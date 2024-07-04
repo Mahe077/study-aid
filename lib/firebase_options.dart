@@ -48,7 +48,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBoZr8mWwa19sqcMxm8KRoNezvaryH7j1A',
-    appId: '1:544057525889:android:6acfd50d8c09112ed72f80',
+    appId: '1:544057525889:android:8b3abd20b77dd65bd72f80',
     messagingSenderId: '544057525889',
     projectId: 'study-aid-e2fc5',
     storageBucket: 'study-aid-e2fc5.appspot.com',
@@ -60,6 +60,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '544057525889',
     projectId: 'study-aid-e2fc5',
     storageBucket: 'study-aid-e2fc5.appspot.com',
+    androidClientId: '544057525889-ero5ibu14svjmt4dhmf2hfj8kkn7c9gn.apps.googleusercontent.com',
     iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
   );
@@ -70,6 +71,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '544057525889',
     projectId: 'study-aid-e2fc5',
     storageBucket: 'study-aid-e2fc5.appspot.com',
+    androidClientId: '544057525889-ero5ibu14svjmt4dhmf2hfj8kkn7c9gn.apps.googleusercontent.com',
     iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
   );
