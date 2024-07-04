@@ -36,5 +36,11 @@ jobs:
       - name: Navigate to ios directory
         run: cd ios
 
+      - name: Update Podfile for iOS deployment target
+        run: |
+          echo "platform :ios, '13.0'" > Podfile.tmp
+          tail -n +2 Podfile >> Podfile.tmp
+          mv Podfile.tmp Podfile
+
       # - name: Build android ios
       #   run: flutter build ipa --release --no-codesign
