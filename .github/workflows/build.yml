@@ -31,8 +31,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
-      - name: Build android apk and appBundle
-        run: flutter build apk
+      # - name: Build android apk and appBundle
+      # run: flutter build apk
 
       - name: Navigate to ios directory
         run: cd ios
@@ -44,6 +44,9 @@ jobs:
             tail -n +2 Podfile >> Podfile.tmp
           fi
           mv Podfile.tmp Podfile
+
+      - name: Set environment variable for flutter build
+        run: export IOS_DEPLOYMENT_TARGET=13.0
 
       - name: Build android ios
         run: flutter build ipa --release --no-codesign
