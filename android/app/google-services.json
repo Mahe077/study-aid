@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "544057525889",
+    "project_id": "study-aid-e2fc5",
+    "storage_bucket": "study-aid-e2fc5.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544057525889:android:6acfd50d8c09112ed72f80",
+        "android_client_info": {
+          "package_name": "com.example.studyaid"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "544057525889-j43cjllc12n3ic49hqtttr4u9cvvp530.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBoZr8mWwa19sqcMxm8KRoNezvaryH7j1A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "544057525889-j43cjllc12n3ic49hqtttr4u9cvvp530.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.studyAid"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
