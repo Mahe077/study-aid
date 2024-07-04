@@ -6,8 +6,8 @@ on:
       release_notes:
         type: string
         required: true
-        default: 'Manual Debug Build'
-        description: 'Release Notes'
+        default: "Manual Debug Build"
+        description: "Release Notes"
 
 jobs:
   build:
@@ -18,14 +18,14 @@ jobs:
 
       - uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: '22'
+          distribution: "temurin"
+          java-version: "22"
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
 
       - name: Make gradlew executable
-        run: chmod +x ./gradlew
+        run: chmod +x ./android/gradlew
 
       - name: Execute Gradle command - assembleDebug
         run: ./gradlew assembleDebug
