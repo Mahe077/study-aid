@@ -39,7 +39,9 @@ jobs:
       - name: Update Podfile for iOS deployment target
         run: |
           echo "platform :ios, '13.0'" > Podfile.tmp
-          tail -n +2 Podfile >> Podfile.tmp
+          if [ -f Podfile ]; then
+            tail -n +2 Podfile >> Podfile.tmp
+          fi
           mv Podfile.tmp Podfile
 
       # - name: Build android ios
