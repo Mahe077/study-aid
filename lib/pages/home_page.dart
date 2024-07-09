@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_drawing_board/flutter_drawing_board.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart'; // Add this package to use a color picker
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -8,8 +10,112 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  DrawingController _drawingController = DrawingController();
+  Color _currentColor = Colors.black;
+  double _currentStrokeWidth = 5.0;
+
+  void _pickColor() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Pick a color"),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: _currentColor,
+            onColorChanged: (color) {
+              setState(() {
+                _currentColor = color;
+                _drawingController.setStyle(color: _currentColor);
+              });
+            },
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: Text("Got it"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actions() {
+    return Column(
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            IconButton(
+              icon: Icon(Icons.color_lens),
+              onPressed: _pickColor,
+            ),
+            IconButton(
+              icon: Icon(Icons.undo),
+              onPressed: () => _drawingController.undo(),
+            ),
+            IconButton(
+              icon: Icon(Icons.redo),
+              onPressed: () => _drawingController.redo(),
+            ),
+            IconButton(
+              icon: Icon(Icons.rotate_right),
+              onPressed: () => _drawingController.turn(),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: () => _drawingController.clear(),
+            ),
+            Expanded(
+              child: Slider(
+                value: _currentStrokeWidth,
+                min: 1.0,
+                max: 20.0,
+                divisions: 19,
+                label: _currentStrokeWidth.round().toString(),
+                onChanged: (value) {
+                  setState(() {
+                    _currentStrokeWidth = value;
+                    _drawingController.setStyle(
+                        strokeWidth: _currentStrokeWidth);
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Drawing Test'),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return DrawingBoard(
+                  controller: _drawingController,
+                  background: Container(
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    color: Colors.white,
+                  ),
+                  showDefaultActions: false,
+                  showDefaultTools: true,
+                );
+              },
+            ),
+          ),
+          _actions(),
+        ],
+      ),
+    );
   }
 }
