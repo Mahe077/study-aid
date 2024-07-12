@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:study_aid/pages/home_page.dart';
+import 'package:study_aid/core/configs/theme/app_theme.dart';
+// import 'package:study_aid/pages/editor_page.dart';
+// import 'package:study_aid/pages/home_page.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:study_aid/presentation/intro/pages/get_started.dart';
+// import 'package:study_aid/widgets/note_taking_canvas.dart';
+// import 'package:study_aid/widgets/v3.dart';
+// import 'package:study_aid/widgets/v4.dart';
+// import 'package:study_aid/widgets/v5.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -17,12 +24,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Study Aid',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
-    );
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        debugShowCheckedModeBanner: false,
+        home: const GetStartedPage());
   }
 }
