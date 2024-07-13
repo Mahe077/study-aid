@@ -1,5 +1,4 @@
 # name: Deploy to Firebase
-
 # on:
 #   workflow_dispatch:
 #     inputs:
@@ -8,7 +7,6 @@
 #         required: true
 #         default: "Manual Debug Build"
 #         description: "Release Notes"
-
 # jobs:
 #   build:
 #     name: Building and distributing app
