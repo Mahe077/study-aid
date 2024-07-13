@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:study_aid/common/widgets/basic_app_button.dart';
-import 'package:study_aid/common/widgets/headings.dart';
-import 'package:study_aid/common/widgets/sub_headings.dart';
+import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
+import 'package:study_aid/common/widgets/headings/headings.dart';
+import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
-import 'package:study_aid/core/configs/theme/app_theme.dart';
 import 'package:study_aid/presentation/auth/signin.dart';
 
 class GetStartedPage extends StatefulWidget {
@@ -16,9 +15,8 @@ class GetStartedPage extends StatefulWidget {
 
 class _GetStartedPageState extends State<GetStartedPage> {
   final PageController _pageController = PageController();
-  int _currentPage = 0;
 
-  List images = ["spotify_logo.svg", "spotify_logo.svg", "spotify_logo.svg"];
+  List images = ["holder.svg", "holder.svg", "holder.svg"];
   List headings = ["Stay Organized", "Make Voice", "Sync Everything"];
   List subHeadings = [
     'Organize your notes in a way they are welcoming you every time you see them.',
@@ -61,7 +59,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     if (index == images.length - 1)
                       BasicAppButton(
                           onPressed: () {
-                            Navigator.push(
+                            Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                     builder: (BuildContext context) =>
@@ -72,7 +70,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (index != (images.length - 1)) const Spacer(flex: 2),
+                        if (index != (images.length - 1)) const Spacer(flex: 1),
                         Expanded(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -105,11 +103,13 @@ class _GetStartedPageState extends State<GetStartedPage> {
                               children: [
                                 Text(
                                   'Next',
-                                  style: TextStyle(color: AppColors.primary),
+                                  style: TextStyle(
+                                      color: AppColors.primary, fontSize: 16),
                                 ),
                                 Icon(
                                   Icons.arrow_forward,
                                   color: AppColors.primary,
+                                  size: 17,
                                 ),
                               ],
                             ),

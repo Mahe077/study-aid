@@ -19,6 +19,8 @@ dependencies:
   screenshot: ^3.0.0
   path_provider: ^2.1.3
   flutter_svg: ^2.0.10+1
+  email_otp: ^3.0.1
+  flutter_expandable_fab: ^2.1.0
 
 dev_dependencies:
   flutter_test:

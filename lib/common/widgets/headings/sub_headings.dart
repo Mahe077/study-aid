@@ -3,21 +3,21 @@ import 'package:study_aid/core/configs/theme/app_colors.dart';
 
 class AppSubHeadings extends StatelessWidget {
   final String text;
-  const AppSubHeadings({
-    super.key,
-    required this.text,
-  });
+  final TextAlign? alignment;
+  final double? size;
+  const AppSubHeadings(
+      {super.key, required this.text, this.alignment, this.size});
 
   @override
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontWeight: FontWeight.w500,
         color: AppColors.primary,
-        fontSize: 16,
+        fontSize: size ?? 16,
       ),
-      textAlign: TextAlign.center,
+      textAlign: alignment ?? TextAlign.center,
     );
   }
 }

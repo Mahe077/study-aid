@@ -11,18 +11,19 @@ class AppTheme {
           SliderThemeData(overlayShape: SliderComponentShape.noOverlay),
       inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.all(30),
+          fillColor: AppColors.grey,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           hintStyle: const TextStyle(
-            color: Color(0xff383838),
+            color: AppColors.primary,
             fontWeight: FontWeight.w500,
           ),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(10),
               borderSide: const BorderSide(color: Colors.white, width: 0.4)),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Colors.black, width: 0.4))),
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide.none)),
       elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.lightBackground,
