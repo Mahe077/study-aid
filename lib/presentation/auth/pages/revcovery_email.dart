@@ -4,7 +4,7 @@ import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/presentation/auth/otp_verfication.dart';
+import 'package:study_aid/presentation/auth/pages/otp_verfication.dart';
 
 class RevcoveryEmailPage extends StatefulWidget {
   const RevcoveryEmailPage({super.key});

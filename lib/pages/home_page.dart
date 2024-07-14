@@ -11,11 +11,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  DrawingController _drawingController = DrawingController();
+  final DrawingController _drawingController = DrawingController();
   Color _currentColor = Colors.black;
   double _currentStrokeWidth = 5.0;
   bool _isWritingMode = false;
-  quill.QuillController _quillController = quill.QuillController.basic();
+  final quill.QuillController _quillController = quill.QuillController.basic();
   final FocusNode _focusNode = FocusNode();
 
   void _pickColor() {

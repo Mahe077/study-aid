@@ -3,7 +3,7 @@ import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/presentation/auth/signin.dart';
+import 'package:study_aid/presentation/auth/pages/signin.dart';
 
 class CreatePasswordPage extends StatefulWidget {
   const CreatePasswordPage({super.key});

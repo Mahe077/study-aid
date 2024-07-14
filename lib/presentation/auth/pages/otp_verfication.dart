@@ -5,7 +5,7 @@ import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
-import 'package:study_aid/presentation/auth/create_password.dart';
+import 'package:study_aid/presentation/auth/pages/create_password.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;

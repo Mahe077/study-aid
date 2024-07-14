@@ -16,6 +16,7 @@ class FAB extends StatelessWidget {
       distance: 70,
       overlayStyle: ExpandableFabOverlayStyle(
         color: Colors.black.withOpacity(0.4),
+        // blur: 6
       ),
       openButtonBuilder: RotateFloatingActionButtonBuilder(
         child: const Icon(

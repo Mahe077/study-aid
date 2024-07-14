@@ -3,19 +3,19 @@ import 'package:flutter_svg/svg.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/core/configs/assets/app_vectors.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
+import 'package:study_aid/presentation/auth/pages/signin.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
-import 'package:study_aid/presentation/auth/revcovery_email.dart';
-import 'package:study_aid/presentation/auth/signup.dart';
 
-class SigninPage extends StatefulWidget {
-  const SigninPage({super.key});
+class SignupPage extends StatefulWidget {
+  const SignupPage({super.key});
 
   @override
-  State<SigninPage> createState() => _SigninPageState();
+  State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SigninPageState extends State<SigninPage> {
+class _SignupPageState extends State<SignupPage> {
   final TextEditingController _email = TextEditingController();
+  final TextEditingController _username = TextEditingController();
 
   final TextEditingController _password = TextEditingController();
 
@@ -46,15 +46,19 @@ class _SigninPageState extends State<SigninPage> {
             const SizedBox(
               height: 35,
             ),
+            _usenameField(context),
+            const SizedBox(
+              height: 20,
+            ),
             _emailField(context),
             const SizedBox(
               height: 20,
             ),
             _passwordField(context),
-            _forgotpassword(),
             const SizedBox(
               height: 20,
             ),
+            _aggrementText(context),
             BasicAppButton(
               onPressed: () {
                 Navigator.pushReplacement(
@@ -62,7 +66,7 @@ class _SigninPageState extends State<SigninPage> {
                     MaterialPageRoute(
                         builder: (BuildContext context) => const HomePage()));
               }, //TODO:implement correctly adding logic onPrecessd
-              title: "Log In",
+              title: "Sign Up",
             ),
             const SizedBox(
               height: 20,
@@ -123,35 +127,13 @@ class _SigninPageState extends State<SigninPage> {
         SizedBox(
           height: 4,
         ),
-        Text("Log In using",
+        Text("Sign Up using",
             style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 17,
                 color: AppColors.primary))
       ],
     );
-  }
-
-  Align _forgotpassword() {
-    return Align(
-        alignment: Alignment.topRight,
-        child: TextButton(
-          onPressed: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (BuildContext context) =>
-                        const RevcoveryEmailPage()));
-          },
-          child: const Text(
-            "Forgot password?",
-            style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: AppColors.primary),
-            textAlign: TextAlign.right,
-          ),
-        ));
   }
 
   Widget _welcomeText() {
@@ -175,11 +157,20 @@ class _SigninPageState extends State<SigninPage> {
     );
   }
 
+  Widget _usenameField(BuildContext context) {
+    return TextField(
+      controller: _username,
+      decoration: const InputDecoration(
+              suffixIcon: Icon(Icons.person), hintText: 'Username')
+          .applyDefaults(Theme.of(context).inputDecorationTheme),
+    );
+  }
+
   Widget _emailField(BuildContext context) {
     return TextField(
       controller: _email,
       decoration: const InputDecoration(
-              suffixIcon: Icon(Icons.mail), hintText: 'Email or Username')
+              suffixIcon: Icon(Icons.mail), hintText: 'Email Address')
           .applyDefaults(Theme.of(context).inputDecorationTheme),
     );
   }
@@ -212,7 +203,7 @@ class _SigninPageState extends State<SigninPage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'First time here? Click to',
+            'Already have an account? Click to ',
             style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
           ),
           TextButton(
@@ -220,15 +211,54 @@ class _SigninPageState extends State<SigninPage> {
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (BuildContext context) => const SignupPage()));
+                        builder: (BuildContext context) => const SigninPage()));
               },
-              child: const Text('Sign Up',
+              child: const Text('Log In',
                   style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                       color: AppColors.primary)))
         ],
       ),
+    );
+  }
+
+  Widget _aggrementText(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'By registering, you agree with our',
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+        ),
+        TextButton(
+            onPressed: () {
+              // Navigator.push(
+              // context,
+              // MaterialPageRoute(
+              //     builder: (BuildContext context) => const SigninPage()));
+            },
+            child: const Text(' Terms of Use',
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.primary))),
+        const Text(
+          'and',
+          style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
+        ),
+        TextButton(
+            onPressed: () {
+              // Navigator.push(
+              //     context,
+              //     MaterialPageRoute(
+              //         builder: (BuildContext context) => const SigninPage()));
+            },
+            child: const Text('Privacy Policy.',
+                style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: AppColors.primary))),
+      ],
     );
   }
 }
