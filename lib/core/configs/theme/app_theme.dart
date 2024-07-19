@@ -49,10 +49,13 @@ class AppTheme {
           filled: true,
           fillColor: Colors.transparent,
           hintStyle: const TextStyle(
-            color: Color(0xffA7A7A7),
+            color: AppColors.primary,
             fontWeight: FontWeight.w500,
+            fontSize: 16,
           ),
-          contentPadding: const EdgeInsets.all(30),
+          isDense: true,
+          // contentPadding:
+          //     const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: const BorderSide(color: Colors.white, width: 0.4)),
