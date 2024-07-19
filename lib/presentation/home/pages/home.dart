@@ -7,7 +7,7 @@ import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
-import 'package:study_aid/common/widgets/tiles/topic_tile.dart';
+import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/domain/entities/note.dart';
 import 'package:study_aid/domain/entities/topic.dart';
 import 'package:study_aid/presentation/example_data.dart';
@@ -146,7 +146,7 @@ class _HomePageState extends State<HomePage> {
                             children: [
                               // ...exampleTopicEntitys.map((entity) => Column(
                               //       children: [
-                              //         TopicTile(title: entity.title, type: 3),
+                              //         ContentTile(title: entity.title, type: 3),
                               //         const SizedBox(height: 10),
                               //       ],
                               //     )),
@@ -155,7 +155,7 @@ class _HomePageState extends State<HomePage> {
                                   i++)
                                 Column(
                                   children: [
-                                    TopicTile(
+                                    ContentTile(
                                         title: exampleTopicEntitys[i].title,
                                         entity: exampleTopicEntitys[i],
                                         type: TopicType.topic),
@@ -167,7 +167,7 @@ class _HomePageState extends State<HomePage> {
                               //   topics.length,
                               //   (index) => Column(
                               //     children: [
-                              //       TopicTile(
+                              //       ContentTile(
                               //         title: topics[index],
                               //         type: types[index],
                               //       ),

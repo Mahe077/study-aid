@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
 
 class FAB extends StatelessWidget {
@@ -44,8 +45,9 @@ class FAB extends StatelessWidget {
                 'Record an Audio',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              SizedBox(width: 5), // Adjust spacing between icon and text
-              Icon(Icons.mic, size: 28, color: AppColors.primary),
+              SizedBox(width: 8), // Adjust spacing between icon and text
+              FaIcon(FontAwesomeIcons.microphone,
+                  size: 20, color: AppColors.primary),
             ],
           ),
           heroTag: null,
@@ -60,8 +62,9 @@ class FAB extends StatelessWidget {
                 'Create a New Note',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              SizedBox(width: 5),
-              Icon(Icons.note_add, size: 26, color: AppColors.primary),
+              SizedBox(width: 8),
+              FaIcon(FontAwesomeIcons.solidNoteSticky,
+                  size: 20, color: AppColors.primary),
             ],
           ),
           heroTag: null,
@@ -75,10 +78,10 @@ class FAB extends StatelessWidget {
                 'Add a Topic',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              SizedBox(width: 5),
-              Icon(
-                Icons.topic,
-                size: 26,
+              SizedBox(width: 8),
+              FaIcon(
+                FontAwesomeIcons.bookOpen,
+                size: 20,
                 color: AppColors.primary,
               )
             ],

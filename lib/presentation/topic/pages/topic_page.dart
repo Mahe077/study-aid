@@ -7,7 +7,7 @@ import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
-import 'package:study_aid/common/widgets/tiles/topic_tile.dart';
+import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/domain/entities/note.dart';
 import 'package:study_aid/domain/entities/topic.dart';
 import 'package:study_aid/presentation/example_data.dart';
@@ -203,7 +203,7 @@ class _TopicPageState extends State<TopicPage>
         if (entity.subTopics != null)
           ...entity.subTopics!.map((topic) => Column(
                 children: [
-                  TopicTile(
+                  ContentTile(
                     title: topic.title,
                     entity: topic,
                     type: TopicType.topic,
@@ -216,7 +216,7 @@ class _TopicPageState extends State<TopicPage>
           const SizedBox(height: 10),
           ...entity.notes!.map((note) => Column(
                 children: [
-                  TopicTile(
+                  ContentTile(
                     title: note.title,
                     entity: note,
                     type: TopicType.note,
@@ -229,7 +229,7 @@ class _TopicPageState extends State<TopicPage>
           const SizedBox(height: 10),
           ...entity.audioRecordings!.map((audio) => Column(
                 children: [
-                  TopicTile(
+                  ContentTile(
                     title: audio.title,
                     entity: audio,
                     type: TopicType.topic,
@@ -243,7 +243,7 @@ class _TopicPageState extends State<TopicPage>
         //   subTopics.length,
         //   (index) => Column(
         //     children: [
-        //       TopicTile(
+        //       ContentTile(
         //         title: subTopics[index],
         //         type: TopicType.note,
         //       ),
@@ -269,7 +269,7 @@ class _TopicPageState extends State<TopicPage>
       return ListView(children: [
         ...entity.subTopics!.map((topic) => Column(
               children: [
-                TopicTile(
+                ContentTile(
                   title: topic.title,
                   entity: topic,
                   type: TopicType.topic,
@@ -298,7 +298,7 @@ class _TopicPageState extends State<TopicPage>
           const SizedBox(height: 10),
           ...entity.notes!.map((note) => Column(
                 children: [
-                  TopicTile(
+                  ContentTile(
                     title: note.title,
                     entity: note,
                     type: TopicType.note,
@@ -327,7 +327,7 @@ class _TopicPageState extends State<TopicPage>
           const SizedBox(height: 10),
           ...entity.audioRecordings!.map((audio) => Column(
                 children: [
-                  TopicTile(
+                  ContentTile(
                     title: audio.title,
                     entity: audio,
                     type: TopicType.audio,

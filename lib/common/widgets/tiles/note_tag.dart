@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
 
 class Tag extends StatelessWidget {
@@ -9,7 +10,7 @@ class Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: 20),
+      constraints: const BoxConstraints(minWidth: 10),
       height: 18,
       decoration: BoxDecoration(
           color: AppColors.white, borderRadius: BorderRadius.circular(5)),
@@ -20,7 +21,7 @@ class Tag extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (icon != null) ...[
-              Icon(
+              FaIcon(
                 icon,
                 size: 10,
                 color: AppColors.primary,
