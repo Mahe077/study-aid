@@ -9,7 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  logger: ^2.3.0
+  logger: ^2.4.0
   firebase_auth: ^5.1.1
   firebase_core: ^3.1.1
   flutter_drawing_board: ^0.7.0+2
@@ -21,7 +21,14 @@ dependencies:
   flutter_svg: ^2.0.10+1
   email_otp: ^3.0.1
   flutter_expandable_fab: ^2.1.0
-
+  intl: ^0.19.0
+  font_awesome_flutter: ^10.7.0
+  dartz: ^0.10.1
+  get_it: ^7.7.0
+  cloud_firestore: ^5.1.0
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^7.0.1
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter  
