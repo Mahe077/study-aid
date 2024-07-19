@@ -10,6 +10,7 @@ import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/topic_tile.dart';
 import 'package:study_aid/domain/entities/note.dart';
 import 'package:study_aid/domain/entities/topic.dart';
+import 'package:study_aid/presentation/example_data.dart';
 
 class TopicPage extends StatefulWidget {
   final String topicTitle;
@@ -40,12 +41,12 @@ class _TopicPageState extends State<TopicPage>
   //TODO:check these
   String usename = "Nasim";
   List notes = ["hi", "hello"];
-  List<String> topics = ["Topic 1", "Topic 2", "Topic 3"];
+  List<String> subTopics = ["Topic 1", "Topic 2", "Topic 3"];
   List<int> types = [1, 2, 3];
 
   void _loadMoreTopics() {
     setState(() {
-      topics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
+      subTopics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
     });
   }
   // List notes = [];
@@ -118,17 +119,23 @@ class _TopicPageState extends State<TopicPage>
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             clipBehavior: Clip.none,
-                            child: Row(
-                              children: List.generate(
-                                3,
-                                (index) => Row(
+                            child: Row(children: [
+                              for (int i = 0; i < recent.length; i++)
+                                Row(
                                   children: [
-                                    const RecentTile(),
-                                    if (index < 2) const SizedBox(width: 15),
+                                    RecentTile(
+                                        title: recent[i].title,
+                                        entity: recent[i],
+                                        type: (recent[i] is TopicEntity)
+                                            ? TopicType.topic
+                                            : (recent[i] is NoteEntity)
+                                                ? TopicType.note
+                                                : TopicType.audio),
+                                    if (i < recent.length - 1)
+                                      const SizedBox(width: 15)
                                   ],
                                 ),
-                              ),
-                            ),
+                            ]),
                           ),
                           const SizedBox(
                             height: 10,
@@ -193,15 +200,16 @@ class _TopicPageState extends State<TopicPage>
     // Replace with your content for "All" tab
     return ListView(
       children: [
-        if (entity.topics != null)
-          ...entity.topics!.map((topic) => Column(
+        if (entity.subTopics != null)
+          ...entity.subTopics!.map((topic) => Column(
                 children: [
                   TopicTile(
                     title: topic.title,
                     entity: topic,
                     type: TopicType.topic,
                   ),
-                  if (topic != entity.topics!.last) const SizedBox(height: 10),
+                  if (topic != entity.subTopics!.last)
+                    const SizedBox(height: 10),
                 ],
               )),
         if (entity.notes != null) ...[
@@ -232,14 +240,14 @@ class _TopicPageState extends State<TopicPage>
               ))
         ],
         // ...List.generate(
-        //   topics.length,
+        //   subTopics.length,
         //   (index) => Column(
         //     children: [
         //       TopicTile(
-        //         title: topics[index],
+        //         title: subTopics[index],
         //         type: TopicType.note,
         //       ),
-        //       if (index < topics.length - 1) const SizedBox(height: 10),
+        //       if (index < subTopics.length - 1) const SizedBox(height: 10),
         // ],
         // ),
         // ),
@@ -257,16 +265,16 @@ class _TopicPageState extends State<TopicPage>
   Widget _topicsContent(TopicEntity entity) {
     // Replace with your content for "Topics" tab
     // return const Center(child: Text("Topics content goes here"));
-    if (entity.topics != null && entity.topics!.isNotEmpty) {
+    if (entity.subTopics != null && entity.subTopics!.isNotEmpty) {
       return ListView(children: [
-        ...entity.topics!.map((topic) => Column(
+        ...entity.subTopics!.map((topic) => Column(
               children: [
                 TopicTile(
                   title: topic.title,
                   entity: topic,
                   type: TopicType.topic,
                 ),
-                if (topic != entity.topics!.last) const SizedBox(height: 10),
+                if (topic != entity.subTopics!.last) const SizedBox(height: 10),
               ],
             )),
         ElevatedButton(
@@ -322,7 +330,7 @@ class _TopicPageState extends State<TopicPage>
                   TopicTile(
                     title: audio.title,
                     entity: audio,
-                    type: TopicType.topic,
+                    type: TopicType.audio,
                   ),
                   if (audio != entity.audioRecordings!.last)
                     const SizedBox(height: 10),

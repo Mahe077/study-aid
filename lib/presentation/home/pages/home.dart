@@ -8,6 +8,8 @@ import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/configs/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/topic_tile.dart';
+import 'package:study_aid/domain/entities/note.dart';
+import 'package:study_aid/domain/entities/topic.dart';
 import 'package:study_aid/presentation/example_data.dart';
 
 class HomePage extends StatefulWidget {
@@ -98,17 +100,33 @@ class _HomePageState extends State<HomePage> {
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           clipBehavior: Clip.none,
-                          child: Row(
-                            children: List.generate(
-                              3,
-                              (index) => Row(
+                          child: Row(children: [
+                            for (int i = 0; i < recent.length; i++)
+                              Row(
                                 children: [
-                                  const RecentTile(),
-                                  if (index < 2) const SizedBox(width: 15),
+                                  RecentTile(
+                                      title: recent[i].title,
+                                      entity: recent[i],
+                                      type: (recent[i] is TopicEntity)
+                                          ? TopicType.topic
+                                          : (recent[i] is NoteEntity)
+                                              ? TopicType.note
+                                              : TopicType.audio),
+                                  if (i < recent.length - 1)
+                                    const SizedBox(width: 15),
                                 ],
                               ),
-                            ),
-                          ),
+                          ]
+                              // List.generate(
+                              //   3,
+                              //   (index) => Row(
+                              //     children: [
+                              //       const RecentTile(),
+                              //       if (index < 2) const SizedBox(width: 15),
+                              //     ],
+                              //   ),
+                              // ),
+                              ),
                         ),
                         const SizedBox(
                           height: 15,
