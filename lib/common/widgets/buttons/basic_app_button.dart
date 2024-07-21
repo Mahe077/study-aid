@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 class BasicAppButton extends StatelessWidget {
   final VoidCallback onPressed;

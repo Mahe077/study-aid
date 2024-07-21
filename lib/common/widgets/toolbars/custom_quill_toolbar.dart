@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 class CustomQuillToolbar extends StatelessWidget {
   const CustomQuillToolbar({

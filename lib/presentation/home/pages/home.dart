@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/content_tile.dart';
-import 'package:study_aid/domain/entities/note.dart';
-import 'package:study_aid/domain/entities/topic.dart';
-import 'package:study_aid/presentation/example_data.dart';
+import 'package:study_aid/features/notes/domain/entities/note.dart';
+import 'package:study_aid/features/topics/domain/entities/topic.dart';
+import 'package:study_aid/example_data.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String? username;
+  const HomePage({super.key, this.username});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -24,18 +26,18 @@ class _HomePageState extends State<HomePage> {
 
   //TODO:check these
 
-  String usename = "Nasim";
+  // String usename = "Nasim";
   List notes = ["hi", "hello"];
   List<String> topics = ["Topic 1", "Topic 2", "Topic 3"];
-  List<int> types = [1, 2, 3];
+  // List<int> types = [1, 2, 3];
 
   void _loadMoreTopics() {
-    setState(() {
-      topics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
-    });
+    Logger().d("_loadMoreTopics clicked",);
+    // setState(() {
+    //   topics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
+    // });
   }
-  // List notes = [];
-  //
+
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +60,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppHeadings(
-                        text: 'Hello $usename,',
+                        text: 'Hello ${widget.username ?? ''},',
                         alignment: TextAlign.left,
                       ),
                       const SizedBox(
@@ -107,9 +109,9 @@ class _HomePageState extends State<HomePage> {
                                   RecentTile(
                                       title: recent[i].title,
                                       entity: recent[i],
-                                      type: (recent[i] is TopicEntity)
+                                      type: (recent[i] is Topic)
                                           ? TopicType.topic
-                                          : (recent[i] is NoteEntity)
+                                          : (recent[i] is Note)
                                               ? TopicType.note
                                               : TopicType.audio),
                                   if (i < recent.length - 1)
@@ -150,16 +152,14 @@ class _HomePageState extends State<HomePage> {
                               //         const SizedBox(height: 10),
                               //       ],
                               //     )),
-                              for (int i = 0;
-                                  i < exampleTopicEntitys.length;
-                                  i++)
+                              for (int i = 0; i < recent.length; i++)
                                 Column(
                                   children: [
                                     ContentTile(
-                                        title: exampleTopicEntitys[i].title,
-                                        entity: exampleTopicEntitys[i],
+                                        title: recent[i].title,
+                                        entity: recent[i],
                                         type: TopicType.topic),
-                                    if (i < exampleTopicEntitys.length - 1)
+                                    if (i < recent.length - 1)
                                       const SizedBox(height: 10),
                                   ],
                                 ),
