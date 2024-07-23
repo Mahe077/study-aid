@@ -110,15 +110,15 @@ class _SigninPageState extends ConsumerState<SigninPage> {
               _password.text.toString(),
             );
         break;
-      // case AuthMethod.google:
-      //   result = await sl<SignInWithGoogleUseCase>().call();
-      //   break;
-      // case AuthMethod.facebook:
-      //   result = await sl<SignInWithFacebookUseCase>().call();
-      //   break;
-      // case AuthMethod.apple:
-      //   result = await sl<SignInWithAppleUseCase>().call();
-      //   break;
+      case AuthMethod.google:
+        result = await ref.read(signInWithGoogleProvider).call();
+        break;
+      case AuthMethod.facebook:
+        result = await ref.read(signInWithFacebookProvider).call();
+        break;
+      case AuthMethod.apple:
+        result = await ref.read(signInWithAppleProvider).call();
+        break;
       default:
         result = const dartz.Left('Invalid authentication method');
     }

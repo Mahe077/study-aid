@@ -32,12 +32,13 @@ class _HomePageState extends State<HomePage> {
   // List<int> types = [1, 2, 3];
 
   void _loadMoreTopics() {
-    Logger().d("_loadMoreTopics clicked",);
+    Logger().d(
+      "_loadMoreTopics clicked",
+    );
     // setState(() {
     //   topics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
     // });
   }
-
 
   @override
   Widget build(BuildContext context) {

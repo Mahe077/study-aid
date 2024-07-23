@@ -11,4 +11,5 @@ abstract class AuthRepository {
   Future<Either<Failure, User?>> signInWithFacebook();
   Future<Either<Failure, User?>> signInWithApple();
   Future<Either<Failure, Unit>> signOut();
+  Future<Either<Failure, void>> resetPassword(String newPassword);
 }

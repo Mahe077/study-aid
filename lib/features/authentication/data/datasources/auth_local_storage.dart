@@ -4,20 +4,26 @@ import 'package:study_aid/features/authentication/data/models/user.dart';
 abstract class LocalDataSource {
   Future<void> cacheUser(UserModel user);
   Future<UserModel?> getCachedUser(String id);
+  Future<void> clearUser();
 }
 
 class LocalDataSourceImpl implements LocalDataSource {
-  final Box<UserModel> userBox;
+  final Box<UserModel> _userBox;
 
-  LocalDataSourceImpl(this.userBox);
+  LocalDataSourceImpl(this._userBox);
 
   @override
   Future<void> cacheUser(UserModel user) async {
-    await userBox.put(user.id, user);
+    await _userBox.put(user.id, user);
+  }
+
+  @override
+  Future<void> clearUser() async {
+    await _userBox.clear();
   }
 
   @override
   Future<UserModel?> getCachedUser(String id) async {
-    return userBox.get(id);
+    return _userBox.get(id);
   }
 }

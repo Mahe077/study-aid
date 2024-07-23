@@ -25,6 +25,8 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on ServerException {
       return Left(ServerFailure('Failed to sign in'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
     }
   }
 
@@ -38,24 +40,58 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on ServerException {
       return Left(ServerFailure('Failed to sign up'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, User?>> signInWithGoogle() async {
-    // Implement Google sign-in logic
-    return Left(ServerFailure('Google sign-in not implemented yet'));
+    try {
+      UserModel? user = await remoteDataSource.signInWithGoogle();
+
+      if (user != null) {
+        if (await localDataSource.getCachedUser(user.id) != null) {
+          // Cache the user data in local storage
+          await localDataSource.cacheUser(user);
+        }
+        return Right(user);
+      } else {
+        // Return a failure if user is null
+        return Left(ServerFailure('Google sign-in returned no user data'));
+      }
+    } on ServerException {
+      return Left(ServerFailure('Failed to google sign-in'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, User?>> signInWithFacebook() async {
-    // Implement Facebook sign-in logic
-    return Left(ServerFailure('Facebook sign-in not implemented yet'));
+    try {
+      UserModel? user = await remoteDataSource.signInWithFacebook();
+
+      if (user != null) {
+        if (await localDataSource.getCachedUser(user.id) != null) {
+          // Cache the user data in local storage
+          await localDataSource.cacheUser(user);
+        }
+        return Right(user);
+      } else {
+        // Return a failure if user is null
+        return Left(ServerFailure('Facebook sign-in returned no user data'));
+      }
+    } on ServerException {
+      return Left(ServerFailure('Failed to google sign-in'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
   }
 
   @override
   Future<Either<Failure, User?>> signInWithApple() async {
-    // Implement Apple sign-in logic
+    //TODO: Implement Apple sign-in logic
     return Left(ServerFailure('Apple sign-in not implemented yet'));
   }
 
@@ -63,10 +99,22 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, Unit>> signOut() async {
     try {
       await remoteDataSource.signOut();
+      // Clear the cached user data from local storage
+      await localDataSource.clearUser();
       return const Right(
           unit); // `unit` is used to indicate success with no result
     } catch (e) {
       return Left(ServerFailure('Failed to sign out'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> resetPassword(String newPassword) async {
+    try {
+      await remoteDataSource.resetPassword(newPassword);
+      return const Right(unit);
+    } on Exception catch (e) {
+      return Left(ServerFailure('Failed to update the password'));
     }
   }
 }

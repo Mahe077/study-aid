@@ -1,3 +1,4 @@
+import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
@@ -41,11 +42,72 @@ class UserNotifier extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
+  Future<void> signInWithGoogle() async {
+    state = const AsyncValue.loading();
+    try {
+      final signInWithGoogle = _ref.read(signInWithGoogleProvider);
+      final result = await signInWithGoogle.call();
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (user) => AsyncValue.data(user),
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> signInWithFacebook() async {
+    state = const AsyncValue.loading();
+    try {
+      final signInWithFacebook = _ref.read(signInWithFacebookProvider);
+      final result = await signInWithFacebook.call();
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (user) => AsyncValue.data(user),
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> signInWithApple() async {
+    state = const AsyncValue.loading();
+    try {
+      final signInWithApple = _ref.read(signInWithAppleProvider);
+      final result = await signInWithApple.call();
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (user) => AsyncValue.data(user),
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
       final signOut = _ref.read(signOutProvider);
       final result = await signOut.call();
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (_) => const AsyncValue.data(
+            null), // Reset state to null after successful sign out
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> resetPassword(String newPassword) async {
+    state = const AsyncValue.loading();
+    try {
+      final resetPassword = _ref.read(resetPasswordProvider);
+      final result = await resetPassword.call(newPassword);
 
       state = result.fold(
         (failure) => AsyncValue.error(failure.message, StackTrace.current),

@@ -5,6 +5,7 @@ import 'package:study_aid/features/authentication/data/datasources/auth_local_st
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:study_aid/features/authentication/domain/repositories/auth.dart';
+import 'package:study_aid/features/authentication/domain/usecases/reset_password.dart';
 import 'package:study_aid/features/authentication/domain/usecases/signin.dart';
 import 'package:study_aid/features/authentication/domain/usecases/signout.dart';
 import 'package:study_aid/features/authentication/domain/usecases/signup.dart';
@@ -26,6 +27,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 // Use case providers
 final signInWithEmailProvider =
     Provider((ref) => SignInWithEmail(ref.read(authRepositoryProvider)));
+
 final signUpWithEmailProvider =
     Provider((ref) => SignUpWithEmail(ref.read(authRepositoryProvider)));
 
@@ -34,4 +36,14 @@ final signOutProvider = Provider<SignOut>((ref) {
   return SignOut(authRepository);
 });
 
-// Providers for other use cases
+final signInWithGoogleProvider =
+    Provider((ref) => SignInWithGoogle(ref.read(authRepositoryProvider)));
+
+final signInWithFacebookProvider =
+    Provider((ref) => SignInWithFacebook(ref.read(authRepositoryProvider)));
+
+final signInWithAppleProvider =
+    Provider((ref) => SignInWithApple(ref.read(authRepositoryProvider)));
+
+final resetPasswordProvider =
+    Provider((ref) => ResetPassword(ref.read(authRepositoryProvider)));
