@@ -15,6 +15,7 @@ abstract class RemoteDataSource {
   Future<UserModel?> getUserById(String id);
   Future<Unit> signOut();
   Future<Unit> resetPassword(String newPassword);
+  Future<Unit> sendPasswordResetEmail(String email);
 }
 
 class RemoteDataSourceImpl implements RemoteDataSource {
@@ -180,6 +181,16 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       return unit;
     } catch (e) {
       throw Exception('Error reset password: $e');
+    }
+  }
+
+  @override
+  Future<Unit> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return unit;
+    } catch (e) {
+      throw Exception('Error password reset email: $e');
     }
   }
 }

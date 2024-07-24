@@ -47,3 +47,6 @@ final signInWithAppleProvider =
 
 final resetPasswordProvider =
     Provider((ref) => ResetPassword(ref.read(authRepositoryProvider)));
+
+final sendPasswordResetEmailProvider =
+    Provider((ref) => SendPasswordResetEmail(ref.read(authRepositoryProvider)));

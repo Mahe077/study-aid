@@ -7,15 +7,15 @@ import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/presentation/pages/create_password.dart';
 
-class OTPVerificationPage extends StatefulWidget {
+class OTPVerificationPageCopy extends StatefulWidget {
   final String email;
-  const OTPVerificationPage({super.key, required this.email});
+  const OTPVerificationPageCopy({super.key, required this.email});
 
   @override
-  State<OTPVerificationPage> createState() => _OTPVerificationPageState();
+  State<OTPVerificationPageCopy> createState() => _OTPVerificationPageState();
 }
 
-class _OTPVerificationPageState extends State<OTPVerificationPage> {
+class _OTPVerificationPageState extends State<OTPVerificationPageCopy> {
   final List<String> _otp = List.filled(5, '');
 
   @override
@@ -79,21 +79,21 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   Future<void> _verifyOTP() async {
     String otp = _otp.join();
-    if (await EmailOTP.verifyOTP(otp: otp)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("OTP verification success")),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (BuildContext context) => const CreatePasswordPage(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("OTP verification failed")),
-      );
-    }
+    // if (await EmailOTP.verifyOTP(otp: otp)) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text("OTP verification success")),
+    //   );
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (BuildContext context) => const CreatePasswordPage(),
+      ),
+    );
+    // } else {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(content: Text("OTP verification failed")),
+    //   );
+    // }
   }
 
   Widget _textFieldOTP({required int index}) {

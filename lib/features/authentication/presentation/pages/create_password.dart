@@ -6,6 +6,7 @@ import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
@@ -18,12 +19,22 @@ class CreatePasswordPage extends ConsumerStatefulWidget {
 }
 
 class _CreatePasswordPageState extends ConsumerState<CreatePasswordPage> {
-  final TextEditingController _password1 = TextEditingController();
-  final TextEditingController _password2 = TextEditingController();
+  final TextEditingController _password1Controller = TextEditingController();
+  final TextEditingController _password2Controller = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+
+  String? password1Error;
+  String? password2Error;
 
   bool passwordVisible1 = true;
   bool passwordVisible2 = true;
+
+  @override
+  void dispose() {
+    _password1Controller.dispose();
+    _password2Controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,80 +43,57 @@ class _CreatePasswordPageState extends ConsumerState<CreatePasswordPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Align(
-              alignment: Alignment.topLeft,
-              child: Column(children: [
-                AppHeadings(
-                  text: 'Recover Password',
-                  alignment: TextAlign.left,
-                ),
-                AppSubHeadings(
-                  text:
-                      'Let us send you a verification code to your email to get your password reset.',
-                  alignment: TextAlign.left,
-                )
-              ]),
+            const AppHeadings(
+              text: 'Recover Password',
+              alignment: TextAlign.left,
             ),
-            const SizedBox(
-              height: 20,
+            const AppSubHeadings(
+              text: 'Enter your new password below to reset your password.',
+              alignment: TextAlign.left,
             ),
+            const SizedBox(height: 20),
             Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _passwordField(
-                        context, _password1, "Password", passwordVisible1,
-                        (value) {
+              key: _formKey,
+              child: Column(
+                children: [
+                  _passwordField(
+                    context,
+                    _password1Controller,
+                    "Password",
+                    passwordVisible1,
+                    (value) {
                       setState(() {
                         passwordVisible1 = value;
+                        password1Error = null;
                       });
-                    }),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    _passwordField(context, _password2, "Confirm Password",
-                        passwordVisible2, (value) {
+                    },
+                    errorText: password1Error,
+                  ),
+                  const SizedBox(height: 20),
+                  _passwordField(
+                    context,
+                    _password2Controller,
+                    "Confirm Password",
+                    passwordVisible2,
+                    (value) {
                       setState(() {
                         passwordVisible2 = value;
+                        password2Error = null;
                       });
-                    }, isConfirm: true),
-                  ],
-                )),
-            const SizedBox(
-              height: 20,
+                    },
+                    isConfirm: true,
+                    errorText: password2Error,
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 20),
             BasicAppButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  dartz.Either result =
-                      await ref.read(resetPasswordProvider).call(
-                            _password2.text.toString(),
-                          );
-
-                  result.fold(
-                    (l) {
-                      Logger().e(l);
-                      var snackbar = SnackBar(
-                        content: Text(l.message),
-                        behavior: SnackBarBehavior.floating,
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(snackbar);
-                    },
-                    (r) {
-                      Logger().d(r);
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => const SigninPage(),
-                        ),
-                      );
-                    },
-                  );
-                }
-              },
+              onPressed: _onSetPassword,
               title: "Set Password",
-            )
+            ),
           ],
         ),
       ),
@@ -119,26 +107,64 @@ class _CreatePasswordPageState extends ConsumerState<CreatePasswordPage> {
     bool passwordVisible,
     ValueChanged<bool> onVisibilityChanged, {
     bool isConfirm = false,
+    String? errorText,
   }) {
     return TextFormField(
       controller: controller,
       obscureText: passwordVisible,
       validator: (value) {
         if (isConfirm) {
-          return validateConfirmPassword(value, _password1.text);
+          password2Error =
+              validateConfirmPassword(value, _password1Controller.text);
+          return password2Error;
         }
-        return validatePassword(value);
+        password1Error = validatePassword(value);
+        return password1Error;
+      },
+      onChanged: (_) {
+        // Clear the error message when the user starts typing
+        setState(() {
+          if (isConfirm) {
+            password2Error = null;
+          } else {
+            password1Error = null;
+          }
+        });
+        _formKey.currentState?.validate();
       },
       decoration: InputDecoration(
-              suffixIcon: IconButton(
-                icon: Icon(
-                    passwordVisible ? Icons.visibility : Icons.visibility_off),
-                onPressed: () {
-                  onVisibilityChanged(!passwordVisible);
-                },
-              ),
-              hintText: hintText)
-          .applyDefaults(Theme.of(context).inputDecorationTheme),
+        suffixIcon: IconButton(
+          icon: Icon(passwordVisible ? Icons.visibility : Icons.visibility_off),
+          onPressed: () {
+            onVisibilityChanged(!passwordVisible);
+          },
+        ),
+        hintText: hintText,
+        errorText: errorText,
+      ).applyDefaults(Theme.of(context).inputDecorationTheme),
     );
+  }
+
+  Future<void> _onSetPassword() async {
+    if (_formKey.currentState!.validate()) {
+      final result =
+          await ref.read(resetPasswordProvider).call(_password2Controller.text);
+
+      result.fold(
+        (l) {
+          Logger().e(l.message);
+          showSnackBar(context, l.message);
+        },
+        (r) {
+          Logger().d('password reset success');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) => const SigninPage(),
+            ),
+          );
+        },
+      );
+    }
   }
 }

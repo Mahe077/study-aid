@@ -104,7 +104,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(
           unit); // `unit` is used to indicate success with no result
     } catch (e) {
-      return Left(ServerFailure('Failed to sign out'));
+      return Left(ServerFailure(e.toString()));
     }
   }
 
@@ -115,6 +115,16 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(unit);
     } on Exception catch (e) {
       return Left(ServerFailure('Failed to update the password'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Unit>> sendPasswordResetEmail(String email) async {
+    try {
+      await remoteDataSource.sendPasswordResetEmail(email);
+      return const Right(unit);
+    } on Exception catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 }

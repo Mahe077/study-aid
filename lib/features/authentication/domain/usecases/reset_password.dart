@@ -11,3 +11,13 @@ class ResetPassword {
     return await _repository.resetPassword(newPassword);
   }
 }
+
+class SendPasswordResetEmail {
+  final AuthRepository _repository;
+
+  SendPasswordResetEmail(this._repository);
+
+  Future<Either<Failure, void>> call(String email) async {
+    return await _repository.sendPasswordResetEmail(email);
+  }
+}

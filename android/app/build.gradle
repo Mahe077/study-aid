@@ -32,7 +32,9 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
-
+    dependencies {
+         implementation 'com.facebook.android:facebook-login:latest.release'
+    }
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -40,6 +42,7 @@ android {
             signingConfig = signingConfigs.debug
         }
     }
+    
 }
 
 flutter {

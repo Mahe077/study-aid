@@ -111,8 +111,22 @@ class UserNotifier extends StateNotifier<AsyncValue<User?>> {
 
       state = result.fold(
         (failure) => AsyncValue.error(failure.message, StackTrace.current),
-        (_) => const AsyncValue.data(
-            null), // Reset state to null after successful sign out
+        (_) => const AsyncValue.data(null),
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    state = const AsyncValue.loading();
+    try {
+      final sendPasswordResetEmail = _ref.read(sendPasswordResetEmailProvider);
+      final result = await sendPasswordResetEmail.call(email);
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (_) => const AsyncValue.data(null),
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);

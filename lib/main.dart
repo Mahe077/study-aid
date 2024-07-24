@@ -9,6 +9,7 @@ import 'package:study_aid/core/utils/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/presentation/intro/pages/get_started.dart';
+import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
 // import 'package:study_aid/widgets/note_taking_canvas.dart';
 // import 'package:study_aid/widgets/v3.dart';
 // import 'package:study_aid/widgets/v4.dart';
@@ -53,6 +54,6 @@ class MyApp extends StatelessWidget {
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
-        home: const GetStartedPage());
+        home: const SplashScreen());
   }
 }

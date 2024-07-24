@@ -29,3 +29,26 @@ String? validateConfirmPassword(String? value, String password) {
   }
   return null;
 }
+
+String? isValidEmail(String? email) {
+  if (email == null || email.isEmpty) {
+    return 'Email is required';
+  } else {
+    final emailRegEx = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    if (!emailRegEx.hasMatch(email)) {
+      return 'Invalid email address';
+    } else {
+      return null;
+    }
+  }
+}
+
+String? isValidUsername(String? username) {
+  if (username == null || username.isEmpty) {
+    return 'Email is required';
+  } else if (username.length >= 3) {
+    return 'Username must be at least 3 characters long';
+  }
+
+  return null;
+}
