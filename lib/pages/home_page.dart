@@ -11,18 +11,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  DrawingController _drawingController = DrawingController();
+  final DrawingController _drawingController = DrawingController();
   Color _currentColor = Colors.black;
   double _currentStrokeWidth = 5.0;
   bool _isWritingMode = false;
-  quill.QuillController _quillController = quill.QuillController.basic();
+  final quill.QuillController _quillController = quill.QuillController.basic();
   final FocusNode _focusNode = FocusNode();
 
   void _pickColor() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Pick a color"),
+        title: const Text("Pick a color"),
         content: SingleChildScrollView(
           child: ColorPicker(
             pickerColor: _currentColor,
@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
         ),
         actions: <Widget>[
           TextButton(
-            child: Text("Got it"),
+            child: const Text("Got it"),
             onPressed: () {
               Navigator.of(context).pop();
             },
@@ -69,23 +69,23 @@ class _HomePageState extends State<HomePage> {
         Row(
           children: <Widget>[
             IconButton(
-              icon: Icon(Icons.color_lens),
+              icon: const Icon(Icons.color_lens),
               onPressed: _pickColor,
             ),
             IconButton(
-              icon: Icon(Icons.undo),
+              icon: const Icon(Icons.undo),
               onPressed: () => _drawingController.undo(),
             ),
             IconButton(
-              icon: Icon(Icons.redo),
+              icon: const Icon(Icons.redo),
               onPressed: () => _drawingController.redo(),
             ),
             IconButton(
-              icon: Icon(Icons.rotate_right),
+              icon: const Icon(Icons.rotate_right),
               onPressed: () => _drawingController.turn(),
             ),
             IconButton(
-              icon: Icon(Icons.delete),
+              icon: const Icon(Icons.delete),
               onPressed: () => _drawingController.clear(),
             ),
             Expanded(
@@ -115,7 +115,7 @@ class _HomePageState extends State<HomePage> {
       children: [
         Expanded(
           child: Container(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             color: Colors.white,
             child: quill.QuillEditor.basic(
               configurations: quill.QuillEditorConfigurations(
@@ -134,7 +134,7 @@ class _HomePageState extends State<HomePage> {
         ),
         ElevatedButton(
           onPressed: _saveTextToCanvas,
-          child: Text('Save Text to Canvas'),
+          child: const Text('Save Text to Canvas'),
         ),
       ],
     );
