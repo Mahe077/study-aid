@@ -4,3 +4,5 @@ enum TopicType {
   note,
   audio,
 }
+
+enum AuthMethod { emailAndPassword, google, apple, facebook }

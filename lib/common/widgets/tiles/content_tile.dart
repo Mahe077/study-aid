@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
-import 'package:study_aid/domain/entities/audio_recording.dart';
-import 'package:study_aid/domain/entities/note.dart';
-import 'package:study_aid/domain/entities/topic.dart';
-import 'package:study_aid/presentation/editor/note.dart';
-import 'package:study_aid/presentation/topic/pages/topic_page.dart';
+import 'package:study_aid/features/notes/domain/entities/note.dart';
+import 'package:study_aid/features/topics/domain/entities/topic.dart';
+import 'package:study_aid/features/notes/presentation/pages/note.dart';
+import 'package:study_aid/features/topics/presentation/pages/topic_page.dart';
 
 class ContentTile extends StatelessWidget {
   final String title;
@@ -25,14 +24,14 @@ class ContentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (entity is TopicEntity) {
+        if (entity is Topic) {
           Navigator.push(
               context,
               MaterialPageRoute(
                   builder: (BuildContext context) =>
                       TopicPage(topicTitle: entity.title, entity: entity)));
         }
-        if (entity is NoteEntity) {
+        if (entity is Note) {
           Navigator.push(
               context,
               MaterialPageRoute(
@@ -78,7 +77,7 @@ class ContentTile extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  if (entity is NoteEntity)
+                  if (entity is Note)
                     Expanded(
                       child: Text(
                         entity.content ?? "",
@@ -103,19 +102,19 @@ class ContentTile extends StatelessWidget {
                         Tag(
                           icon: FontAwesomeIcons.bookOpen,
                           text:
-                              '${(entity is TopicEntity) ? entity.topics.length.toString() : 0} Topics',
+                              '${(entity is Topic) ? entity.subTopics.length.toString() : 0} Topics',
                         ),
                         const SizedBox(width: 5),
                         Tag(
                           icon: FontAwesomeIcons.solidNoteSticky,
                           text:
-                              '${(entity is TopicEntity) ? entity.notes.length.toString() : 0} Notes',
+                              '${(entity is Topic) ? entity.notes.length.toString() : 0} Notes',
                         ),
                         const SizedBox(width: 5),
                         Tag(
                           icon: FontAwesomeIcons.microphone,
                           text:
-                              '${(entity is TopicEntity) ? entity.audioRecordings.length.toString() : 0} Audio Clips',
+                              '${(entity is Topic) ? entity.audioRecordings.length.toString() : 0} Audio Clips',
                         ),
                       ],
                     )

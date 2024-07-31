@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
-import 'package:study_aid/domain/entities/note.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/notes/domain/entities/note.dart';
 
 class RecentTile extends StatelessWidget {
   final String title;
@@ -51,20 +51,22 @@ class RecentTile extends StatelessWidget {
                 ),
                 Expanded(
                   child: AppSubHeadings(
-                    text: entity.title,
-                    size: 16,
-                  ),
+                      text: entity.title, size: 16, alignment: TextAlign.left),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             Expanded(
-              child: Text(
-                entity is NoteEntity ? entity.content : '',
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w400),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  entity is Note ? entity.content : '',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                  textAlign: TextAlign.left,
+                  style: const TextStyle(
+                      fontSize: 10, fontWeight: FontWeight.w400),
+                ),
               ),
             ),
             const Spacer(),

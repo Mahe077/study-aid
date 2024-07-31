@@ -3,8 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/core/configs/theme/app_colors.dart';
-import 'package:study_aid/presentation/auth/pages/signin.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart';
+import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/presentation/intro/pages/get_started.dart';
 
-class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
+class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget? title;
   final Widget? action;
   final Color? backgroundColor;
   final bool hideBack;
+
   const BasicAppbar(
       {this.title,
       this.hideBack = false,
@@ -14,7 +18,9 @@ class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
       super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
+
     return AppBar(
       scrolledUnderElevation: 0.0,
       backgroundColor: backgroundColor ?? Colors.white,
@@ -24,8 +30,15 @@ class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         if (hideBack)
           IconButton(
-            onPressed: () {
-              // TODO: implement suffix icon action
+            onPressed: () async {
+              final userNotifier = ref.read(userProvider.notifier);
+              await userNotifier.signOut();
+
+              Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                      builder: (BuildContext context) => const SigninPage()),
+                  (route) => false);
             },
             icon: const Icon(
               Icons.person,
@@ -39,6 +52,7 @@ class BasicAppbar extends StatelessWidget implements PreferredSizeWidget {
       leading: hideBack
           ? IconButton(
               onPressed: () {
+                // TODO:menu implementation add here
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
