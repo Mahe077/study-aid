@@ -57,8 +57,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
         return Right(user);
       } else {
-        // Return a failure if user is null
-        return Left(ServerFailure('Google sign-in returned no user data'));
+        return const Right(null);
       }
     } on ServerException {
       return Left(ServerFailure('Failed to google sign-in'));
@@ -79,8 +78,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }
         return Right(user);
       } else {
-        // Return a failure if user is null
-        return Left(ServerFailure('Facebook sign-in returned no user data'));
+        return const Right(null);
       }
     } on ServerException {
       return Left(ServerFailure('Failed to google sign-in'));
@@ -113,8 +111,8 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       await remoteDataSource.resetPassword(newPassword);
       return const Right(unit);
-    } on Exception catch (e) {
-      return Left(ServerFailure('Failed to update the password'));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 

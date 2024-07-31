@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
+import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
@@ -97,8 +98,6 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   Future<void> _signUpClicked(
       BuildContext context, AuthMethod authMethod) async {
-    if (!_signUpKey.currentState!.validate()) return;
-
     setState(() {
       _isLoading = true; // Show loading mask
     });
@@ -111,6 +110,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
     switch (authMethod) {
       case AuthMethod.emailAndPassword:
+        if (!_signUpKey.currentState!.validate()) return;
         result = await ref
             .read(signUpWithEmailProvider)
             .call(email, password, username);
@@ -144,12 +144,14 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       },
       (user) {
         _log.d(user);
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-              builder: (context) => HomePage(username: user?.username)),
-          (route) => false,
-        );
+        if (user != null) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+                builder: (context) => HomePage(username: user.username)),
+            (route) => false,
+          );
+        }
       },
     );
   }
@@ -339,35 +341,26 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
   Widget _buildSocialLoginButtons() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _buildSocialButton(
+        buildSocialButton(
           icon: FontAwesomeIcons.google,
-          color: Colors.red,
+          color: AppColors.primary,
           onPressed: () => _signUpClicked(context, AuthMethod.google),
         ),
-        _buildSocialButton(
-          icon: FontAwesomeIcons.facebook,
-          color: Colors.blue,
+        const SizedBox(width: 10),
+        buildSocialButton(
+          icon: FontAwesomeIcons.facebookF,
+          color: AppColors.primary,
           onPressed: () => _signUpClicked(context, AuthMethod.facebook),
         ),
-        _buildSocialButton(
+        const SizedBox(width: 10),
+        buildSocialButton(
           icon: FontAwesomeIcons.apple,
-          color: Colors.black,
+          color: AppColors.primary,
           onPressed: () => _signUpClicked(context, AuthMethod.apple),
         ),
       ],
-    );
-  }
-
-  Widget _buildSocialButton(
-      {required IconData icon,
-      required Color color,
-      required VoidCallback onPressed}) {
-    return IconButton(
-      icon: FaIcon(icon, color: color),
-      onPressed: onPressed,
-      iconSize: 30,
     );
   }
 }

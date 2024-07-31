@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
+import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
@@ -91,8 +92,6 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
   Future<void> _signInClicked(
       BuildContext context, AuthMethod authMethod) async {
-    if (_signInKey.currentState!.validate()) return;
-
     setState(() {
       _isLoading = true; // Show loading mask
     });
@@ -103,6 +102,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     dartz.Either result;
     switch (authMethod) {
       case AuthMethod.emailAndPassword:
+        if (!_signInKey.currentState!.validate()) return;
         result = await ref.read(signInWithEmailProvider).call(email, password);
         break;
       case AuthMethod.google:
@@ -124,19 +124,21 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
     result.fold(
       (failure) {
-        Logger().e(failure);
+        Logger().e(failure.message);
         showSnackBar(context, failure.message);
       },
       (user) {
         Logger().d(user.toString());
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (BuildContext context) =>
-                HomePage(username: user?.username.toString()),
-          ),
-          (route) => false,
-        );
+        if (user != null) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (BuildContext context) =>
+                  HomePage(username: user?.username.toString()),
+            ),
+            (route) => false,
+          );
+        }
       },
     );
   }
@@ -269,21 +271,21 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          icon: const FaIcon(FontAwesomeIcons.google,
-              color: AppColors.primary, size: 25),
+        buildSocialButton(
+          icon: FontAwesomeIcons.google,
+          color: AppColors.primary,
           onPressed: () => _signInClicked(context, AuthMethod.google),
         ),
         const SizedBox(width: 10),
-        IconButton(
-          icon: const FaIcon(FontAwesomeIcons.facebookF,
-              color: AppColors.primary, size: 25),
+        buildSocialButton(
+          icon: FontAwesomeIcons.facebookF,
+          color: AppColors.primary,
           onPressed: () => _signInClicked(context, AuthMethod.facebook),
         ),
         const SizedBox(width: 10),
-        IconButton(
-          icon: const FaIcon(FontAwesomeIcons.apple,
-              color: AppColors.primary, size: 28),
+        buildSocialButton(
+          icon: FontAwesomeIcons.apple,
+          color: AppColors.primary,
           onPressed: () => _signInClicked(context, AuthMethod.apple),
         ),
       ],

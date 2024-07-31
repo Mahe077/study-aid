@@ -97,21 +97,21 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     /// Trigger the authentication flow
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      // if (googleUser == null) return null;
+      if (googleUser == null) return null;
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       // Create a new credential
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
       );
 
       // Once signed in, return the UserCredential
       UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+          await _auth.signInWithCredential(credential);
 
       UserModel? user = await getUserById(userCredential.user!.uid);
       if (user == null) {
@@ -138,7 +138,9 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     /// Trigger the authentication flow
     try {
       final LoginResult facebookUser = await _facebookAuth.login();
-      // if (googleUser == null) return null;
+      if (facebookUser.accessToken == null) {
+        return null;
+      }
 
       // Create a credential from the access token
       final OAuthCredential facebookAuthCredential =

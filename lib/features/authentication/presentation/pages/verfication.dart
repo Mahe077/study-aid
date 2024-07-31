@@ -1,4 +1,3 @@
-import 'package:email_otp/email_otp.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -10,7 +9,7 @@ import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
-import 'package:study_aid/features/authentication/presentation/pages/create_password.dart';
+import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
 
 class VerificationPage extends ConsumerStatefulWidget {
@@ -45,11 +44,21 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
                       const SizedBox(height: 20),
                       AppSubHeadings(
                         text:
-                            'We have sent a password reset email to ${widget.email}. Please click on the link to reset your password.',
+                            'We have sent a password reset email to ${widget.email}. Please click on the link to reset your password.\n\nAfter successfully change the password go to Login',
                         alignment: TextAlign.left,
                       ),
                       const SizedBox(height: 20),
                     ]),
+              ),
+              BasicAppButton(
+                onPressed: () async {
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (BuildContext context) =>
+                              const SigninPage()));
+                },
+                title: "Go to Log In",
               ),
               const SizedBox(
                 height: 20,

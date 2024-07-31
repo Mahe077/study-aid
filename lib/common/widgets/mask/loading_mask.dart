@@ -2,14 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 Widget buildLoadingMask() {
-  return Positioned.fill(
-    child: Container(
-      color: Colors.black.withOpacity(0.3), // Semi-transparent background
-      child: const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primary, // Customize the color if needed
-        ),
-      ),
-    ),
-  );
+  return const Center(child: CircularProgressIndicator());
+}
+
+class FullScreenLoader extends StatelessWidget {
+  final Widget child;
+  final bool isLoading;
+
+  const FullScreenLoader({
+    Key? key,
+    required this.child,
+    required this.isLoading,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        child,
+        if (isLoading) buildLoadingMask(),
+      ],
+    );
+  }
 }
