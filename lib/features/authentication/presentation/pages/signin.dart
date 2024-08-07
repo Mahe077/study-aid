@@ -53,7 +53,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       bottomNavigationBar: _buildSignupText(context),
       body: Stack(children: [
         SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+          padding: const EdgeInsets.fromLTRB(20, 70, 20, 50),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -133,8 +133,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-              builder: (BuildContext context) =>
-                  HomePage(username: user?.username.toString()),
+              builder: (BuildContext context) => HomePage(user: user),
             ),
             (route) => false,
           );

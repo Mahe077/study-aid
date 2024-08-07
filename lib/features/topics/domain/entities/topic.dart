@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
+
 class Topic {
   final String id;
   final String title;
   final String description;
+  final Color color;
   final DateTime createdDate;
   final DateTime updatedDate;
   final List<String> subTopics;
@@ -15,6 +18,7 @@ class Topic {
     required this.id,
     required this.title,
     required this.description,
+    required this.color,
     required this.createdDate,
     required this.updatedDate,
     required this.subTopics,

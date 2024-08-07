@@ -6,3 +6,5 @@ enum TopicType {
 }
 
 enum AuthMethod { emailAndPassword, google, apple, facebook }
+
+enum DialogMode { view, edit, add }

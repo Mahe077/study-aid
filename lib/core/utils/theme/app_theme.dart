@@ -3,6 +3,7 @@ import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 class AppTheme {
   static final lightTheme = ThemeData(
+      primarySwatch: Colors.blue,
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.lightBackground,
       brightness: Brightness.light,
@@ -15,14 +16,14 @@ class AppTheme {
           contentPadding:
               const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
           hintStyle: const TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.w500,
-          ),
+              color: AppColors.primary,
+              fontWeight: FontWeight.w500,
+              fontSize: 16),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.white, width: 0.4)),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none)),
       elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
