@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
@@ -8,23 +8,23 @@ import 'package:study_aid/features/topics/presentation/providers/topic_provider.
 class TopicsState {
   final List<Topic> topics;
   final bool hasMore;
-  final DocumentSnapshot? lastDocument;
+  final int lastDocument;
 
   TopicsState({
     required this.topics,
     this.hasMore = true,
-    this.lastDocument,
+    required this.lastDocument,
   });
 
   TopicsState copyWith({
     List<Topic>? topics,
     bool? hasMore,
-    DocumentSnapshot? lastDocument,
+    required int lastDocument,
   }) {
     return TopicsState(
       topics: topics ?? this.topics,
       hasMore: hasMore ?? this.hasMore,
-      lastDocument: lastDocument ?? this.lastDocument,
+      lastDocument: lastDocument,
     );
   }
 }
@@ -41,7 +41,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> _loadInitialTopics() async {
     try {
-      final result = await repository.fetchUserTopics(userId, 5);
+      final result = await repository.fetchUserTopics(userId, 5, 0);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -66,8 +66,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
     final lastDocument = currentState.value!.lastDocument;
     try {
-      final result =
-          await repository.fetchUserTopics(userId, 5, startAfter: lastDocument);
+      final result = await repository.fetchUserTopics(userId, 5, lastDocument);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -93,7 +92,8 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> createTopic(String? title, String? description, Color color,
       String? parentId, String userId) async {
-    state = const AsyncValue.loading();
+    final currentState = state; // Get the current state before changing it
+    // state = const AsyncValue.loading();
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =
@@ -103,16 +103,32 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (newTopic) {
-          final currentState = state;
+          Logger().d(
+              'createTopic:: Current state: ${currentState.value.toString()}');
+          Logger().d('createTopic:: State: ${state.value.toString()}');
+          Logger().d('createTopic:: New topic created: $newTopic');
 
-          state = AsyncValue.data(
-            currentState.value!.copyWith(
-              topics: [newTopic, ...currentState.value!.topics],
-              // Keep existing `hasMore` and `lastDocument` state
-              hasMore: currentState.value!.hasMore,
-              lastDocument: currentState.value!.lastDocument,
-            ),
-          );
+          // If the state is loading or null, initialize the state with the new topic
+          if (currentState.value == null ||
+              currentState.value!.topics.isEmpty) {
+            // Initialize state
+            state = AsyncValue.data(
+              TopicsState(
+                topics: [newTopic],
+                hasMore: false,
+                lastDocument: 0,
+              ),
+            );
+          } else {
+            // If we already have some topics, merge the new one
+            state = AsyncValue.data(
+              currentState.value!.copyWith(
+                topics: [newTopic, ...currentState.value!.topics],
+                hasMore: currentState.value!.hasMore,
+                lastDocument: currentState.value!.lastDocument,
+              ),
+            );
+          }
         },
       );
     } catch (e, stackTrace) {
@@ -120,11 +136,11 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
     }
   }
 
-  Future<void> updateTopic(String id, String title, Color color) async {
+  Future<void> updateTopic(Topic topic) async {
     state = const AsyncValue.loading();
     try {
       final updateTopic = _ref.read(updateTopicProvider);
-      final result = await updateTopic.call(id, title, color);
+      final result = await updateTopic.call(topic);
 
       result.fold(
         (failure) =>
@@ -134,13 +150,13 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
           state = AsyncValue.data(
             currentState.value!.copyWith(
-              topics: currentState.value!.topics
-                  .map(
-                    (topic) =>
-                        topic.id == updatedTopic.id ? updatedTopic : topic,
-                  )
-                  .toList(),
-            ),
+                topics: currentState.value!.topics
+                    .map(
+                      (topic) =>
+                          topic.id == updatedTopic.id ? updatedTopic : topic,
+                    )
+                    .toList(),
+                lastDocument: currentState.value!.lastDocument),
           );
         },
       );
@@ -158,7 +174,8 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
-        (topics) => state = AsyncValue.data(TopicsState(topics: topics)),
+        (topics) => state = AsyncValue.data(
+            TopicsState(topics: topics, lastDocument: topics.length)),
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -174,10 +191,118 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
       final currentState = state;
       state = AsyncValue.data(
         currentState.value!.copyWith(
-          topics: currentState.value!.topics
-              .where((topic) => topic.id != topicId)
-              .toList(),
-        ),
+            topics: currentState.value!.topics
+                .where((topic) => topic.id != topicId)
+                .toList(),
+            lastDocument: currentState.value!.lastDocument),
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+}
+
+class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
+  final TopicRepository repository;
+  final String topicId;
+  final Ref _ref;
+
+  TopicChildNotifier(this.repository, this.topicId, this._ref)
+      : super(const AsyncValue.loading()) {
+    _loadInitialTopicChild();
+  }
+
+  Future<void> createTopic(String? title, String? description, Color color,
+      String? parentId, String userId) async {
+    final currentState = state; // Get the current state before changing it
+    // state = const AsyncValue.loading();
+    try {
+      final createTopic = _ref.read(createTopicProvider);
+      final result =
+          await createTopic.call(title, description, color, parentId, userId);
+
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (newTopic) {
+          Logger().d(
+              'createSubTopic:: Current state: ${currentState.value.toString()}');
+          Logger().d('createSubTopic:: State: ${state.value.toString()}');
+          Logger().d('createSubTopic:: New topic created: $newTopic');
+
+          // If the state is loading or null, initialize the state with the new topic
+          if (currentState.value == null ||
+              currentState.value!.topics.isEmpty) {
+            // Initialize state
+            state = AsyncValue.data(
+              TopicsState(
+                topics: [newTopic],
+                hasMore: false,
+                lastDocument: 0,
+              ),
+            );
+          } else {
+            // If we already have some topics, merge the new one
+            state = AsyncValue.data(
+              currentState.value!.copyWith(
+                topics: [newTopic, ...currentState.value!.topics],
+                hasMore: currentState.value!.hasMore,
+                lastDocument: currentState.value!.lastDocument,
+              ),
+            );
+          }
+        },
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> _loadInitialTopicChild() async {
+    try {
+      final result = await repository.fetchSubTopics(topicId, 5, 0);
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (paginatedObj) {
+          state = AsyncValue.data(
+            TopicsState(
+              topics: paginatedObj.items,
+              hasMore: paginatedObj.hasMore,
+              lastDocument: paginatedObj.lastDocument,
+            ),
+          );
+        },
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> loadMoreTopicChild() async {
+    final currentState = state;
+    if (!currentState.value!.hasMore) return;
+
+    final lastDocument = currentState.value!.lastDocument;
+    try {
+      final result = await repository.fetchSubTopics(topicId, 5, lastDocument);
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (paginatedObj) {
+          final newTopics = paginatedObj.items
+              .where((item) => !currentState.value!.topics
+                  .any((topic) => topic.id == item.id))
+              .toList();
+
+          state = AsyncValue.data(
+            currentState.value!.copyWith(
+              topics: [...currentState.value!.topics, ...newTopics],
+              hasMore: paginatedObj.hasMore,
+              lastDocument: paginatedObj.lastDocument,
+            ),
+          );
+        },
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);

@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:study_aid/common/widgets/snackbars/base_snackbar.dart';
 
 class SuccessSnackBar extends BaseSnackBar {
-  SuccessSnackBar(BuildContext context, String title, String message)
-      : super(context, title, message, ContentType.success);
+  SuccessSnackBar(BuildContext context, String message)
+      : super(context, "Success", message, ContentType.success);
 }
 
 

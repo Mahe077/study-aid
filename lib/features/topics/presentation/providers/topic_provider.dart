@@ -49,3 +49,10 @@ final topicsProvider = StateNotifierProvider.autoDispose
 
 final syncTopicsUseCaseProvider =
     Provider((ref) => SyncTopicsUseCase(ref.read(topicRepositoryProvider)));
+
+final topicChildProvider = StateNotifierProvider.autoDispose
+    .family<TopicChildNotifier, AsyncValue<TopicsState>, String?>(
+        (ref, parentTopicId) {
+  final repository = ref.read(topicRepositoryProvider);
+  return TopicChildNotifier(repository, parentTopicId!, ref);
+});

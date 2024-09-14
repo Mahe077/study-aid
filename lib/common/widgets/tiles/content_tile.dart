@@ -13,11 +13,13 @@ import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.d
 class ContentTile extends StatelessWidget {
   final Enum type;
   final dynamic entity;
+  final String userId;
 
   const ContentTile({
     super.key,
     required this.type,
     required this.entity,
+    required this.userId,
   });
 
   @override
@@ -29,6 +31,7 @@ class ContentTile extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (BuildContext context) => TopicPage(
+                userId: userId,
                 topicTitle: entity.title,
                 entity: entity,
               ),
@@ -40,6 +43,7 @@ class ContentTile extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (BuildContext context) => NotePage(
+                topicId: entity.id,
                 topicTitle: entity.title,
                 entity: entity,
                 isNewNote: false,

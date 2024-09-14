@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:study_aid/core/utils/helpers/custome_types.dart';
 
-class Topic {
+class Topic extends BaseEntity {
+  @override
   final String id;
   final String title;
   final String description;
   final Color color;
   final DateTime createdDate;
+  @override
   final DateTime updatedDate;
   final List<String> subTopics;
   final List<String> notes;

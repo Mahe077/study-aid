@@ -1,7 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter/material.dart';
 import 'package:study_aid/core/error/failures.dart';
-import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
 
@@ -26,9 +25,8 @@ class UpdateTopic {
 
   UpdateTopic(this.repository);
 
-  Future<Either<Failure, Topic>> call(
-      String topicId, String title, Color color) async {
-    final result = await repository.updateTopic(topicId, title, color);
+  Future<Either<Failure, Topic>> call(Topic topic) async {
+    final result = await repository.updateTopic(topic);
     return result.fold(
       (failure) => Left(failure),
       (topic) => Right(topic),

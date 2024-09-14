@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
@@ -13,12 +14,18 @@ import 'package:study_aid/features/authentication/presentation/providers/user_pr
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/example_data.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 
 class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
   final Topic entity;
+  final String userId;
 
-  const TopicPage({Key? key, required this.topicTitle, required this.entity})
+  const TopicPage(
+      {Key? key,
+      required this.topicTitle,
+      required this.entity,
+      required this.userId})
       : super(key: key);
 
   @override
@@ -43,118 +50,157 @@ class _TopicPageState extends ConsumerState<TopicPage>
   }
 
   void _loadMoreTopics() {
-    setState(() {
-      widget.entity.subTopics.addAll(["Topic 4", "Topic 5", "Topic 6"]);
-    });
+    Logger().d("_loadMoreTopics clicked");
+    ref.read(topicChildProvider(widget.userId).notifier).loadMoreTopicChild();
   }
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(userProvider);
+    final userAsyncValue = ref.watch(userProvider);
 
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: const BasicAppbar(hideBack: true),
-        floatingActionButtonLocation: ExpandableFab.location,
-        floatingActionButton:
-            FAB(parentId: widget.entity.id, userId: user.value!.id),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return userAsyncValue.when(
+      data: (user) {
+        Logger().d("User data: ${user}");
+
+        if (user == null) {
+          return const Scaffold(
+            appBar: BasicAppbar(hideBack: true),
+            body: Center(child: Text("No user logged in")),
+          );
+        }
+
+        final subtopicsState = ref.watch(topicChildProvider(widget.entity.id));
+
+        return DefaultTabController(
+          length: 4,
+          child: Scaffold(
+            appBar: const BasicAppbar(hideBack: true),
+            floatingActionButtonLocation: ExpandableFab.location,
+            floatingActionButton: FAB(
+              parentId: widget.entity.id,
+              userId: user.id,
+              topicTitle: widget.entity.title,
+              topicColor: widget.entity.color,
+            ),
+            body: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Column(
                 children: [
-                  Align(
-                    alignment: Alignment.topLeft,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            AppHeadings(
+                              text: "${widget.topicTitle},",
+                              alignment: TextAlign.left,
+                            ),
+                            const SizedBox(height: 10),
+                            _searchField(),
+                            const SizedBox(height: 15),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppHeadings(
-                          text: "${widget.topicTitle},",
-                          alignment: TextAlign.left,
+                        const Align(
+                          alignment: AlignmentDirectional.topStart,
+                          child: AppSubHeadings(
+                            text: 'Recent Items',
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          child: Row(
+                            children: recent.map((item) {
+                              return Row(
+                                children: [
+                                  RecentTile(
+                                    title: item.title,
+                                    entity: item,
+                                    type: item is Topic
+                                        ? TopicType.topic
+                                        : item is Note
+                                            ? TopicType.note
+                                            : TopicType.audio,
+                                  ),
+                                  const SizedBox(width: 15),
+                                ],
+                              );
+                            }).toList(),
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        _searchField(),
-                        const SizedBox(height: 15),
+                        const TabBar(
+                          tabs: [
+                            Tab(text: "All"),
+                            Tab(text: "Topic"),
+                            Tab(text: "Notes"),
+                            Tab(text: "Audio Clips"),
+                          ],
+                          unselectedLabelColor: AppColors.darkGrey,
+                          unselectedLabelStyle: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
+                          labelColor: AppColors.primary,
+                          labelStyle: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w600),
+                          indicator: BoxDecoration(),
+                          dividerHeight: 0,
+                          tabAlignment: TabAlignment.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                            child: subtopicsState.when(
+                          data: (state) {
+                            if (state.topics.isEmpty
+                                //&&
+                                // state.notes.isEmpty &&
+                                // state.audioRecordings.isEmpty
+                                ) {
+                              return const Center(
+                                  child: Text("No items to show"));
+                            }
+                            return TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _contentList(state.topics, TopicType.topic),
+                                _contentList(state.topics, TopicType.topic),
+                                _contentList(
+                                    widget.entity.notes, TopicType.note),
+                                _contentList(widget.entity.audioRecordings,
+                                    TopicType.audio),
+                              ],
+                            );
+                          },
+                          loading: () =>
+                              const Center(child: CircularProgressIndicator()),
+                          error: (error, stack) => const Center(
+                              child: Center(child: Text("No item to show"))),
+                        )),
                       ],
                     ),
                   ),
                 ],
               ),
-              Expanded(
-                child: Column(
-                  children: [
-                    const Align(
-                      alignment: AlignmentDirectional.topStart,
-                      child: AppSubHeadings(
-                        text: 'Recent Items',
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      child: Row(
-                        children: recent.map((item) {
-                          return Row(
-                            children: [
-                              RecentTile(
-                                title: item.title,
-                                entity: item,
-                                type: item is Topic
-                                    ? TopicType.topic
-                                    : item is Note
-                                        ? TopicType.note
-                                        : TopicType.audio,
-                              ),
-                              const SizedBox(width: 15),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const TabBar(
-                      tabs: [
-                        Tab(text: "All"),
-                        Tab(text: "Topic"),
-                        Tab(text: "Notes"),
-                        Tab(text: "Audio Clips"),
-                      ],
-                      unselectedLabelColor: AppColors.darkGrey,
-                      unselectedLabelStyle:
-                          TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                      labelColor: AppColors.primary,
-                      labelStyle:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                      indicator: BoxDecoration(),
-                      dividerHeight: 0,
-                      tabAlignment: TabAlignment.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _contentList(
-                              widget.entity.subTopics, TopicType.topic),
-                          _contentList(
-                              widget.entity.subTopics, TopicType.topic),
-                          _contentList(widget.entity.notes, TopicType.note),
-                          _contentList(
-                              widget.entity.audioRecordings, TopicType.audio),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        );
+      },
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Scaffold(
+        appBar: const BasicAppbar(hideBack: true),
+        body: Center(child: Text("Failed to load user: $error")),
       ),
     );
   }
@@ -169,7 +215,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
         ...items.map((item) => Column(
               children: [
                 ContentTile(
-                  // title: item.title,
+                  userId: widget.userId,
                   entity: item,
                   type: type,
                 ),

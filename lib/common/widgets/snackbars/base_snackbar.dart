@@ -11,9 +11,10 @@ abstract class BaseSnackBar {
 
   void show() {
     final snackBar = SnackBar(
-      elevation: 0,
+      elevation: 1,
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
+      margin: const EdgeInsets.all(10),
       content: AwesomeSnackbarContent(
         title: title,
         message: message,

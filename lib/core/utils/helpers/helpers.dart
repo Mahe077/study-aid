@@ -1,4 +1,3 @@
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
@@ -34,13 +33,13 @@ void showCustomDialog(
 String _getDialogTitle(DialogMode mode, String component) {
   switch (mode) {
     case DialogMode.add:
-      return "Add a $component";
+      return "Add $component";
     case DialogMode.edit:
       return "Edit $component";
     case DialogMode.view:
       return "View $component";
     default:
-      return "";
+      return component;
   }
 }
 
@@ -64,37 +63,43 @@ List<Widget> _getDialogActions(
       return [
         TextButton(
           onPressed: () {
-            // Handle update topic
             Navigator.of(context).pop();
+            // Handle update topic logic here if needed
           },
           child: Text("Update $component"),
         ),
       ];
     case DialogMode.add:
-    default:
       return [
-        // TextButton(
-        //   onPressed: () {
-        //     Navigator.of(context).pop();
-        //   },
-        //   child: const Text("Cancel"),
-        // ),
         BasicAppButton(
           onPressed: () {
             onConfirm();
+            Navigator.of(context).pop();
           },
           title: "Add $component",
           height: 32,
           fontsize: 15,
           fontweight: FontWeight.w500,
-        )
-        // TextButton(
-        //   onPressed: () {
-        //     onConfirm();
-        //     Navigator.of(context).pop();
-        //   },
-        //   child: Text("Add $component"),
-        // ),
+        ),
+      ];
+    default:
+      return [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text("No"),
+        ),
+        BasicAppButton(
+          onPressed: () {
+            onConfirm();
+            Navigator.of(context).pop();
+          },
+          title: "Yes",
+          height: 32,
+          fontsize: 15,
+          fontweight: FontWeight.w500,
+        ),
       ];
   }
 }

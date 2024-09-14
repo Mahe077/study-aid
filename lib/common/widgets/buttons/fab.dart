@@ -3,19 +3,28 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/failure_bannerbar.dart';
+import 'package:study_aid/common/widgets/bannerbars/info_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/notes/presentation/pages/note.dart';
+import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 
 class FAB extends ConsumerStatefulWidget {
   final String userId;
-  String? parentId;
+  final String? parentId;
+  final String? topicTitle;
+  final Color? topicColor;
 
-  FAB({super.key, this.parentId, required this.userId});
+  FAB(
+      {super.key,
+      this.parentId,
+      required this.userId,
+      this.topicTitle,
+      this.topicColor});
 
   @override
   ConsumerState<FAB> createState() => _FABState();
@@ -75,26 +84,57 @@ class _FABState extends ConsumerState<FAB> {
   Future<void> _handleCreateTopic(WidgetRef ref) async {
     final String title = _topicController.text.trim();
     final String description = _descriptionController.text.trim();
-    final result = await ref.read(createTopicProvider).call(
-        title, description, selectedColor, widget.parentId, widget.userId);
-    result.fold(
-      (failure) {
-        Logger().e(failure.message);
-        FailureBannerbar(context, failure.message).show();
-        // showSnackBar(context, failure.message);
-      },
-      (topic) {
-        Logger().d(topic.toString());
-        setState(() {
-          _topicController.clear();
-          _descriptionController.clear();
-          selectedColor = Colors.black;
-        });
-        SuccessBannerbar(context, 'Topic Saved!').show();
-        Navigator.of(context).pop();
-        _fabKey.currentState?.toggle();
-      },
-    );
+
+    // Get the TopicsNotifier instance using ref
+    AsyncValue<TopicsState> currentState;
+    if (widget.parentId == null) {
+      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
+
+      // Call the createTopic method from the TopicsNotifier
+      await topicsNotifier.createTopic(
+        title,
+        description,
+        selectedColor,
+        widget.parentId,
+        widget.userId,
+      );
+
+      if (!mounted) return;
+
+      // Check the state after attempting to create the topic
+      currentState = ref.read(topicsProvider(widget.userId));
+    } else {
+      final topicChildNotifier =
+          ref.read(topicChildProvider(widget.parentId).notifier);
+
+      await topicChildNotifier.createTopic(
+        title,
+        description,
+        selectedColor,
+        widget.parentId,
+        widget.userId,
+      );
+
+      currentState = ref.read(topicsProvider(widget.userId));
+
+      // Invalidate topicChildProvider to refresh the subtopics
+      ref.invalidate(topicChildProvider(widget.parentId));
+    }
+
+    if (currentState.hasError) {
+      FailureBannerbar(context, currentState.error.toString()).show();
+    } else if (currentState.isLoading) {
+      const Center(child: CircularProgressIndicator());
+    } else {
+      // Handle success, show success banner, clear input fields
+      setState(() {
+        _topicController.clear();
+        _descriptionController.clear();
+        selectedColor = Colors.black;
+      });
+
+      SuccessBannerbar(context, 'Topic Saved.').show();
+    }
   }
 
   @override
@@ -126,8 +166,8 @@ class _FABState extends ConsumerState<FAB> {
         backgroundColor: AppColors.primary,
       ),
       children: [
-        const FloatingActionButton.extended(
-          label: Row(
+        FloatingActionButton.extended(
+          label: const Row(
             children: [
               Text(
                 'Record an Audio',
@@ -139,11 +179,32 @@ class _FABState extends ConsumerState<FAB> {
             ],
           ),
           heroTag: null,
-          onPressed: null, //TODO:implement
-          backgroundColor: AppColors.grey,
+          onPressed: () {
+            widget.parentId != null
+                ? {
+                    _fabKey.currentState?.toggle(),
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (BuildContext context) => NotePage(
+                            topicId: widget.parentId ?? '',
+                            topicTitle: widget.topicTitle,
+                            entity: null,
+                            isNewNote: true,
+                            noteColor: widget.topicColor,
+                          ),
+                        ))
+                  }
+                : {
+                    _fabKey.currentState?.toggle(),
+                    InfoBannerbar(context, 'Please add a Topic').show()
+                  };
+          }, //TODO:implement
+          backgroundColor:
+              widget.parentId != null ? AppColors.grey : Colors.red,
         ),
-        const FloatingActionButton.extended(
-          label: Row(
+        FloatingActionButton.extended(
+          label: const Row(
             children: [
               Text(
                 'Create a New Note',
@@ -155,8 +216,29 @@ class _FABState extends ConsumerState<FAB> {
             ],
           ),
           heroTag: null,
-          onPressed: null, //TODO:implement
-          backgroundColor: AppColors.grey,
+          onPressed: () {
+            widget.parentId != null
+                ? {
+                    _fabKey.currentState?.toggle(),
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (BuildContext context) => NotePage(
+                            topicId: widget.parentId ?? '',
+                            topicTitle: widget.topicTitle,
+                            entity: null,
+                            isNewNote: true,
+                            noteColor: widget.topicColor,
+                          ),
+                        ))
+                  }
+                : {
+                    _fabKey.currentState?.toggle(),
+                    InfoBannerbar(context, 'Please add a Topic').show()
+                  };
+          }, //TODO:implement
+          backgroundColor:
+              widget.parentId != null ? AppColors.grey : Colors.red,
         ),
         FloatingActionButton.extended(
           label: const Row(
@@ -175,6 +257,7 @@ class _FABState extends ConsumerState<FAB> {
           ),
           heroTag: null,
           onPressed: () {
+            _fabKey.currentState?.toggle();
             showCustomDialog(
               context,
               DialogMode.add,

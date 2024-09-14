@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
 
@@ -36,7 +37,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     try {
       final docRef = _firestore.collection('topics').doc();
       // Convert TopicModel to Firestore document
-      final topicWithId = topic.copyWith(id: docRef.id, syncStatus: 'synced');
+      final topicWithId =
+          topic.copyWith(id: docRef.id, syncStatus: ConstantStrings.synced);
 
       // Set the document in Firestore
       await docRef.set(topicWithId.toFirestore());

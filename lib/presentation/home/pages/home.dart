@@ -28,7 +28,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController _search = TextEditingController();
 
-  List<Note> notes = [sampleNote];
+  // List<Note> notes = [sampleNote];
   // List<Topic> topics = [sampleTopic];
 
   void _loadMoreTopics() {
@@ -63,7 +63,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                         alignment: TextAlign.left,
                       ),
                       const SizedBox(height: 10),
-                      notes.isEmpty ? _emptyHomeText() : _searchField(),
+                      widget.user.createdTopics.isEmpty
+                          ? _emptyHomeText()
+                          : _searchField(),
                       const SizedBox(height: 15),
                     ],
                   ),
@@ -127,6 +129,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 children: [
                                   ContentTile(
                                     // title: state.topics[i].title,
+                                    userId: widget.user.id,
                                     entity: state.topics[i],
                                     type: TopicType.topic,
                                   ),
@@ -142,7 +145,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   size: 25,
                                 ),
                               ),
-                            ]
+                            ] else
+                              const SizedBox(height: 10),
                           ],
                         ),
                       ),
