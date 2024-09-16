@@ -10,4 +10,5 @@ class AppColors {
   static const editorInput = Color(0xffB6B6B6);
   static const icon = Color.fromARGB(255, 255, 255, 255);
   static const white = Color.fromARGB(255, 255, 255, 255);
+  static const black = Colors.black;
 }

@@ -55,7 +55,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       body: Stack(
         children: [
           SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
+            padding: const EdgeInsets.fromLTRB(20, 70, 20, 50),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -147,8 +147,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         if (user != null) {
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-                builder: (context) => HomePage(username: user.username)),
+            MaterialPageRoute(builder: (context) => HomePage(user: user)),
             (route) => false,
           );
         }

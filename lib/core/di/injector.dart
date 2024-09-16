@@ -1,11 +1,14 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+// lib/core/di/injector.dart
 
-final ProviderContainer providerContainer = ProviderContainer(
-  overrides: [],
-);
+import 'package:get_it/get_it.dart';
+import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+
+final GetIt getIt = GetIt.instance;
 
 void setupInjection() {
   authRepositoryProvider;
-  // Initialization code if needed
+  topicRepositoryProvider;
+  userRepositoryProvider;
 }

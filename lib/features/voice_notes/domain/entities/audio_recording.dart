@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
+
 class AudioRecording {
   final String id;
   final String title;
+  final Color color;
   final List<String> tags;
   final DateTime createdDate;
   final DateTime updatedDate;
@@ -12,6 +15,7 @@ class AudioRecording {
   AudioRecording({
     required this.id,
     required this.title,
+    required this.color,
     required this.tags,
     required this.createdDate,
     required this.updatedDate,

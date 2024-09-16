@@ -1,9 +1,10 @@
+// splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:study_aid/features/authentication/data/models/user.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
 import 'package:study_aid/presentation/intro/pages/get_started.dart';
 
@@ -28,7 +29,7 @@ class _State extends ConsumerState<SplashScreen>
     );
     _animation = CurvedAnimation(parent: _controller!, curve: Curves.easeIn);
     _controller!.forward();
-    _checkLoginStatus();
+    // _checkLoginStatus();
   }
 
   @override
@@ -43,36 +44,67 @@ class _State extends ConsumerState<SplashScreen>
 
     if (!mounted) return;
 
-    final userBox = Hive.box<UserModel>('userBox');
+    final userState = ref.watch(userProvider);
 
-// To check if the box is already open
-    if (!Hive.isBoxOpen('userBox')) {
-      // Open the box if it's not already open
-      await Hive.openBox<UserModel>('userBox');
-    }
-    if (userBox.isNotEmpty) {
-      final user = userBox.getAt(0);
-      if (user != null) {
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => HomePage(username: user.username)));
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const SigninPage()),
-        );
-      }
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const GetStartedPage()),
-      );
-    }
+    userState.when(
+      data: (user) {
+        if (user != null) {
+          const Text("User not logged in");
+          // Navigator.pushReplacement(
+          //     context,
+          //     MaterialPageRoute(
+          //         builder: (context) =>
+          //             HomePage(user:user)));
+        } else {
+          Logger().i(user);
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const SigninPage()),
+          // );
+        }
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, stack) {
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const GetStartedPage()),
+        // );
+        Logger().e(e);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userProvider);
+
+    userState.when(
+      data: (user) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (user != null) {
+            Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (context) => HomePage(user: user)));
+          } else {
+            Logger().i(user);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SigninPage()),
+            );
+          }
+        });
+      },
+      loading: () => Logger().i('Loading user data...'),
+      error: (e, stack) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const GetStartedPage()),
+          );
+        });
+        Logger().e('Error loading user data: $e');
+      },
+    );
+
     return Scaffold(
       body: FadeTransition(
         opacity: _animation!,

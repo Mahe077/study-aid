@@ -23,13 +23,14 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       createdDate: fields[3] as DateTime,
       updatedDate: fields[4] as DateTime,
       createdTopics: (fields[5] as List).cast<String>(),
+      syncStatus: fields[6] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(4)
       ..write(obj.updatedDate)
       ..writeByte(5)
-      ..write(obj.createdTopics);
+      ..write(obj.createdTopics)
+      ..writeByte(6)
+      ..write(obj.syncStatus);
   }
 
   @override

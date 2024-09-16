@@ -18,6 +18,8 @@ class UserModel extends User {
   final DateTime updatedDate;
   @HiveField(5)
   final List<String> createdTopics;
+  @HiveField(6)
+  final String syncStatus;
 
   UserModel({
     required this.id,
@@ -26,6 +28,7 @@ class UserModel extends User {
     required this.createdDate,
     required this.updatedDate,
     required this.createdTopics,
+    required this.syncStatus,
   }) : super(
           id: id,
           username: username,
@@ -33,18 +36,30 @@ class UserModel extends User {
           createdDate: createdDate,
           updatedDate: updatedDate,
           createdTopics: createdTopics,
+          syncStatus: syncStatus,
         );
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel(
-      id: doc.id,
-      username: data['username'] ?? '',
-      email: data['email'] ?? '',
-      createdDate: (data['createdDate'] as Timestamp).toDate(),
-      updatedDate: (data['updatedDate'] as Timestamp).toDate(),
-      createdTopics: List<String>.from(data['createdTopics'] ?? []),
-    );
+        id: doc.id,
+        username: data['username'] ?? '',
+        email: data['email'] ?? '',
+        createdDate: (data['createdDate'] as Timestamp).toDate(),
+        updatedDate: (data['updatedDate'] as Timestamp).toDate(),
+        createdTopics: List<String>.from(data['createdTopics'] ?? []),
+        syncStatus: data['syncStatus']);
+  }
+
+  factory UserModel.fromEntity(User user) {
+    return UserModel(
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        createdDate: user.createdDate,
+        updatedDate: user.updatedDate,
+        createdTopics: user.createdTopics,
+        syncStatus: user.syncStatus);
   }
 
   Map<String, dynamic> toFirestore() {
@@ -54,6 +69,26 @@ class UserModel extends User {
       'createdDate': Timestamp.fromDate(createdDate),
       'updatedDate': Timestamp.fromDate(updatedDate),
       'createdTopics': createdTopics,
+      'syncStatus': syncStatus
     };
+  }
+
+  UserModel copyWith(
+      {String? id,
+      String? name,
+      String? email,
+      DateTime? createdDate,
+      DateTime? updatedDate,
+      List<String>? createdTopics,
+      List<String>? subTopics,
+      String? syncStatus}) {
+    return UserModel(
+        id: id ?? this.id,
+        username: name ?? this.username,
+        email: email ?? this.email,
+        createdDate: createdDate ?? this.createdDate,
+        updatedDate: updatedDate ?? this.updatedDate,
+        createdTopics: createdTopics ?? this.createdTopics,
+        syncStatus: syncStatus ?? this.syncStatus);
   }
 }
