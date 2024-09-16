@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
@@ -11,7 +12,7 @@ abstract class RemoteDataSource {
       String email, String password, String username);
   Future<UserModel?> signInWithGoogle();
   Future<UserModel?> signInWithFacebook();
-  Future<void> updateUserCollection(UserModel user);
+  Future<void> updateUser(UserModel user);
   Future<UserModel?> getUserById(String id);
   Future<Unit> signOut();
   Future<Unit> resetPassword(String newPassword);
@@ -45,14 +46,14 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       UserCredential userCredential = await _auth
           .createUserWithEmailAndPassword(email: email, password: password);
       UserModel user = UserModel(
-        id: userCredential.user!.uid,
-        username: username,
-        email: email,
-        createdDate: DateTime.now(),
-        updatedDate: DateTime.now(),
-        createdTopics: [],
-      );
-      await updateUserCollection(user);
+          id: userCredential.user!.uid,
+          username: username,
+          email: email,
+          createdDate: DateTime.now(),
+          updatedDate: DateTime.now(),
+          createdTopics: [],
+          syncStatus: ConstantStrings.synced);
+      await updateUser(user);
       return user;
     } on Exception catch (e) {
       throw Exception('Error signing up with email: $e');
@@ -60,7 +61,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-  Future<void> updateUserCollection(UserModel user) async {
+  Future<void> updateUser(UserModel user) async {
     try {
       await _firestore.collection('users').doc(user.id).set(user.toFirestore());
     } on Exception catch (e) {
@@ -116,14 +117,14 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       UserModel? user = await getUserById(userCredential.user!.uid);
       if (user == null) {
         user = UserModel(
-          id: userCredential.user!.uid,
-          username: userCredential.user?.displayName ?? '',
-          email: userCredential.user?.email ?? '',
-          createdDate: DateTime.now(),
-          updatedDate: DateTime.now(),
-          createdTopics: [],
-        );
-        await updateUserCollection(user);
+            id: userCredential.user!.uid,
+            username: userCredential.user?.displayName ?? '',
+            email: userCredential.user?.email ?? '',
+            createdDate: DateTime.now(),
+            updatedDate: DateTime.now(),
+            createdTopics: [],
+            syncStatus: ConstantStrings.synced);
+        await updateUser(user);
         return user;
       } else {
         return user;
@@ -154,14 +155,14 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       UserModel? user = await getUserById(userCredential.user!.uid);
       if (user == null) {
         user = UserModel(
-          id: userCredential.user!.uid,
-          username: userCredential.user?.displayName ?? '',
-          email: userCredential.user?.email ?? '',
-          createdDate: DateTime.now(),
-          updatedDate: DateTime.now(),
-          createdTopics: [],
-        );
-        await updateUserCollection(user);
+            id: userCredential.user!.uid,
+            username: userCredential.user?.displayName ?? '',
+            email: userCredential.user?.email ?? '',
+            createdDate: DateTime.now(),
+            updatedDate: DateTime.now(),
+            createdTopics: [],
+            syncStatus: ConstantStrings.synced);
+        await updateUser(user);
         return user;
       } else {
         return user;

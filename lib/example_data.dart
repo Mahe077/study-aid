@@ -1,4 +1,5 @@
 // example_data.dart
+import 'package:flutter/material.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart'; // Import if needed
@@ -14,6 +15,7 @@ final Note sampleNote = Note(
   syncStatus: 'synced',
   localChangeTimestamp: DateTime.now(),
   remoteChangeTimestamp: DateTime.now(),
+  color: Colors.red,
 );
 
 // Sample AudioRecording
@@ -27,6 +29,7 @@ final AudioRecording sampleAudio = AudioRecording(
   syncStatus: 'synced',
   localChangeTimestamp: DateTime.now(),
   remoteChangeTimestamp: DateTime.now(),
+  color: Colors.red,
 );
 
 // Sample Topic
@@ -42,6 +45,7 @@ final Topic sampleTopic = Topic(
   localChangeTimestamp: DateTime.now(),
   remoteChangeTimestamp: DateTime.now(),
   id: 'Topic 1',
+  color: Colors.red,
 );
 
 // List of recent entities

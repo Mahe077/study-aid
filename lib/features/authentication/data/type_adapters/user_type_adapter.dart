@@ -8,13 +8,13 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
   @override
   UserModel read(BinaryReader reader) {
     return UserModel(
-      id: reader.read(),
-      username: reader.read(),
-      email: reader.read(),
-      createdDate: reader.read(),
-      updatedDate: reader.read(),
-      createdTopics: reader.readList().cast<String>(),
-    );
+        id: reader.read(),
+        username: reader.read(),
+        email: reader.read(),
+        createdDate: reader.read(),
+        updatedDate: reader.read(),
+        createdTopics: reader.readList().cast<String>(),
+        syncStatus: reader.read());
   }
 
   @override
@@ -25,6 +25,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..write(obj.email)
       ..write(obj.createdDate)
       ..write(obj.updatedDate)
-      ..writeList(obj.createdTopics);
+      ..writeList(obj.createdTopics)
+      ..write(obj.syncStatus);
   }
 }
