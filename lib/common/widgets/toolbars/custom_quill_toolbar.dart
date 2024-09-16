@@ -13,14 +13,20 @@ class CustomQuillToolbar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.fromLTRB(0, 0, 10, 10),
+      // padding: EdgeInsets.symmetric(horizontal: 10),
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        color: AppColors.toolbar,
         borderRadius: BorderRadius.circular(8),
       ),
       child: QuillToolbar.simple(
         configurations: QuillSimpleToolbarConfigurations(
+            decoration: BoxDecoration(
+              color: AppColors.toolbar,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            color: AppColors.black,
+            embedButtons: [],
             fontSizesValues: const {
               "24": "24",
               "20": "20",
@@ -56,7 +62,7 @@ class CustomQuillToolbar extends StatelessWidget {
             showBackgroundColorButton: false,
             buttonOptions: const QuillSimpleToolbarButtonOptions(
                 fontSize:
-                    QuillToolbarFontSizeButtonOptions(initialValue: '12'))),
+                    QuillToolbarFontSizeButtonOptions(initialValue: '16'))),
       ),
     );
   }

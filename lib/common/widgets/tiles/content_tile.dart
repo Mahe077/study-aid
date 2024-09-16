@@ -6,7 +6,7 @@ import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
-import 'package:study_aid/features/notes/presentation/pages/note.dart';
+import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/pages/topic_page.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 

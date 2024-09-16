@@ -12,6 +12,7 @@ final Note sampleNote = Note(
   createdDate: DateTime.now(),
   updatedDate: DateTime.now(),
   content: 'This is a sample note content.',
+  contentJson: 'This is a sample note content.',
   syncStatus: 'synced',
   localChangeTimestamp: DateTime.now(),
   remoteChangeTimestamp: DateTime.now(),
