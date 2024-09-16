@@ -36,3 +36,9 @@ class User {
         syncStatus: syncStatus ?? this.syncStatus);
   }
 }
+
+class MetdaData {
+  final String reference;
+  final DateTime updatedDate;
+  MetdaData(this.reference, this.updatedDate);
+}

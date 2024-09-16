@@ -1,3 +1,5 @@
+import 'package:logger/logger.dart';
+
 String? validatePassword(String? value) {
   if (value == null || value.isEmpty) {
     return 'Password is required';
@@ -44,9 +46,10 @@ String? isValidEmail(String? email) {
 }
 
 String? isValidUsername(String? username) {
+  Logger().d(username);
   if (username == null || username.isEmpty) {
     return 'Email is required';
-  } else if (username.length >= 3) {
+  } else if (username.length <= 3) {
     return 'Username must be at least 3 characters long';
   }
 

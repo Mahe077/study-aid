@@ -110,10 +110,17 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
     switch (authMethod) {
       case AuthMethod.emailAndPassword:
-        if (!_signUpKey.currentState!.validate()) return;
-        result = await ref
-            .read(signUpWithEmailProvider)
-            .call(email, password, username);
+        if (_signUpKey.currentState!.validate()) {
+          result = await ref
+              .read(signUpWithEmailProvider)
+              .call(email, password, username);
+        } else {
+          // If validation fails, show an error and return early
+          setState(() {
+            _isLoading = false; // Hide loading mask
+          });
+          return; // Exit early if form is not valid
+        }
         break;
       case AuthMethod.google:
         result = await ref.read(signInWithGoogleProvider).call();
@@ -330,7 +337,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 _log.i("Terms of Use clicked");
-                // Navigate to Terms of Use page
+                //TODO: Navigate to Terms of Use page
               },
           ),
         ],
