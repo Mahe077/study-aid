@@ -4,7 +4,7 @@ import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
-import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
+import 'package:study_aid/features/authentication/presentation/pages/signup.dart';
 
 class GetStartedPage extends StatefulWidget {
   const GetStartedPage({super.key});
@@ -63,7 +63,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (BuildContext context) =>
-                                        const SigninPage()));
+                                        const SignupPage()));
                           },
                           title: 'Get Started'),
                     const Spacer(),

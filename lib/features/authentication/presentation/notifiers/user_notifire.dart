@@ -1,74 +1,45 @@
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:logger/logger.dart';
-// import 'package:study_aid/features/authentication/domain/entities/user.dart';
-// import 'package:study_aid/features/authentication/domain/usecases/load_user.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive/hive.dart';
+import 'package:logger/logger.dart';
+import 'package:study_aid/features/authentication/data/models/user.dart';
 
-// class UserState {
-//   final User? user;
-//   final bool isLoading;
-//   final String? error;
+class UserNotifier extends AsyncNotifier<UserModel?> {
+  @override
+  Future<UserModel?> build() async {
+    return await _fetchUser();
+  }
 
-//   UserState({
-//     this.user,
-//     this.isLoading = false,
-//     this.error,
-//   });
+  Future<UserModel?> _fetchUser() async {
+    try {
+      Logger().d("Trying to open userBox...");
 
-//   UserState copyWith({
-//     User? user,
-//     bool? isLoading,
-//     String? error,
-//   }) {
-//     return UserState(
-//       user: user ?? this.user,
-//       isLoading: isLoading ?? this.isLoading,
-//       error: error ?? this.error,
-//     );
-//   }
-// }
+      // Open the box if it's not already open
+      final userBox = Hive.isBoxOpen('userBox')
+          ? Hive.box<UserModel>('userBox')
+          : await Hive.openBox<UserModel>('userBox');
 
-// class UserNotifier extends StateNotifier<UserState> {
-//   final LoadUser loadUser;
-//   final String userId;
-//   UserNotifier(this.loadUser, this.userId) : super(UserState()) {
-//     fetchUser(); // Ensure user data is fetched upon initialization
-//   }
+      Logger().d("User box opened. Box length: ${userBox.length}");
 
-//   Future<void> fetchUser() async {
-//     state = UserState(isLoading: true);
-//     try {
-//       final result =
-//           await loadUser(userId); // Replace with your actual API call
+      // Fetch the user
+      if (userBox.isNotEmpty) {
+        final user = userBox.get(userBox.keys.first);
+        Logger().d("User found in box: ${user?.email}");
+        return user;
+      } else {
+        Logger().d("No user found in the box.");
+        return null;
+      }
+    } catch (e) {
+      Logger().e("Error opening or fetching from Hive box: $e");
+      return null;
+    }
+  }
 
-//       result.fold(
-//         (failure) =>
-//             state = state.copyWith(error: failure.message, isLoading: false),
-//         (user) => {
-//           Logger().i("UserNotifier:: $user"),
-//           state = state.copyWith(user: user, isLoading: false)
-//         },
-//       );
-//     } catch (e) {
-//       state = UserState(error: e.toString()); // Handle error case
-//     }
-//   }
-// }
-
-// // class UserNotifier extends StateNotifier<UserState> {
-// //   final LoadUser loadUser;
-
-// //   UserNotifier(this.loadUser) : super(UserState());
-
-// //   Future<void> fetchUser(String userId) async {
-// //     state = state.copyWith(isLoading: true);
-// //     final result = await loadUser(userId);
-// //     result.fold(
-// //       (failure) =>
-// //           state = state.copyWith(error: failure.message, isLoading: false),
-// //       (user) => {
-// //         Logger().i("UserNotifier:: $user"),
-// //         state = state.copyWith(user: user, isLoading: false)
-// //       },
-// //     );
-// //   }
-// // }
+  // Optional: You can add methods for other user-related actions (e.g., log out)
+  Future<void> logOut() async {
+    final userBox = await Hive.openBox<UserModel>('userBox');
+    await userBox.clear();
+    Logger().d("User logged out.");
+    state = const AsyncValue.data(null);
+  }
+}
