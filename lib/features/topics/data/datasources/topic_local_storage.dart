@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:hive/hive.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
@@ -46,7 +47,7 @@ class LocalDataSourceImpl implements LocalDataSource {
       int startIndex = startAfter;
       int endIndex = startIndex + limit;
 
-      printTopicBoxContents();
+      printTopicBoxContents(); //TODO:remove the prints
 
       List<Future<TopicModel?>> futureTopics = topicRefs.map((topicId) {
         return getCachedTopic(topicId);
@@ -76,6 +77,7 @@ class LocalDataSourceImpl implements LocalDataSource {
 
   @override
   Future<TopicModel?> getCachedTopic(String topicId) async {
+    printTopicBoxContents(); //TODO:remove the prints
     final topic = _topicBox.get(topicId);
     if (topic != null) {
       return topic;
@@ -89,10 +91,11 @@ class LocalDataSourceImpl implements LocalDataSource {
     return _topicBox.containsKey(topicId);
   }
 
+  //TODO:remove the prints
   void printTopicBoxContents() {
     // Assuming _topicBox is your Hive box
     var allKeys = _topicBox.keys;
-    print('All keys in topicBox: $allKeys');
+    Logger().d('All keys in topicBox: $allKeys');
 
     var allTopics = _topicBox.values.toList();
     print('All items in topicBox:');

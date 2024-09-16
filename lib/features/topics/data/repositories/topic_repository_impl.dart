@@ -279,6 +279,23 @@ class TopicRepositoryImpl implements TopicRepository {
       } else {
         final topicRefs = List.from(parentTopic.subTopics);
 
+        for (var id in topicRefs) {
+          if (!localDataSource.topicExists(id)) {
+            final topicOrFailure = await remoteDataSource.getTopicById(id);
+
+            topicOrFailure.fold(
+              (failure) {
+                // Handle the failure (e.g., log it or return a failure response)
+                Logger().e('Failed to fetch topic with ID $id: $failure');
+              },
+              (topic) async {
+                // Save the fetched topic to the local data source
+                await localDataSource.createTopic(topic);
+              },
+            );
+          }
+        }
+
         final topics = await localDataSource.fetchPeginatedTopics(
           limit,
           topicRefs,

@@ -281,7 +281,7 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> loadMoreTopicChild() async {
     final currentState = state;
-    if (!currentState.value!.hasMore) return;
+    if (currentState.value == null || !currentState.value!.hasMore) return;
 
     final lastDocument = currentState.value!.lastDocument;
     try {

@@ -132,6 +132,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     userId: widget.user.id,
                                     entity: state.topics[i],
                                     type: TopicType.topic,
+                                    parentTopicId: '',
                                   ),
                                   if (i < state.topics.length - 1)
                                     const SizedBox(height: 10),

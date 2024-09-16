@@ -14,13 +14,14 @@ class ContentTile extends StatelessWidget {
   final Enum type;
   final dynamic entity;
   final String userId;
+  final String parentTopicId;
 
-  const ContentTile({
-    super.key,
-    required this.type,
-    required this.entity,
-    required this.userId,
-  });
+  const ContentTile(
+      {super.key,
+      required this.type,
+      required this.entity,
+      required this.userId,
+      required this.parentTopicId});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class ContentTile extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (BuildContext context) => NotePage(
-                topicId: entity.id,
+                topicId: parentTopicId,
                 topicTitle: entity.title,
                 entity: entity,
                 isNewNote: false,
@@ -54,11 +55,12 @@ class ContentTile extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: type == TopicType.topic
-              ? entity.color ?? AppColors.grey
-              : AppColors.grey,
-        ),
+            borderRadius: BorderRadius.circular(10),
+            color: entity.color ?? AppColors.grey
+            // type == TopicType.topic
+            //     ? entity.color ?? AppColors.grey
+            //     : AppColors.grey,
+            ),
         child: IntrinsicHeight(
           child: ConstrainedBox(
             constraints: const BoxConstraints(
@@ -71,17 +73,17 @@ class ContentTile extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      if (type == TopicType.topic)
+                      if (type == TopicType.topic || entity is Topic)
                         const FaIcon(
                           FontAwesomeIcons.bookOpen,
                           size: 16,
                         ),
-                      if (type == TopicType.note)
+                      if (type == TopicType.note || entity is Note)
                         const FaIcon(
                           FontAwesomeIcons.solidNoteSticky,
                           size: 16,
                         ),
-                      if (type == TopicType.audio)
+                      if (type == TopicType.audio || entity is AudioRecording)
                         const FaIcon(
                           FontAwesomeIcons.microphone,
                           size: 16,
@@ -135,7 +137,7 @@ class ContentTile extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  type == TopicType.topic
+                  type == TopicType.topic || entity is Topic
                       ? Row(
                           children: [
                             Tag(
@@ -157,20 +159,15 @@ class ContentTile extends StatelessWidget {
                             ),
                           ],
                         )
-                      : const Row(
-                          children: [
-                            Tag(
-                              text: 'Tag 1',
-                            ),
-                            SizedBox(width: 5),
-                            Tag(
-                              text: 'Tag 2',
-                            ),
-                            SizedBox(width: 5),
-                            Tag(
-                              text: 'Tag 3',
-                            ),
-                          ],
+                      : Row(
+                          children: (entity.tags as List<dynamic>)
+                              .map<Widget>((tag) => Row(
+                                    children: [
+                                      Tag(text: tag.toString()),
+                                      const SizedBox(width: 5),
+                                    ],
+                                  ))
+                              .toList(),
                         ),
                   const SizedBox(height: 8),
                   Row(
