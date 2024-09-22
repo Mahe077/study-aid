@@ -10,6 +10,7 @@ import 'package:study_aid/core/utils/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
+import 'package:study_aid/features/notes/data/models/note.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
 import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
 // import 'package:study_aid/widgets/note_taking_canvas.dart';
@@ -37,6 +38,14 @@ void main() async {
   if (!Hive.isBoxOpen('topicBox')) {
     await Hive.openBox<TopicModel>('topicBox');
   }
+
+  if (!Hive.isBoxOpen('noteBox')) {
+    await Hive.openBox<NoteModel>('noteBox');
+  }
+
+  // if (!Hive.isBoxOpen('audioBox')) {
+  //   await Hive.openBox<TopicModel>('audioBox');
+  // }
 
   setupInjection();
 

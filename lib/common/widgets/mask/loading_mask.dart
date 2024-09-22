@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 Widget buildLoadingMask() {
   return const Center(child: CircularProgressIndicator());

@@ -9,7 +9,7 @@ import 'package:study_aid/common/widgets/bannerbars/info_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
-import 'package:study_aid/features/notes/presentation/pages/note.dart';
+import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 

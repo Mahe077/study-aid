@@ -8,30 +8,38 @@ class BasicAppButton extends StatelessWidget {
   final double? fontsize;
   final FontWeight? fontweight;
 
-  const BasicAppButton(
-      {required this.onPressed,
-      required this.title,
-      this.height,
-      super.key,
-      this.fontsize,
-      this.fontweight});
+  const BasicAppButton({
+    required this.onPressed,
+    required this.title,
+    this.height,
+    this.fontsize,
+    this.fontweight,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            minimumSize: Size.fromHeight(height ?? 50),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10))),
-        child: Text(
-          title,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: fontsize ?? 16,
-            fontWeight: fontweight ?? FontWeight.w600,
-          ),
-        ));
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        minimumSize: Size.fromHeight(
+            height ?? 50), // Default height is 50 if not provided
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16), // Add horizontal padding
+      ),
+      child: Text(
+        title,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: fontsize ?? 16, // Default font size is 16 if not provided
+          fontWeight: fontweight ??
+              FontWeight.w600, // Default font weight is w600 if not provided
+        ),
+      ),
+    );
   }
 }
