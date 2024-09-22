@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 class TopicsState {
   final List<Topic> topics;
@@ -103,31 +104,38 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (newTopic) {
-          Logger().d(
-              'createTopic:: Current state: ${currentState.value.toString()}');
-          Logger().d('createTopic:: State: ${state.value.toString()}');
-          Logger().d('createTopic:: New topic created: $newTopic');
+          if (parentId == null) {
+            Logger().d(
+                'createTopic:: Current state: ${currentState.value.toString()}');
+            Logger().d('createTopic:: State: ${state.value.toString()}');
+            Logger().d('createTopic:: New topic created: $newTopic');
 
-          // If the state is loading or null, initialize the state with the new topic
-          if (currentState.value == null ||
-              currentState.value!.topics.isEmpty) {
-            // Initialize state
-            state = AsyncValue.data(
-              TopicsState(
-                topics: [newTopic],
-                hasMore: false,
-                lastDocument: 0,
-              ),
-            );
+            // If the state is loading or null, initialize the state with the new topic
+            if (currentState.value == null ||
+                currentState.value!.topics.isEmpty) {
+              // Initialize state
+              state = AsyncValue.data(
+                TopicsState(
+                  topics: [newTopic],
+                  hasMore: false,
+                  lastDocument: 0,
+                ),
+              );
+            } else {
+              // If we already have some topics, merge the new one
+              state = AsyncValue.data(
+                currentState.value!.copyWith(
+                  topics: [newTopic, ...currentState.value!.topics],
+                  hasMore: currentState.value!.hasMore,
+                  lastDocument: currentState.value!.lastDocument,
+                ),
+              );
+            }
           } else {
-            // If we already have some topics, merge the new one
-            state = AsyncValue.data(
-              currentState.value!.copyWith(
-                topics: [newTopic, ...currentState.value!.topics],
-                hasMore: currentState.value!.hasMore,
-                lastDocument: currentState.value!.lastDocument,
-              ),
-            );
+            // Notify TabDataNotifier to update state
+            final tabDataNotifier =
+                _ref.read(tabDataProvider(parentId).notifier);
+            tabDataNotifier.updateTopic(newTopic);
           }
         },
       );
