@@ -143,7 +143,7 @@ class _NotePageState extends ConsumerState<NotePage> {
 
   Note getNote() {
     return Note(
-      id: '',
+      id: UniqueKey().toString(),
       title: '',
       content: '',
       contentJson: '',
@@ -216,6 +216,7 @@ class _NotePageState extends ConsumerState<NotePage> {
   @override
   void dispose() {
     titleController.dispose();
+    tagController.dispose();
     quillController.dispose();
     focusNode.dispose();
     super.dispose();
