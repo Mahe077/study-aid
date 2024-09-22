@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 
+part 'note.g.dart';
+
 @HiveType(typeId: 3)
 class NoteModel extends Note {
   @HiveField(1)
