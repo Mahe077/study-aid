@@ -12,6 +12,7 @@ import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/voice_notes/presentation/pages/voice_page.dart';
 
 class FAB extends ConsumerStatefulWidget {
   final String userId;
@@ -186,11 +187,10 @@ class _FABState extends ConsumerState<FAB> {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (BuildContext context) => NotePage(
+                          builder: (BuildContext context) => VoicePage(
                             topicId: widget.parentId ?? '',
                             topicTitle: widget.topicTitle,
                             entity: null,
-                            isNewNote: true,
                             noteColor: widget.topicColor,
                           ),
                         ))

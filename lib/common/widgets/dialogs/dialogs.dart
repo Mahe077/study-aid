@@ -74,7 +74,7 @@ class CustomDialog extends StatelessWidget {
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       backgroundColor: AppColors.lightBackground,
-      actionsPadding: const EdgeInsets.fromLTRB(40, 0, 40, 10),
+      actionsPadding: const EdgeInsets.fromLTRB(40, 0, 20, 10),
       contentPadding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
       titlePadding: const EdgeInsets.fromLTRB(20, 10, 5, 0),
     );
