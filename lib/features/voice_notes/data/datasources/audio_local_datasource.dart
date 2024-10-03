@@ -75,7 +75,12 @@ class LocalDataSourceImpl extends LocalDataSource {
 
   @override
   Future<void> createAudioRecording(AudioRecordingModel audio) async {
-    await _audioBox.put(audio.id, audio);
+    try {
+      await _audioBox.put(audio.id, audio);
+      printAudioRecordingBoxContents();
+    } catch (e) {
+      Logger().e(e);
+    }
   }
 
   @override

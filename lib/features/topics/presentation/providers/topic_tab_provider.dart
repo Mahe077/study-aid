@@ -5,7 +5,7 @@ import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
-// import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
+import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
 class TabDataState {
   final List<Topic> topics;
@@ -173,17 +173,17 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     try {
       final topicRepository = ref.read(topicRepositoryProvider);
       final noteRepository = ref.read(noteRepositoryProvider);
-      // final audioRepository = ref.read(audioRepositoryProvider);
+      final audioRepository = ref.read(audioRepositoryProvider);
 
       final result = await Future.wait([
         topicRepository.fetchSubTopics(parentTopicId, 5, 0),
         noteRepository.fetchNotes(parentTopicId, 5, 0),
-        // audioRepository.fetchAudioRecordings(parentTopicId, 5),
+        audioRepository.fetchAudioRecordings(parentTopicId, 5, 0),
       ]);
 
       final topicsResult = result[0];
       final notesResult = result[1];
-      // final audioResult = result[2];
+      final audioResult = result[2];
 
       topicsResult.fold(
         (failure) =>
@@ -193,43 +193,39 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
             (failure) =>
                 state = AsyncValue.error(failure.message, StackTrace.current),
             (notesPaginatedObj) {
-              //     audioResult.fold(
-              //       (failure) => state =
-              //           AsyncValue.error(failure.message, StackTrace.current),
-              //       (audioPaginatedObj) {
-              // Cast and filter items to their specific types
-              final List<Topic> topics = topicsPaginatedObj.items
-                  .whereType<Topic>() // Cast to Topic
-                  .toList();
+              audioResult.fold(
+                (failure) => state =
+                    AsyncValue.error(failure.message, StackTrace.current),
+                (audioPaginatedObj) {
+                  // Cast and filter items to their specific types
+                  final List<Topic> topics = topicsPaginatedObj.items
+                      .whereType<Topic>() // Cast to Topic
+                      .toList();
 
-              final List<Note> notes = notesPaginatedObj.items
-                  .whereType<Note>() // Cast to Note
-                  .toList();
+                  final List<Note> notes = notesPaginatedObj.items
+                      .whereType<Note>() // Cast to Note
+                      .toList();
 
-              // final List<AudioRecording> audioRecordings =
-              //     audioPaginatedObj.items
-              //         .whereType<AudioRecording>() // Cast to AudioRecording
-              //         .toList();
+                  final List<AudioRecording> audioRecordings =
+                      audioPaginatedObj.items
+                          .whereType<AudioRecording>() // Cast to AudioRecording
+                          .toList();
 
-              state = AsyncValue.data(TabDataState(
-                topics: topics,
-                // notes: [],
-                audioRecordings: [],
-                notes: notes,
-                // audioRecordings: audioRecordings,
-                hasMoreTopics: topicsPaginatedObj.hasMore,
-                // hasMoreNotes: false,
-                hasMoreAudio: false,
-                hasMoreNotes: notesPaginatedObj.hasMore,
-                // hasMoreAudio: audioPaginatedObj.hasMore,
-                lastTopicDocument: topicsPaginatedObj.lastDocument,
-                lastNoteDocument: notesPaginatedObj.lastDocument,
-                // lastAudioDocument: audioPaginatedObj.lastDocument,
-              ));
+                  state = AsyncValue.data(TabDataState(
+                    topics: topics,
+                    notes: notes,
+                    audioRecordings: audioRecordings,
+                    hasMoreTopics: topicsPaginatedObj.hasMore,
+                    hasMoreNotes: notesPaginatedObj.hasMore,
+                    hasMoreAudio: audioPaginatedObj.hasMore,
+                    lastTopicDocument: topicsPaginatedObj.lastDocument,
+                    lastNoteDocument: notesPaginatedObj.lastDocument,
+                    lastAudioDocument: audioPaginatedObj.lastDocument,
+                  ));
+                },
+              );
             },
           );
-          // },
-          // );
         },
       );
     } catch (e, stackTrace) {

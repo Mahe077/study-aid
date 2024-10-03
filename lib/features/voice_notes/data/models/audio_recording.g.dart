@@ -24,10 +24,10 @@ class AudioRecordingModelAdapter extends TypeAdapter<AudioRecordingModel> {
       createdDate: fields[5] as DateTime,
       updatedDate: fields[6] as DateTime,
       url: fields[7] as String,
+      localpath: fields[8] as String,
       syncStatus: fields[9] as String,
       localChangeTimestamp: fields[10] as DateTime,
       remoteChangeTimestamp: fields[11] as DateTime,
-      localpath: fields[8] as String,
     );
   }
 

@@ -72,15 +72,27 @@ List<Widget> _getDialogActions(
       ];
     case DialogMode.add:
       return [
-        BasicAppButton(
-          onPressed: () {
-            onConfirm();
-            Navigator.of(context).pop();
-          },
-          title: "Add $component",
-          height: 32,
-          fontsize: 15,
-          fontweight: FontWeight.w500,
+        Center(
+          child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                  // minimumSize: Size.fromWidth(100),
+                  padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                  // visualDensity: VisualDensity.compact,
+                  backgroundColor: AppColors.black,
+                  iconColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8))),
+              onPressed: () => {
+                    onConfirm(), // Perform the confirm logic first
+                    Navigator.of(context).pop() // Close the dialog after
+                  },
+              child: Text(
+                "Add $component",
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w500),
+              )),
         ),
       ];
     default:
@@ -93,7 +105,7 @@ List<Widget> _getDialogActions(
                 iconColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => {onConfirm(), Navigator.of(context).pop(true)},
             child: const Text(
               'Yes',
               style: TextStyle(

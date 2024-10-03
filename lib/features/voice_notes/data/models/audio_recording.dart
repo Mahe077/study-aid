@@ -31,19 +31,19 @@ class AudioRecordingModel extends AudioRecording {
   @HiveField(11)
   final DateTime remoteChangeTimestamp;
 
-  AudioRecordingModel(
-      {required this.id,
-      required this.title,
-      required this.color,
-      required this.tags,
-      required this.createdDate,
-      required this.updatedDate,
-      required this.url,
-      required this.syncStatus,
-      required this.localChangeTimestamp,
-      required this.remoteChangeTimestamp,
-      required this.localpath})
-      : super(
+  AudioRecordingModel({
+    required this.id,
+    required this.title,
+    required this.color,
+    required this.tags,
+    required this.createdDate,
+    required this.updatedDate,
+    required this.url,
+    required this.localpath,
+    required this.syncStatus,
+    required this.localChangeTimestamp,
+    required this.remoteChangeTimestamp,
+  }) : super(
             id: id,
             title: title,
             color: color,
@@ -113,7 +113,7 @@ class AudioRecordingModel extends AudioRecording {
       createdDate: createdDate ?? this.createdDate,
       updatedDate: updatedDate ?? this.updatedDate,
       url: url ?? this.url,
-      localpath: url ?? this.localpath,
+      localpath: localpath ?? this.localpath,
       syncStatus: syncStatus ?? this.syncStatus,
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
@@ -123,17 +123,18 @@ class AudioRecordingModel extends AudioRecording {
 
   factory AudioRecordingModel.fromDomain(AudioRecording audio) {
     return AudioRecordingModel(
-        id: audio.id,
-        title: audio.title,
-        color: audio.color,
-        tags: audio.tags,
-        createdDate: audio.createdDate,
-        updatedDate: audio.updatedDate,
-        url: audio.url,
-        syncStatus: audio.syncStatus,
-        localChangeTimestamp: audio.localChangeTimestamp,
-        remoteChangeTimestamp: audio.remoteChangeTimestamp,
-        localpath: audio.localpath);
+      id: audio.id,
+      title: audio.title,
+      color: audio.color,
+      tags: audio.tags,
+      createdDate: audio.createdDate,
+      updatedDate: audio.updatedDate,
+      url: audio.url,
+      localpath: audio.localpath,
+      syncStatus: audio.syncStatus,
+      localChangeTimestamp: audio.localChangeTimestamp,
+      remoteChangeTimestamp: audio.remoteChangeTimestamp,
+    );
   }
   AudioRecording toDomain() {
     return AudioRecording(

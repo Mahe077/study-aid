@@ -35,7 +35,7 @@ class _FABState extends ConsumerState<FAB> {
   final GlobalKey<ExpandableFabState> _fabKey = GlobalKey<ExpandableFabState>();
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  Color selectedColor = Colors.black;
+  Color selectedColor = AppColors.grey;
 
   @override
   void dispose() {
@@ -172,7 +172,10 @@ class _FABState extends ConsumerState<FAB> {
             children: [
               Text(
                 'Record an Audio',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary),
               ),
               SizedBox(width: 8),
               FaIcon(FontAwesomeIcons.microphone,
@@ -199,16 +202,20 @@ class _FABState extends ConsumerState<FAB> {
                     _fabKey.currentState?.toggle(),
                     InfoBannerbar(context, 'Please add a Topic').show()
                   };
-          }, //TODO:implement
-          backgroundColor:
-              widget.parentId != null ? AppColors.grey : Colors.red,
+          },
+          backgroundColor: widget.parentId != null
+              ? AppColors.grey
+              : AppColors.black.withOpacity(0.30),
         ),
         FloatingActionButton.extended(
           label: const Row(
             children: [
               Text(
                 'Create a New Note',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary),
               ),
               SizedBox(width: 8),
               FaIcon(FontAwesomeIcons.solidNoteSticky,
@@ -236,9 +243,10 @@ class _FABState extends ConsumerState<FAB> {
                     _fabKey.currentState?.toggle(),
                     InfoBannerbar(context, 'Please add a Topic').show()
                   };
-          }, //TODO:implement
-          backgroundColor:
-              widget.parentId != null ? AppColors.grey : Colors.red,
+          },
+          backgroundColor: widget.parentId != null
+              ? AppColors.grey
+              : AppColors.black.withOpacity(0.30),
         ),
         FloatingActionButton.extended(
           label: const Row(

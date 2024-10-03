@@ -31,6 +31,7 @@ final AudioRecording sampleAudio = AudioRecording(
   localChangeTimestamp: DateTime.now(),
   remoteChangeTimestamp: DateTime.now(),
   color: Colors.red,
+  localpath: '',
 );
 
 // Sample Topic

@@ -12,6 +12,7 @@ import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/notes/data/models/note.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
+import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
 // import 'package:study_aid/widgets/note_taking_canvas.dart';
 // import 'package:study_aid/widgets/v3.dart';
@@ -43,9 +44,9 @@ void main() async {
     await Hive.openBox<NoteModel>('noteBox');
   }
 
-  // if (!Hive.isBoxOpen('audioBox')) {
-  //   await Hive.openBox<TopicModel>('audioBox');
-  // }
+  if (!Hive.isBoxOpen('audioBox')) {
+    await Hive.openBox<AudioRecordingModel>('audioBox');
+  }
 
   setupInjection();
 

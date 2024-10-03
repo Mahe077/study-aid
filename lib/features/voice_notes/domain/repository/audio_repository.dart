@@ -5,13 +5,13 @@ import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.d
 
 abstract class AudioRecordingRepository {
   Future<Either<Failure, AudioRecording>> createAudioRecording(
-      AudioRecording note, String topicId);
+      AudioRecording audio, String topicId);
   Future<Either<Failure, AudioRecording>> updateAudioRecording(
-      AudioRecording note, String topicId);
+      AudioRecording audio, String topicId);
   Future<void> deleteAudioRecording(String noteId);
   Future<Either<Failure, PaginatedObj<AudioRecording>>> fetchAudioRecordings(
       String topicId, int limit, int startAfter);
   Future<Either<Failure, void>> syncAudioRecordings();
   Future<Either<Failure, void>> updateAudioRecordingOfParent(
-      String parentId, String noteId);
+      String parentId, String audioId);
 }

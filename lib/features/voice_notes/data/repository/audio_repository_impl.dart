@@ -28,17 +28,12 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       AudioRecording audio, String topicId) async {
     AudioRecordingModel audioRecording = AudioRecordingModel.fromDomain(audio);
 
-    // Path to the local file
-    String localFilePath = audioRecording.localpath;
-
-    // Firebase storage reference
-    // FirebaseStorage storage = FirebaseStorage.instance; //TODO: get firebase storage
-
     if (await networkInfo.isConnected) {
       final result =
           await remoteDataSource.createAudioRecording(audioRecording);
-      await localDataSource.createAudioRecording(audioRecording);
+
       return result.fold((failure) => Left(failure), (audio) async {
+        await localDataSource.createAudioRecording(audio);
         await topicRepository.updateAudioOfParent(topicId, audio.id);
         return Right(audio);
       });
@@ -56,9 +51,11 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       final localTopic = await topicRepository.getTopic(topicId);
 
       return localTopic.fold((failure) => Left(failure), (items) async {
-        if (items == null || items.audioRecordings.isEmpty) {
-          return Left(
-              Failure('Topic was not found or has no created sub topics'));
+        if (items == null) {
+          return Left(Failure('Topic was not found'));
+        } else if (items.audioRecordings.isEmpty) {
+          return Right(
+              PaginatedObj(items: [], hasMore: false, lastDocument: 0));
         } else {
           final audioRefs = List.from(items.audioRecordings);
 

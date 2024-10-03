@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
+import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/common/widgets/dialogs/dialogs.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
@@ -16,6 +17,7 @@ import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
+import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
 class VoicePage extends ConsumerStatefulWidget {
   final String topicId;
@@ -162,12 +164,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   }
 
   void _saveNote(BuildContext context, WidgetRef ref) {
-    // if (recordedFiles.length > 1) {
-    Logger().d("recordedFiles has  items");
-    //   final outputFilepath = _generateUniqueName();
-    //   _mergeFiles(recordedFiles, outputFilepath);
-    //   Logger().d("outputFilepath  $outputFilepath");
-    // }
     final audioTemp = AudioRecording(
       id: audio.id,
       title: titleController.text.trim(),
@@ -184,13 +180,32 @@ class _VoicePageState extends ConsumerState<VoicePage> {
 
     Logger().i(audioTemp.toString());
 
-    // final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
+    final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
+    audioNotifier.createAudio(audioTemp, widget.topicId);
+
+    if (!mounted) return;
+
+    SuccessBannerbar(context, 'Audio Saved.').show();
+
+    setState(() {
+      isSaved = true;
+    });
+
+    // Add a delay before popping the context
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(hideBack: true),
+      appBar: const BasicAppbar(
+        hideBack: true,
+        showMenu: true,
+      ),
       body: isLoading
           ? const Center(
               child: CircularProgressIndicator(),
@@ -377,11 +392,11 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                           // const SizedBox(height: 25),
                           isRecording
                               ? _pauseButton(_pauseRecording)
-                              : recordingEnded
-                                  ? _isPlayerPaused
-                                      ? _playButton()
-                                      : _pauseButton(_pausePlayer)
-                                  : _recordButton(),
+                              // : recordingEnded
+                              //     ? _isPlayerPaused
+                              //         ? _playButton()
+                              //         : _pauseButton(_pausePlayer)
+                              : _recordButton(),
 
                           // IconButton(
                           //   splashRadius: 20,
@@ -795,6 +810,10 @@ class _VoicePageState extends ConsumerState<VoicePage> {
         Navigator.of(context).pop();
         titleController.clear(); // Clear title on discard
       });
+    } else {
+      titleController.clear();
+      Navigator.of(context).pop();
+      Logger().w("not saved");
     }
   }
 
