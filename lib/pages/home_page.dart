@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_drawing_board/flutter_drawing_board.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
@@ -56,7 +57,9 @@ class _HomePageState extends State<HomePage> {
     final text = _quillController.document.toPlainText();
     // Here you can add logic to save the text to the canvas
     // For simplicity, we'll just print the text
-    print(text);
+    if (kDebugMode) {
+      print(text);
+    }
 
     setState(() {
       _isWritingMode = false;

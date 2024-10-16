@@ -20,6 +20,7 @@ class CustomQuillToolbar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: QuillToolbar.simple(
+        controller: quillController,
         configurations: QuillSimpleToolbarConfigurations(
             decoration: BoxDecoration(
               color: AppColors.toolbar,

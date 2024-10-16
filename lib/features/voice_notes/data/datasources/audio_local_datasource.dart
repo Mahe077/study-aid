@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
@@ -104,9 +105,13 @@ class LocalDataSourceImpl extends LocalDataSource {
     Logger().d('All keys in AudioBox: $allKeys');
 
     var allAudio = _audioBox.values.toList();
-    print('All items in AudioBox:');
+    if (kDebugMode) {
+      print('All items in AudioBox:');
+    }
     for (var i = 0; i < allAudio.length; i++) {
-      print('Item $i: ${allAudio[i]}');
+      if (kDebugMode) {
+        print('Item $i: ${allAudio[i]}');
+      }
     }
   }
 }

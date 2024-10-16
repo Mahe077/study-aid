@@ -9,10 +9,10 @@ class FullScreenLoader extends StatelessWidget {
   final bool isLoading;
 
   const FullScreenLoader({
-    Key? key,
+    super.key,
     required this.child,
     required this.isLoading,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

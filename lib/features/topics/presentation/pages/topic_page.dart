@@ -6,7 +6,6 @@ import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
-import 'package:study_aid/common/widgets/bannerbars/info_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';

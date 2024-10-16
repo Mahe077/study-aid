@@ -7,14 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/chat_bubble.dart';
 
-class Temp_page extends StatefulWidget {
-  const Temp_page({Key? key}) : super(key: key);
+class TempPage extends StatefulWidget {
+  const TempPage({super.key});
 
   @override
-  State<Temp_page> createState() => _TempPageState();
+  State<TempPage> createState() => _TempPageState();
 }
 
-class _TempPageState extends State<Temp_page> {
+class _TempPageState extends State<TempPage> {
   late final RecorderController recorderController;
 
   String? path;
