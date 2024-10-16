@@ -41,7 +41,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     Align(
                       alignment: Alignment.topCenter,
                       child:
-                          SvgPicture.asset("assets/vectors/" + images[index]),
+                          SvgPicture.asset("assets/vectors/${images[index]}"),
                     ),
                     const Spacer(),
                     AppHeadings(

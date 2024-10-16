@@ -6,9 +6,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
-import 'package:study_aid/common/widgets/bannerbars/failure_bannerbar.dart';
-import 'package:study_aid/common/widgets/bannerbars/info_bannerbar.dart';
-import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
@@ -145,8 +142,6 @@ class _FABState extends ConsumerState<FAB> {
 
   @override
   Widget build(BuildContext context) {
-    final toast = CustomToast(context: context);
-
     return ExpandableFab(
       key: _fabKey,
       type: ExpandableFabType.up,
