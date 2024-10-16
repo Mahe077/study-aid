@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:study_aid/common/helpers/enums.dart';
-import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/dialogs/dialogs.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 
@@ -129,22 +129,14 @@ List<Widget> _getDialogActions(
                   color: AppColors.black,
                   fontWeight: FontWeight.w500),
             )),
-        // TextButton(
-        //   onPressed: () {
-        //     Navigator.of(context).pop();
-        //   },
-        //   child: const Text("No"),
-        // ),
-        // BasicAppButton(
-        //   onPressed: () {
-        //     onConfirm();
-        //     Navigator.of(context).pop();
-        //   },
-        //   title: "Yes",
-        //   height: 32,
-        //   fontsize: 15,
-        //   fontweight: FontWeight.w500,
-        // ),
       ];
   }
+}
+
+String formatDateTime(DateTime date) {
+  // Create a DateFormat instance with the required format
+  final DateFormat formatter = DateFormat('hh:mm a dd/MM/yyyy');
+
+  // Format the date
+  return formatter.format(date);
 }

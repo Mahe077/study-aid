@@ -9,6 +9,7 @@ import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/common/widgets/dialogs/dialogs.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
@@ -24,14 +25,15 @@ class VoicePage extends ConsumerStatefulWidget {
   final String? topicTitle;
   final AudioRecording? entity;
   final Color? noteColor;
+  final String userId;
 
-  VoicePage({
-    super.key,
-    this.topicTitle,
-    this.entity,
-    this.noteColor,
-    required this.topicId,
-  });
+  const VoicePage(
+      {super.key,
+      this.topicTitle,
+      this.entity,
+      this.noteColor,
+      required this.topicId,
+      required this.userId});
 
   @override
   ConsumerState<VoicePage> createState() => _VoicePageState();
@@ -53,7 +55,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   bool recordingStarted = false;
   bool isSaved = false;
   bool recordingEnded = false;
-  bool _isPlayerPaused = false;
   List<double> waveformData = [];
 
   Duration recordedDuration = Duration.zero;
@@ -97,7 +98,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     titleController.dispose();
     tagController.dispose();
     recorderController.dispose();
-    // playerController.dispose();
     focusNode.dispose();
     durationSubscription?.cancel(); // Stop listening to duration updates
     super.dispose();
@@ -127,30 +127,20 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     playerController = PlayerController();
   }
 
-  // void _pickFile() async {
-  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
-  //   if (result != null) {
-  //     musicFile = result.files.single.path;
-  //     setState(() {});
-  //   } else {
-  //     debugPrint("File not picked");
-  //   }
-  // }
-
   AudioRecording getAudioRecording() {
     return AudioRecording(
-      id: UniqueKey().toString(),
-      title: '',
-      createdDate: DateTime.now(),
-      color: widget.noteColor ?? AppColors.grey,
-      remoteChangeTimestamp: DateTime.now(),
-      tags: [],
-      updatedDate: DateTime.now(),
-      syncStatus: ConstantStrings.pending,
-      localChangeTimestamp: DateTime.now(),
-      url: '',
-      localpath: '',
-    );
+        id: UniqueKey().toString(),
+        title: '',
+        createdDate: DateTime.now(),
+        color: widget.noteColor ?? AppColors.grey,
+        remoteChangeTimestamp: DateTime.now(),
+        tags: [],
+        updatedDate: DateTime.now(),
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: DateTime.now(),
+        url: '',
+        localpath: '',
+        parentId: widget.topicId);
   }
 
   void addTag(String tag) {
@@ -164,38 +154,50 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   }
 
   void _saveNote(BuildContext context, WidgetRef ref) {
+    final toast = CustomToast(context: context);
+
     final audioTemp = AudioRecording(
-      id: audio.id,
-      title: titleController.text.trim(),
-      createdDate: audio.createdDate,
-      color: audio.color,
-      remoteChangeTimestamp: DateTime.now(),
-      tags: audio.tags,
-      updatedDate: DateTime.now(),
-      syncStatus: ConstantStrings.pending,
-      localChangeTimestamp: DateTime.now(),
-      url: '',
-      localpath: recordPath ?? '',
-    );
+        id: audio.id,
+        title: titleController.text.trim(),
+        createdDate: audio.createdDate,
+        color: audio.color,
+        remoteChangeTimestamp: DateTime.now(),
+        tags: audio.tags,
+        updatedDate: DateTime.now(),
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: DateTime.now(),
+        url: '',
+        localpath: recordPath ?? '',
+        parentId: audio.parentId);
 
     Logger().i(audioTemp.toString());
 
     final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
-    audioNotifier.createAudio(audioTemp, widget.topicId);
+    var updateAudioRes =
+        audioNotifier.createAudio(audioTemp, widget.topicId, widget.userId);
 
     if (!mounted) return;
 
-    SuccessBannerbar(context, 'Audio Saved.').show();
-
-    setState(() {
-      isSaved = true;
-    });
-
-    // Add a delay before popping the context
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        Navigator.pop(context);
-      }
+    updateAudioRes.then((either) {
+      either.fold(
+        (failure) {
+          toast.showFailure(
+              description: 'An error occurred while saving the audio clip.');
+          Logger().d(failure.message);
+        },
+        (newNote) {
+          if (!mounted) return;
+          toast.showSuccess(description: 'Audio Clip updated successfully.');
+          setState(() {
+            isSaved = true;
+          });
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) {
+              Navigator.pop(context);
+            }
+          });
+        },
+      );
     });
   }
 
@@ -254,7 +256,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                                     focusedBorder: InputBorder.none),
                               ),
                             ),
-                            _saveButton(context),
+                            if (recordingEnded) _saveButton(context),
                             const SizedBox(width: 2),
                             IconButton(
                                 visualDensity: VisualDensity.compact,
@@ -341,11 +343,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                                               extendWaveform: true,
                                               showMiddleLine: false,
                                             ),
-                                            // decoration: BoxDecoration(
-                                            //   borderRadius:
-                                            //       BorderRadius.circular(12.0),
-                                            //   color: const Color(0xFF1E1B26),
-                                            // ),
                                             padding:
                                                 const EdgeInsets.only(left: 18),
                                             margin: const EdgeInsets.fromLTRB(
@@ -382,44 +379,9 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                                             0, 5, 10, 5),
                                       ),
                           )),
-                          // const SizedBox(height: 25),
-                          // if (recordingStarted)
-                          //   Text(
-                          //     recordedDuration.toHHMMSS(),
-                          //     style: const TextStyle(
-                          //         fontSize: 32, fontWeight: FontWeight.w400),
-                          //   ),
-                          // const SizedBox(height: 25),
                           isRecording
                               ? _pauseButton(_pauseRecording)
-                              // : recordingEnded
-                              //     ? _isPlayerPaused
-                              //         ? _playButton()
-                              //         : _pauseButton(_pausePlayer)
                               : _recordButton(),
-
-                          // IconButton(
-                          //   splashRadius: 20,
-                          //   padding: const EdgeInsets.all(10),
-                          //   iconSize: 40,
-                          //   splashColor: Colors.red,
-                          //   hoverColor: Colors.amber,
-                          //   focusColor: Colors.pink,
-                          //   highlightColor: Colors.blueAccent,
-                          //   icon: Icon(isRecording
-                          //       ? Icons.pause_circle
-                          //       : (isPaused
-                          //           ? Icons.play_circle
-                          //           : Icons.circle)),
-                          //   tooltip: isRecording
-                          //       ? 'Pause'
-                          //       : (isPaused ? 'Resume' : 'Start Recording'),
-                          //   onPressed: isRecording
-                          //       ? _pauseRecording
-                          //       : (isPaused
-                          //           ? _resumeRecording
-                          //           : _startRecording),
-                          // ),
                           const SizedBox(height: 25),
                           isPaused
                               ? ElevatedButton(
@@ -506,9 +468,9 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     );
   }
 
-  GestureDetector _pauseButton(Function() _onTap) {
+  GestureDetector _pauseButton(Function() onTap) {
     return GestureDetector(
-      onTap: _onTap,
+      onTap: onTap,
       child: Container(
         height: 84,
         width: 84,
@@ -527,36 +489,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
             child: Center(
                 child: Icon(
               Icons.pause,
-              size: 43,
-              color: AppColors.primary.withOpacity(0.81),
-            )),
-          ),
-        ),
-      ),
-    );
-  }
-
-  GestureDetector _playButton() {
-    return GestureDetector(
-      onTap: _startPlayer,
-      child: Container(
-        height: 84,
-        width: 84,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary.withOpacity(0.34),
-        ),
-        child: Center(
-          child: Container(
-            height: 72,
-            width: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: widget.noteColor,
-            ),
-            child: Center(
-                child: Icon(
-              Icons.play_arrow,
               size: 43,
               color: AppColors.primary.withOpacity(0.81),
             )),
@@ -586,8 +518,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   }
 
   Future<bool> _showConfirmationDialog() async {
-    // Display the custom dialog and return true if confirmed
-    // You might need to adjust this function based on how your custom dialog works
     return await showDialog<bool>(
           context: context,
           builder: (BuildContext context) {
@@ -631,18 +561,6 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                           color: AppColors.black,
                           fontWeight: FontWeight.w500),
                     )),
-                // TextButton(
-                //   onPressed: () => Navigator.of(context).pop(true), // Confirm
-                //   child: const Text('Yes'),
-                // ),
-                // TextButton(
-                //   onPressed: () => Navigator.of(context).pop(false), // Cancel
-                //   child: const Text('No',
-                //       style: TextStyle(
-                //           fontSize: 12,
-                //           color: AppColors.black,
-                //           fontWeight: FontWeight.w500)),
-                // ),
               ],
             );
           },
@@ -666,57 +584,16 @@ class _VoicePageState extends ConsumerState<VoicePage> {
       recordingStarted = true;
       focusNode.unfocus();
     });
-
-    // Optionally, store each recording file path
-    // recordedFiles.add(filePath);
   }
-
-  // void _startRecording() async {
-  //   if (recordingStarted && !isPaused) {
-  //     showCustomDialog(context, DialogMode.gen, "Confirm Discard",
-  //         const Text('Are you sure you want to discard the recording?'), () {
-  //       setState(() {
-  //         recordingStarted = false;
-  //       });
-  //       _startRecording();
-  //     });
-  //   }
-  //   Logger().d("recoding started");
-  //   String filePath = _generateUniqueName();
-  //   await recorderController.record(path: filePath);
-
-  //   // recordedFiles.add(filePath); // Store each recording file path
-  //   setState(() {
-  //     isRecording = true;
-  //     isPaused = false;
-  //     recordingStarted = true;
-  //     focusNode.unfocus();
-  //   });
-  //   // update state here to, for eample, change the button's state
-  // }
 
   void _pauseRecording() async {
     Logger().d("recoding paused");
-    // await recorderController.stop(); // Stop recording to simulate pause
     await recorderController.pause();
     setState(() {
       isPaused = true;
       isRecording = false;
     });
   }
-
-  void _pausePlayer() async {
-    Logger().d("recoding paused");
-    // await recorderController.stop(); // Stop recording to simulate pause
-    await playerController.pausePlayer();
-    setState(() {
-      _isPlayerPaused = true;
-    });
-  }
-
-  // void _resumeRecording() {
-  //   _startRecording(); // Start a new recording file to simulate resume
-  // }
 
   void _stopRecording() async {
     Logger().d("recoding stoped");
@@ -733,25 +610,9 @@ class _VoicePageState extends ConsumerState<VoicePage> {
         path: recordPath ?? '',
         noOfSamples: 100,
       );
-
-      // await playerController.preparePlayer(
-      //   path: recordPath ?? '',
-      //   shouldExtractWaveform: true,
-      //   noOfSamples: 100,
-      //   volume: 1.0,
-      // );
     }
-    // After stopping, you can merge the files if needed
     Logger().d("Recorded file path: $recordPath");
   }
-
-  // void _mergeFiles(List<String> filePaths, String outputFilePath) async {
-  //   String inputs = filePaths.map((path) => "-i $path").join(" ");
-  //   String command =
-  //       "$inputs -filter_complex amix=inputs=${filePaths.length} $outputFilePath";
-
-  //   await _flutterFFmpeg.execute(command);
-  // }
 
   ElevatedButton _saveButton(BuildContext context) {
     return ElevatedButton(
@@ -847,17 +708,5 @@ class _VoicePageState extends ConsumerState<VoicePage> {
         );
       },
     );
-  }
-
-  void _startPlayer() async {
-    await playerController.preparePlayer(
-      path: recordPath ?? '',
-      shouldExtractWaveform: true,
-      noOfSamples: 100,
-      volume: 1.0,
-    );
-
-    await playerController.startPlayer(finishMode: FinishMode.stop);
-    Logger().d("Player started");
   }
 }

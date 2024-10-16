@@ -17,6 +17,7 @@ class AudioRecording extends BaseEntity {
   final String syncStatus;
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
+  final String parentId;
 
   AudioRecording({
     required this.id,
@@ -30,6 +31,7 @@ class AudioRecording extends BaseEntity {
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
+    required this.parentId,
   });
 
   AudioRecording copyWith({
@@ -44,6 +46,7 @@ class AudioRecording extends BaseEntity {
     String? syncStatus,
     DateTime? localChangeTimestamp,
     DateTime? remoteChangeTimestamp,
+    String? parentId
   }) {
     return AudioRecording(
       id: id ?? this.id,
@@ -58,6 +61,7 @@ class AudioRecording extends BaseEntity {
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
           remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+        parentId: parentId ?? this.parentId
     );
   }
 }

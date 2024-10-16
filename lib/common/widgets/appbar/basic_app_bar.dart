@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart';
-import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
-import 'package:study_aid/presentation/intro/pages/get_started.dart';
 import 'package:study_aid/presentation/settings/pages/settings_page.dart';
 
 class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
@@ -43,24 +40,6 @@ class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
               color: Colors.black,
             ),
           )
-        // IconButton(
-        //   onPressed: () async {
-        //     final userNotifier = ref.read(userProvider.notifier);
-        //     await userNotifier.signOut();
-
-        //     Navigator.pushAndRemoveUntil(
-        //         context,
-        //         MaterialPageRoute(
-        //             builder: (BuildContext context) => const SigninPage()),
-        //         (route) => false);
-        //   },
-        //   icon: const Icon(
-        //     Icons.person,
-        //     size: 25,
-        //     color: Colors.black,
-        //   ),
-        // ),
-        // if (action != null) action!
       ],
       leadingWidth: hideBack ? 56 : 100,
       leading: !hideBack
@@ -85,23 +64,6 @@ class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
               ),
             )
           : const SizedBox.shrink(),
-      // ?
-      // IconButton(
-      //     onPressed: () {
-      //       // TODO:menu implementation add here
-      //       Navigator.pushReplacement(
-      //           context,
-      //           MaterialPageRoute(
-      //               builder: (BuildContext context) =>
-      //                   const GetStartedPage()));
-      //     }, //TODO: implement the menu
-      //     icon: const Icon(
-      //       Icons.menu,
-      //       size: 25,
-      //       color: Colors.black,
-      //     ),
-      //   )
-      // :
     );
   }
 

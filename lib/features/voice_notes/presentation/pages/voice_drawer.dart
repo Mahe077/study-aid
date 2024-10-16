@@ -1,75 +1,84 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
+import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
+import 'package:study_aid/common/widgets/bannerbars/failure_bannerbar.dart';
+import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
+import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
-class ModalBottomSheet extends StatefulWidget {
+class ModalBottomSheet extends ConsumerStatefulWidget {
   final AudioRecording entity;
-  const ModalBottomSheet({super.key, required this.entity});
+  final String userId;
+  final String parentId;
+  const ModalBottomSheet(
+      {super.key,
+      required this.entity,
+      required this.userId,
+      required this.parentId});
 
   @override
-  State<ModalBottomSheet> createState() => _ModalBottomSheetState();
+  ConsumerState<ModalBottomSheet> createState() => _ModalBottomSheetState();
 }
 
-class _ModalBottomSheetState extends State<ModalBottomSheet> {
+class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
   late PlayerController bottomSheetPlayerController;
   String? path;
   late Directory directory;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
 
+  @override
   void initState() {
     super.initState();
     _initialiseController();
-    bottomSheetPlayerController.preparePlayer(path: widget.entity.localpath);
+
+    if (widget.entity.localpath.isNotEmpty) {
+      // Prepare the player only if the path is valid
+      bottomSheetPlayerController.preparePlayer(path: widget.entity.localpath);
+
+      // Listen for player state changes
+      _playerStateSubscription = bottomSheetPlayerController
+          .onPlayerStateChanged
+          .listen((PlayerState state) {
+        if (mounted) {
+          setState(() {});
+        } // Update the UI based on player state changes
+      });
+    } else {
+      // Log or handle the case where the path is not yet available
+      Logger().e("Audio path is null or empty");
+    }
+  }
+
+  @override
+  void dispose() {
+    _playerStateSubscription?.cancel(); // Cancel the subscription
+    bottomSheetPlayerController.dispose();
+    super.dispose();
   }
 
   void _playandPause() async {
-    bottomSheetPlayerController.playerState == PlayerState.playing
-        ? await bottomSheetPlayerController.pausePlayer()
-        : await bottomSheetPlayerController.startPlayer(
-            finishMode: FinishMode.loop);
+    if (bottomSheetPlayerController.playerState == PlayerState.playing) {
+      await bottomSheetPlayerController.pausePlayer();
+    } else {
+      await bottomSheetPlayerController.startPlayer(
+          finishMode: FinishMode.pause);
+    }
+    setState(() {});
   }
-  // @override
-  // void initState() {
-  //   super.initState();
-
-  //   bottomSheetPlayerController = PlayerController();
-  //   _preparePlayer(bottomSheetPlayerController, widget.entity.localpath);
-  //   // playerStateSubscription =
-  //   //     playerController?.onPlayerStateChanged.listen((_) {
-  //   //   setState(() {});
-  //   // });
-  // }
 
   void _initialiseController() {
     bottomSheetPlayerController = PlayerController();
-  }
-
-  void _preparePlayer(PlayerController controller, String? localPath) async {
-    try {
-      if (localPath != null) {
-        Logger().i("Audio file path: $localPath");
-        File file = File(localPath);
-        if (await file.exists()) {
-          await controller.preparePlayer(
-            path: file.toString(),
-            shouldExtractWaveform: true,
-            noOfSamples: 100,
-            volume: 1.0,
-          );
-          Logger().i("Waveform Data: ${controller.waveformData}");
-        } else {
-          Logger().e("File does not exist at the provided path: $file");
-        }
-      }
-    } catch (e) {
-      Logger().e("Error preparing player: $e");
-    }
   }
 
   @override
@@ -91,29 +100,16 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
               AppSubHeadings(text: widget.entity.title, size: 18),
               const SizedBox(height: 8),
               Text(
-                "Created: ${widget.entity?.createdDate}",
+                "Created: ${widget.entity.createdDate}",
                 style:
                     const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 10),
-              // Column(
-              //   children: [
-              //     FlutterLogo(
-              //       size: 300,
-              //       style: FlutterLogoStyle.stacked,
-              //       textColor: _flag ? Colors.black : Colors.red,
-              //     ),
-              //     ElevatedButton(
-              //       onPressed: () => setState(() => _flag = !_flag),
-              //       child: Text('Change Color'),
-              //     )
-              //   ],
-              // ),
               _bottomSheetTag(),
               const SizedBox(height: 20),
               _bottomSheedWaveForm(bottomSheetPlayerController),
               const SizedBox(height: 15),
-              Text(bottomSheetPlayerController.maxDuration.toMMSS()),
+              Text(formatDuration(bottomSheetPlayerController.maxDuration)),
               const SizedBox(height: 20),
               _playerButtonArray(bottomSheetPlayerController),
               const SizedBox(height: 20),
@@ -123,6 +119,16 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
         ]),
       ),
     );
+  }
+
+  String formatDuration(int milliseconds) {
+    Duration duration = Duration(milliseconds: milliseconds);
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitHours = twoDigits(duration.inHours.remainder(60));
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+
+    return "$twoDigitHours:$twoDigitMinutes:$twoDigitSeconds";
   }
 
   Row _bottomSheetHeaderAction(BuildContext context) {
@@ -185,7 +191,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
                 iconColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => _confirmDelete(),
             child: const Row(
               children: [
                 Icon(
@@ -204,6 +210,35 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
             )),
       ],
     );
+  }
+
+  void _confirmDelete() {
+    final toast = CustomToast(context: context);
+    showCustomDialog(context, DialogMode.delete, "Confirm Delete",
+        const Text('Are you sure you want to delete this item?'), () async {
+      final audioRecordingNotifier =
+          ref.read(audioProvider(widget.entity.id).notifier);
+
+      // Stop the player before deleting the audio
+      if (bottomSheetPlayerController.playerState == PlayerState.playing ||
+          bottomSheetPlayerController.playerState == PlayerState.paused) {
+        await bottomSheetPlayerController.stopPlayer();
+      }
+
+      try {
+        Logger()
+            .i("Voice_Drawer:: deleting the audio item ${widget.entity.id}");
+        audioRecordingNotifier.deleteAudio(
+            widget.parentId, widget.entity.id, widget.userId);
+        toast.showWarning(description: "Audio clip deleted successfully.");
+      } catch (e) {
+        toast.showFailure(
+            description: "An error occurred while deleting the audio clip.");
+        Logger().d(e);
+      } finally {
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   Row _bottomSheetTag() {
@@ -250,36 +285,6 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
     );
   }
 
-  GestureDetector _pauseButton(PlayerController playerController) {
-    return GestureDetector(
-      onTap: () => _pausePlayer(playerController),
-      child: Container(
-        height: 84,
-        width: 84,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary.withOpacity(0.34),
-        ),
-        child: Center(
-          child: Container(
-            height: 72,
-            width: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: widget.entity.color,
-            ),
-            child: Center(
-                child: Icon(
-              Icons.pause,
-              size: 43,
-              color: AppColors.primary.withOpacity(0.81),
-            )),
-          ),
-        ),
-      ),
-    );
-  }
-
   GestureDetector _playButton(
       PlayerController playerController, String recordPath) {
     return playerController.playerState == PlayerState.playing
@@ -289,7 +294,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
 
   GestureDetector _bottomSheetPauseButton(PlayerController playerController) {
     return GestureDetector(
-      onTap: () => _playandPause,
+      onTap: () => _playandPause(),
       child: Container(
         height: 46,
         width: 46,
@@ -307,7 +312,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
   GestureDetector _bottomSheetPlayButton(
       PlayerController playerController, String recordPath) {
     return GestureDetector(
-      onTap: () => _playandPause,
+      onTap: () => _playandPause(),
       child: Container(
         height: 46,
         width: 46,
@@ -326,7 +331,7 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
       PlayerController playerController, String recordPath, bool forward) {
     return forward
         ? GestureDetector(
-            // onTap: () => _startPlayer(playerController, recordPath),
+            onTap: () => _seekPlayer(playerController, forward),
             child: Container(
               height: 30,
               width: 30,
@@ -380,37 +385,11 @@ class _ModalBottomSheetState extends State<ModalBottomSheet> {
           );
   }
 
-  void _startPlayer(
-      PlayerController playerController, String recordPath) async {
-    // await playerController.preparePlayer(
-    //   path: recordPath,
-    //   shouldExtractWaveform: true,
-    //   noOfSamples: 100,
-    //   volume: 1.0,
-    // );
-    setState(() {}); // This triggers the rebuild after starting the player
-    await playerController.startPlayer(finishMode: FinishMode.stop);
-    Logger().d("Player started");
-
-    // Listen for player state changes and update UI accordingly
-    playerController.onPlayerStateChanged.listen((PlayerState state) {
-      // If the player finished playing, reset the playFlag
-      if (state == PlayerState.stopped) {
-        setState(() {});
-      }
-      setState(() {}); // Trigger rebuild when player state changes
-    });
-  }
-
   void _seekPlayer(PlayerController playerController, bool forward) async {
-    forward
-        ? await playerController.seekTo(10)
-        : await playerController.seekTo(-10);
-  }
-
-  void _pausePlayer(PlayerController playerController) async {
-    Logger().d("Player paused");
-    await playerController.pausePlayer();
-    setState(() {}); // Trigger rebuild to show the play button
+    final currentPos = await playerController.getDuration(DurationType.current);
+    final newPos =
+        forward ? currentPos + 10000 : currentPos - 10000; // Seek 10 seconds
+    await playerController
+        .seekTo(newPos.clamp(0, playerController.maxDuration));
   }
 }

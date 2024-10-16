@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/voice_notes/data/datasources/audio_local_datasource.dart';
 import 'package:study_aid/features/voice_notes/data/datasources/audio_remote_datasource.dart';
@@ -23,12 +24,13 @@ final audioRepositoryProvider = Provider<AudioRecordingRepository>((ref) {
   final localDataSource = ref.read(localDataSourceProvider);
   final networkInfo = ref.read(networkInfoProvider);
   final topicRepository = ref.read(topicRepositoryProvider);
+  final userRepository = ref.read(userRepositoryProvider);
   return AudioRecordingRepositoryImpl(
-    remoteDataSource: remoteDataSource,
-    localDataSource: localDataSource,
-    networkInfo: networkInfo,
-    topicRepository: topicRepository,
-  );
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+      networkInfo: networkInfo,
+      topicRepository: topicRepository,
+      userRepository: userRepository);
 });
 
 // Use case providers
@@ -47,11 +49,5 @@ final audioProvider = StateNotifierProvider.autoDispose
   return AudioNotifier(repository, topicId, ref);
 });
 
-final syncAudioRecodingsUseCaseProvider =
-    Provider((ref) => SyncAudioRecordingsUseCase(ref.read(audioRepositoryProvider)));
-
-// final noteChildProvider = StateNotifierProvider.autoDispose
-//     .family<AudioRecodingChildNotifier, AsyncValue<AudioState>, String>((ref, userId) {
-//   final repository = ref.read(audioRepositoryProvider);
-//   return AudioRecodingChildNotifier(repository, userId, ref);
-// });
+final syncAudioRecodingsUseCaseProvider = Provider(
+    (ref) => SyncAudioRecordingsUseCase(ref.read(audioRepositoryProvider)));

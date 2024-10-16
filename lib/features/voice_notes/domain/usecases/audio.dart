@@ -23,9 +23,9 @@ class CreateAudioRecording {
   CreateAudioRecording(this.repository);
 
   Future<Either<Failure, AudioRecording>> call(
-      AudioRecording audioRecording, String topicId) async {
+      AudioRecording audioRecording, String topicId, String userId) async {
     final result =
-        await repository.createAudioRecording(audioRecording, topicId);
+        await repository.createAudioRecording(audioRecording, topicId, userId);
     return result.fold(
       (failure) => Left(failure),
       (audioRecording) => Right(audioRecording),
@@ -39,9 +39,9 @@ class UpdateAudioRecording {
   UpdateAudioRecording(this.repository);
 
   Future<Either<Failure, AudioRecording>> call(
-      AudioRecording audioRecording, String topicId) async {
+      AudioRecording audioRecording, String topicId, String userId) async {
     final result =
-        await repository.updateAudioRecording(audioRecording, topicId);
+        await repository.updateAudioRecording(audioRecording, topicId, userId);
     return result.fold(
       (failure) => Left(failure),
       (audioRecording) => Right(audioRecording),
@@ -54,7 +54,37 @@ class DeleteAudioRecording {
 
   DeleteAudioRecording(this.repository);
 
-  Future<void> call(String noteId) async {
-    return repository.deleteAudioRecording(noteId);
+  Future<void> call(String parentId, String audioId, String userId) async {
+    return repository.deleteAudioRecording(parentId, audioId, userId);
   }
 }
+
+// class PlayAudio {
+//   final AudioRepository repository;
+
+//   PlayAudio(this.repository);
+
+//   Future<void> call(String filePath) async {
+//     await repository.play(filePath);
+//   }
+// }
+
+// class PauseAudio {
+//   final AudioRepository repository;
+
+//   PauseAudio(this.repository);
+
+//   Future<void> call() async {
+//     await repository.pause();
+//   }
+// }
+
+// class StopAudio {
+//   final AudioRepository repository;
+
+//   StopAudio(this.repository);
+
+//   Future<void> call() async {
+//     await repository.stop();
+//   }
+// }

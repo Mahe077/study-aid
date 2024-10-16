@@ -3,7 +3,9 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/failure_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/info_bannerbar.dart';
 import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
@@ -20,7 +22,7 @@ class FAB extends ConsumerStatefulWidget {
   final String? topicTitle;
   final Color? topicColor;
 
-  FAB(
+  const FAB(
       {super.key,
       this.parentId,
       required this.userId,
@@ -85,6 +87,7 @@ class _FABState extends ConsumerState<FAB> {
   Future<void> _handleCreateTopic(WidgetRef ref) async {
     final String title = _topicController.text.trim();
     final String description = _descriptionController.text.trim();
+    final toast = CustomToast(context: context);
 
     // Get the TopicsNotifier instance using ref
     AsyncValue<TopicsState> currentState;
@@ -105,10 +108,10 @@ class _FABState extends ConsumerState<FAB> {
       // Check the state after attempting to create the topic
       currentState = ref.read(topicsProvider(widget.userId));
     } else {
-      final topicChildNotifier =
-          ref.read(topicChildProvider(widget.parentId).notifier);
+      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
 
-      await topicChildNotifier.createTopic(
+      // Call the createTopic method from the TopicsNotifier
+      await topicsNotifier.createTopic(
         title,
         description,
         selectedColor,
@@ -116,30 +119,34 @@ class _FABState extends ConsumerState<FAB> {
         widget.userId,
       );
 
-      currentState = ref.read(topicsProvider(widget.userId));
+      if (!mounted) return;
 
-      // Invalidate topicChildProvider to refresh the subtopics
-      ref.invalidate(topicChildProvider(widget.parentId));
+      currentState = ref.read(topicsProvider(widget.userId));
     }
 
     if (currentState.hasError) {
-      FailureBannerbar(context, currentState.error.toString()).show();
+      toast.showFailure(
+          description: 'An error occurred while creating the topic.');
+      Logger().d(currentState.error.toString());
     } else if (currentState.isLoading) {
       const Center(child: CircularProgressIndicator());
     } else {
-      // Handle success, show success banner, clear input fields
       setState(() {
         _topicController.clear();
         _descriptionController.clear();
-        selectedColor = Colors.black;
+        selectedColor = AppColors.grey;
       });
 
-      SuccessBannerbar(context, 'Topic Saved.').show();
+      toast.showSuccess(
+        description: 'Topic saved successfuly.',
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final toast = CustomToast(context: context);
+
     return ExpandableFab(
       key: _fabKey,
       type: ExpandableFabType.up,
@@ -167,93 +174,94 @@ class _FABState extends ConsumerState<FAB> {
         backgroundColor: AppColors.primary,
       ),
       children: [
-        FloatingActionButton.extended(
-          label: const Row(
-            children: [
-              Text(
-                'Record an Audio',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary),
-              ),
-              SizedBox(width: 8),
-              FaIcon(FontAwesomeIcons.microphone,
-                  size: 20, color: AppColors.primary),
-            ],
+        if (widget.parentId != null) ...[
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Record an Audio',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.microphone,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => VoicePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
           ),
-          heroTag: null,
-          onPressed: () {
-            widget.parentId != null
-                ? {
-                    _fabKey.currentState?.toggle(),
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => VoicePage(
-                            topicId: widget.parentId ?? '',
-                            topicTitle: widget.topicTitle,
-                            entity: null,
-                            noteColor: widget.topicColor,
-                          ),
-                        ))
-                  }
-                : {
-                    _fabKey.currentState?.toggle(),
-                    InfoBannerbar(context, 'Please add a Topic').show()
-                  };
-          },
-          backgroundColor: widget.parentId != null
-              ? AppColors.grey
-              : AppColors.black.withOpacity(0.30),
-        ),
-        FloatingActionButton.extended(
-          label: const Row(
-            children: [
-              Text(
-                'Create a New Note',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary),
-              ),
-              SizedBox(width: 8),
-              FaIcon(FontAwesomeIcons.solidNoteSticky,
-                  size: 20, color: AppColors.primary),
-            ],
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Create a New Note',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.solidNoteSticky,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => NotePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              isNewNote: true,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
           ),
-          heroTag: null,
-          onPressed: () {
-            widget.parentId != null
-                ? {
-                    _fabKey.currentState?.toggle(),
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (BuildContext context) => NotePage(
-                            topicId: widget.parentId ?? '',
-                            topicTitle: widget.topicTitle,
-                            entity: null,
-                            isNewNote: true,
-                            noteColor: widget.topicColor,
-                          ),
-                        ))
-                  }
-                : {
-                    _fabKey.currentState?.toggle(),
-                    InfoBannerbar(context, 'Please add a Topic').show()
-                  };
-          },
-          backgroundColor: widget.parentId != null
-              ? AppColors.grey
-              : AppColors.black.withOpacity(0.30),
-        ),
+        ],
         FloatingActionButton.extended(
           label: const Row(
             children: [
               Text(
                 'Add a Topic',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary),
               ),
               SizedBox(width: 8),
               FaIcon(

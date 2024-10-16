@@ -3,7 +3,7 @@ import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 Future<void> showAddTagDialog(
     BuildContext context, Function(String) onTagAdded) async {
-  TextEditingController _tagController = TextEditingController();
+  TextEditingController tagController = TextEditingController();
 
   return showDialog<void>(
     context: context,
@@ -11,7 +11,7 @@ Future<void> showAddTagDialog(
       return AlertDialog(
         title: const Text('Add Tag'),
         content: TextField(
-          controller: _tagController,
+          controller: tagController,
           decoration: const InputDecoration(hintText: 'Enter tag'),
         ),
         actions: <Widget>[
@@ -24,7 +24,7 @@ Future<void> showAddTagDialog(
           TextButton(
             child: const Text('Add'),
             onPressed: () {
-              final newTag = _tagController.text.trim();
+              final newTag = tagController.text.trim();
               if (newTag.isNotEmpty) {
                 onTagAdded(newTag);
               }
