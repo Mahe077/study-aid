@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
@@ -106,6 +107,7 @@ class _ContentTileState extends State<ContentTile> {
                 topicTitle: widget.entity.title,
                 entity: widget.entity,
                 isNewNote: false,
+                userId: widget.userId,
               ),
             ),
           );
@@ -114,7 +116,11 @@ class _ContentTileState extends State<ContentTile> {
           Future(() => showModalBottomSheet(
               context: context,
               builder: (context) {
-                return ModalBottomSheet(entity: widget.entity);
+                return ModalBottomSheet(
+                  entity: widget.entity,
+                  userId: widget.userId,
+                  parentId: widget.parentTopicId,
+                );
               }));
         }
       },
@@ -191,7 +197,7 @@ class _ContentTileState extends State<ContentTile> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
-          'Created: ${widget.entity.createdDate}',
+          'Created: ${formatDateTime(widget.entity.createdDate)}',
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w400,
@@ -235,7 +241,8 @@ class _ContentTileState extends State<ContentTile> {
               overflow: TextOverflow.ellipsis,
             ),
           )
-        ] else if (widget.entity is AudioRecording) ...[
+        ] else if (widget.entity is AudioRecording &&
+            playerController != null) ...[
           const SizedBox(height: 8),
           Row(
             children: [
@@ -262,8 +269,8 @@ class _ContentTileState extends State<ContentTile> {
                 waveformType: WaveformType.fitWidth,
                 waveformData: playerController!.waveformData,
                 playerWaveStyle: PlayerWaveStyle(
-                  fixedWaveColor: AppColors.primary.withOpacity(0.34),
-                  liveWaveColor: AppColors.primary.withOpacity(0.81),
+                  fixedWaveColor: AppColors.primary.withOpacity(0.81),
+                  liveWaveColor: AppColors.primary.withOpacity(0.34),
                   spacing: 6,
                 ),
               ),
