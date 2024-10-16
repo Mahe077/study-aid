@@ -14,7 +14,8 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
         createdDate: reader.read(),
         updatedDate: reader.read(),
         createdTopics: reader.readList().cast<String>(),
-        syncStatus: reader.read());
+        syncStatus: reader.read(),
+        recentItems: reader.readList().cast<Map<String, dynamic>>());
   }
 
   @override
@@ -26,6 +27,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..write(obj.createdDate)
       ..write(obj.updatedDate)
       ..writeList(obj.createdTopics)
-      ..write(obj.syncStatus);
+      ..write(obj.syncStatus)
+      ..writeList(obj.recentItems);
   }
 }

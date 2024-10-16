@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/domain/repository/note_repository.dart';
@@ -23,8 +22,9 @@ class CreateNote {
 
   CreateNote(this.repository);
 
-  Future<Either<Failure, Note>> call(Note note, String topicId) async {
-    final result = await repository.createNote(note, topicId);
+  Future<Either<Failure, Note>> call(
+      Note note, String topicId, String userId) async {
+    final result = await repository.createNote(note, topicId, userId);
     return result.fold(
       (failure) => Left(failure),
       (note) => Right(note),
@@ -37,8 +37,9 @@ class UpdateNote {
 
   UpdateNote(this.repository);
 
-  Future<Either<Failure, Note>> call(Note note, String topicId) async {
-    final result = await repository.updateNote(note, topicId);
+  Future<Either<Failure, Note>> call(
+      Note note, String topicId, String userId) async {
+    final result = await repository.updateNote(note, topicId, userId);
     return result.fold(
       (failure) => Left(failure),
       (note) => Right(note),
@@ -51,7 +52,7 @@ class DeleteNote {
 
   DeleteNote(this.repository);
 
-  Future<void> call(String noteId) async {
-    return repository.deleteNote(noteId);
+  Future<void> call(String parentId, String noteId, String userId) async {
+    return repository.deleteNote(parentId, noteId, userId);
   }
 }

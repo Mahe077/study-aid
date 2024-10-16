@@ -24,13 +24,16 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       updatedDate: fields[4] as DateTime,
       createdTopics: (fields[5] as List).cast<String>(),
       syncStatus: fields[6] as String,
+      recentItems: (fields[7] as List)
+          .map((dynamic e) => (e as Map).cast<String, dynamic>())
+          .toList(),
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -44,7 +47,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(5)
       ..write(obj.createdTopics)
       ..writeByte(6)
-      ..write(obj.syncStatus);
+      ..write(obj.syncStatus)
+      ..writeByte(7)
+      ..write(obj.recentItems);
   }
 
   @override

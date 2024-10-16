@@ -4,7 +4,6 @@ import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/features/notes/data/models/note.dart';
-import 'package:study_aid/features/notes/data/models/note.dart';
 
 abstract class RemoteDataSource {
   Future<Either<Failure, NoteModel>> createNote(NoteModel note);
@@ -67,7 +66,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
           await _firestore.collection('notes').doc(parentId).get();
       return Right(NoteModel.fromFirestore(querySnapshot));
     } catch (e) {
-      throw Exception('Error in updating a note: $e');
+      throw Exception('Error in featching a note: $e');
     }
   }
 

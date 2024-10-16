@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
@@ -98,9 +99,13 @@ class LocalDataSourceImpl implements LocalDataSource {
     Logger().d('All keys in topicBox: $allKeys');
 
     var allTopics = _topicBox.values.toList();
-    print('All items in topicBox:');
+    if (kDebugMode) {
+      print('All items in topicBox:');
+    }
     for (var i = 0; i < allTopics.length; i++) {
-      print('Item $i: ${allTopics[i]}');
+      if (kDebugMode) {
+        print('Item $i: ${allTopics[i]}');
+      }
     }
   }
 }

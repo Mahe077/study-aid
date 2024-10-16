@@ -29,13 +29,14 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       syncStatus: fields[9] as String,
       localChangeTimestamp: fields[10] as DateTime,
       remoteChangeTimestamp: fields[11] as DateTime,
+      parentId: fields[12] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, TopicModel obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +60,9 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       ..writeByte(10)
       ..write(obj.localChangeTimestamp)
       ..writeByte(11)
-      ..write(obj.remoteChangeTimestamp);
+      ..write(obj.remoteChangeTimestamp)
+      ..writeByte(12)
+      ..write(obj.parentId);
   }
 
   @override

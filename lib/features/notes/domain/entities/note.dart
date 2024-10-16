@@ -16,6 +16,7 @@ class Note extends BaseEntity {
   final String syncStatus;
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
+  final String parentId;
 
   Note({
     required this.id,
@@ -29,6 +30,8 @@ class Note extends BaseEntity {
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
+    required this.parentId,
+
   });
 
   Note copyWith({
@@ -43,6 +46,7 @@ class Note extends BaseEntity {
     String? syncStatus,
     DateTime? localChangeTimestamp,
     DateTime? remoteChangeTimestamp,
+    String? parentId,
   }) {
     return Note(
       id: id ?? this.id,
@@ -57,6 +61,7 @@ class Note extends BaseEntity {
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
           remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+        parentId: parentId?? this.parentId
     );
   }
 
@@ -73,6 +78,7 @@ class Note extends BaseEntity {
       'syncStatus': syncStatus,
       'localChangeTimestamp': localChangeTimestamp.millisecondsSinceEpoch,
       'remoteChangeTimestamp': remoteChangeTimestamp.millisecondsSinceEpoch,
+      'parentId': parentId
     };
   }
 }
