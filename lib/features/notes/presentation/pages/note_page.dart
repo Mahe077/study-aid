@@ -1,7 +1,9 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
@@ -155,21 +157,13 @@ class _NotePageState extends ConsumerState<NotePage> {
   }
 
   void addTag(String tag) {
-    if (tag.isNotEmpty) {
-      tagController.clear();
+    if (tag.isNotEmpty && !note.tags.contains(tag)) {
       setState(() {
         note.tags.add(tag);
+        tagController.clear();
       });
     }
   }
-
-  // void removeTag(int index) {
-  //   _tags.removeAt(index);
-  // }
-
-  // void updateTag(String tag, int index) {
-  //   _tags[index] = tag;
-  // }
 
   void _saveNote(BuildContext context, WidgetRef ref) {
     final toast = CustomToast(context: context);
@@ -189,55 +183,66 @@ class _NotePageState extends ConsumerState<NotePage> {
         parentId: note.parentId);
 
     final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
-    if (widget.isNewNote) {
-      var result = noteNotifier.createNote(
-        noteTemp,
-        widget.topicId,
-        widget.userId,
-      );
-      result.then((either) {
-        either.fold(
-          (failure) {
-            toast.showFailure(
-                description: 'An error occurred while creating the note.');
-            Logger().d(failure.message);
-          },
-          (newNote) {
-            if (!mounted) return;
-            toast.showSuccess(description: 'Note saved successfully.');
-          },
+    try {
+      if (widget.isNewNote) {
+        var result = noteNotifier.createNote(
+          noteTemp,
+          widget.topicId,
+          widget.userId,
         );
-      });
-    } else {
-      var updateNoteRes = noteNotifier.updateNote(
-        noteTemp,
-        widget.topicId,
-        widget.userId,
-      );
+        result.then((either) {
+          either.fold(
+            (failure) {
+              toast.showFailure(
+                  description: 'An error occurred while creating the note.');
+              Logger().d(failure.message);
+            },
+            (newNote) {
+              if (!mounted) return;
+              setState(() {
+                note = newNote;
+                widget.entity = newNote;
+                isSaved = true;
+                widget.isNewNote = false;
+                quillController.readOnly = true;
+              });
+              toast.showSuccess(description: 'Note saved successfully.');
+            },
+          );
+        });
+      } else {
+        var updateNoteRes = noteNotifier.updateNote(
+          noteTemp,
+          widget.topicId,
+          widget.userId,
+        );
 
-      updateNoteRes.then((either) {
-        either.fold(
-          (failure) {
-            toast.showFailure(
-                description: 'An error occurred while saving the note.');
-            Logger().d(failure.message);
-          },
-          (newNote) {
-            if (!mounted) return;
-            toast.showSuccess(description: 'Note updated successfully.');
-          },
-        );
-      });
+        updateNoteRes.then((either) {
+          either.fold(
+            (failure) {
+              toast.showFailure(
+                  description: 'An error occurred while saving the note.');
+              Logger().d(failure.message);
+            },
+            (newNote) {
+              if (!mounted) return;
+              setState(() {
+                note = newNote;
+                widget.entity = newNote;
+                isSaved = true;
+                widget.isNewNote = false;
+                quillController.readOnly = true;
+              });
+              toast.showSuccess(description: 'Note updated successfully.');
+            },
+          );
+        });
+      }
+    } on Exception catch (e) {
+      Logger().e('Save Note Error :$e');
+      toast.showFailure(
+          description: 'Unexpected error occurred while saving the note.');
     }
-
-    // Switch toolbar to BottomNavbar
-    setState(() {
-      note = noteTemp;
-      widget.entity = noteTemp;
-      widget.isNewNote = false;
-      quillController.readOnly = true; // Make the editor read-only after saving
-      isSaved = true;
-    });
   }
 
   @override
@@ -298,6 +303,7 @@ class _NotePageState extends ConsumerState<NotePage> {
                             fillColor: Colors.transparent,
                             focusedBorder: InputBorder.none),
                         canRequestFocus: !quillController.readOnly,
+                        maxLength: 25,
                       ),
                     ),
                     if (!isSaved) _saveButton(context),
@@ -374,12 +380,26 @@ class _NotePageState extends ConsumerState<NotePage> {
                   ],
                   const SizedBox(height: 20),
                   Expanded(
-                    child: QuillEditor.basic(
-                      configurations: QuillEditorConfigurations(
-                        controller: quillController,
-                        expands: true,
+                    child: Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: QuillEditor.basic(
+                        configurations: QuillEditorConfigurations(
+                          embedBuilders: FlutterQuillEmbeds.editorBuilders(
+                            imageEmbedConfigurations:
+                                QuillEditorImageEmbedConfigurations(
+                              imageProviderBuilder: (context, imageUrl) {
+                                return CachedNetworkImageProvider(
+                                  imageUrl,
+                                  cacheKey: imageUrl,
+                                );
+                              },
+                            ),
+                          ),
+                          controller: quillController,
+                          expands: true,
+                        ),
+                        focusNode: focusNode,
                       ),
-                      focusNode: focusNode,
                     ),
                   ),
                   quillController.readOnly
@@ -448,6 +468,7 @@ class _NotePageState extends ConsumerState<NotePage> {
             decoration: const InputDecoration(
               hintText: "Enter tag here",
             ).applyDefaults(Theme.of(context).inputDecorationTheme),
+            maxLength: 10,
           ),
         ],
       ),
