@@ -30,10 +30,10 @@ class RecentitemNotifier extends StateNotifier<AsyncValue<RecentItemState>> {
 
   RecentitemNotifier(this.ref, this.userId)
       : super(const AsyncValue.loading()) {
-    _loadRecentItems(userId);
+    loadRecentItems(userId);
   }
 
-  Future<void> _loadRecentItems(String userId) async {
+  Future<void> loadRecentItems(String userId) async {
     final userRepository = ref.read(userRepositoryProvider);
     final topicRepository = ref.read(topicRepositoryProvider);
     final noteRepository = ref.read(noteRepositoryProvider);

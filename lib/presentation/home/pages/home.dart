@@ -37,6 +37,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(topicsProvider(widget.user.id).notifier).loadInitialTopics();
+      ref
+          .read(recentItemProvider(widget.user.id).notifier)
+          .loadRecentItems(widget.user.id);
+    });
+  }
+
+  @override
   Widget build(
     BuildContext context,
   ) {
@@ -110,15 +122,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                                       return Row(
                                         children: [
                                           RecentTile(
-                                            entity: item,
-                                            type: item is Topic
-                                                ? TopicType.topic
-                                                : item is Note
-                                                    ? TopicType.note
-                                                    : TopicType.audio,
+                                              entity: item,
+                                              type: item is Topic
+                                                  ? TopicType.topic
+                                                  : item is Note
+                                                      ? TopicType.note
+                                                      : TopicType.audio,
                                               userId: widget.user.id,
-                                              parentTopicId:item.parentId
-                                          ),
+                                              parentTopicId: item.parentId),
                                           const SizedBox(width: 15),
                                         ],
                                       );
