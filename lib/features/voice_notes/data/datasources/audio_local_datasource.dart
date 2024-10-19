@@ -54,7 +54,7 @@ class LocalDataSourceImpl extends LocalDataSource {
               ? nonNullAudios.sublist(startIndex, endIndex)
               : nonNullAudios.sublist(startIndex),
           hasMore: hasmore,
-          lastDocument: endIndex));
+          lastDocument: hasmore ? endIndex : audios.length));
     } catch (e) {
       return Left(Failure(e.toString()));
     }

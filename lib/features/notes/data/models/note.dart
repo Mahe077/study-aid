@@ -57,26 +57,25 @@ class NoteModel extends Note {
             syncStatus: syncStatus,
             localChangeTimestamp: localChangeTimestamp,
             remoteChangeTimestamp: remoteChangeTimestamp,
-      parentId:parentId);
+            parentId: parentId);
 
   factory NoteModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return NoteModel(
-      id: data['id'],
-      title: data['title'],
-      color: Color(data['color']),
-      tags: List<String>.from(data['tags']),
-      createdDate: (data['createdDate'] as Timestamp).toDate(),
-      updatedDate: (data['updatedDate'] as Timestamp).toDate(),
-      content: data['content'],
-      contentJson: data['contentJson'],
-      syncStatus: data['syncStatus'],
-      localChangeTimestamp:
-          (data['localChangeTimestamp'] as Timestamp).toDate(),
-      remoteChangeTimestamp:
-          (data['remoteChangeTimestamp'] as Timestamp).toDate(),
-        parentId:data['parentId']
-    );
+        id: data['id'],
+        title: data['title'],
+        color: Color(data['color']),
+        tags: List<String>.from(data['tags']),
+        createdDate: (data['createdDate'] as Timestamp).toDate(),
+        updatedDate: (data['updatedDate'] as Timestamp).toDate(),
+        content: data['content'],
+        contentJson: data['contentJson'],
+        syncStatus: data['syncStatus'],
+        localChangeTimestamp:
+            (data['localChangeTimestamp'] as Timestamp).toDate(),
+        remoteChangeTimestamp:
+            (data['remoteChangeTimestamp'] as Timestamp).toDate(),
+        parentId: data['parentId']);
   }
 
   Map<String, dynamic> toFirestore() {
@@ -92,25 +91,24 @@ class NoteModel extends Note {
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
-      'parentId':parentId
+      'parentId': parentId
     };
   }
 
   @override
-  NoteModel copyWith({
-    final String? id,
-    final String? title,
-    final Color? color,
-    final List<String>? tags,
-    final DateTime? createdDate,
-    final DateTime? updatedDate,
-    final String? content,
-    final String? contentJson,
-    final String? syncStatus,
-    final DateTime? localChangeTimestamp,
-    final DateTime? remoteChangeTimestamp,
-    final String? parentId
-  }) {
+  NoteModel copyWith(
+      {final String? id,
+      final String? title,
+      final Color? color,
+      final List<String>? tags,
+      final DateTime? createdDate,
+      final DateTime? updatedDate,
+      final String? content,
+      final String? contentJson,
+      final String? syncStatus,
+      final DateTime? localChangeTimestamp,
+      final DateTime? remoteChangeTimestamp,
+      final String? parentId}) {
     return NoteModel(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -125,7 +123,6 @@ class NoteModel extends Note {
         remoteChangeTimestamp:
             remoteChangeTimestamp ?? this.remoteChangeTimestamp,
         parentId: parentId ?? this.parentId);
-
   }
 
   factory NoteModel.fromDomain(Note note) {
@@ -142,7 +139,6 @@ class NoteModel extends Note {
         localChangeTimestamp: note.localChangeTimestamp,
         remoteChangeTimestamp: note.remoteChangeTimestamp,
         parentId: note.parentId);
-
   }
 
   Note toDomain() {
@@ -158,6 +154,6 @@ class NoteModel extends Note {
         syncStatus: syncStatus,
         localChangeTimestamp: localChangeTimestamp,
         remoteChangeTimestamp: remoteChangeTimestamp,
-        parentId:parentId);
+        parentId: parentId);
   }
 }

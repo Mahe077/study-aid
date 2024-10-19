@@ -70,7 +70,7 @@ class LocalDataSourceImpl implements LocalDataSource {
               ? nonNullTopics.sublist(startIndex, endIndex)
               : nonNullTopics.sublist(startIndex),
           hasMore: hasmore,
-          lastDocument: endIndex));
+          lastDocument: hasmore ? endIndex : topics.length));
     } catch (e) {
       return Left(Failure(e.toString()));
     }

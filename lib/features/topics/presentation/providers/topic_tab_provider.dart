@@ -70,7 +70,7 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
 
   TabDataNotifier(this.ref, this.parentTopicId)
       : super(const AsyncValue.loading()) {
-    loadAllData(parentTopicId);
+    loadAllData(parentTopicId, 0, 0, 0);
   }
 
   Future<void> loadMoreTopics(String topicId) async {
@@ -186,16 +186,19 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     }
   }
 
-  Future<void> loadAllData(String parentTopicId) async {
+  Future<void> loadAllData(String parentTopicId, int startTopic, int startNote,
+      int startAudio) async {
     try {
+      final currentState = state;
+
       final topicRepository = ref.read(topicRepositoryProvider);
       final noteRepository = ref.read(noteRepositoryProvider);
       final audioRepository = ref.read(audioRepositoryProvider);
 
       final result = await Future.wait([
-        topicRepository.fetchSubTopics(parentTopicId, 5, 0),
-        noteRepository.fetchNotes(parentTopicId, 5, 0),
-        audioRepository.fetchAudioRecordings(parentTopicId, 5, 0),
+        topicRepository.fetchSubTopics(parentTopicId, 5, startTopic),
+        noteRepository.fetchNotes(parentTopicId, 5, startNote),
+        audioRepository.fetchAudioRecordings(parentTopicId, 5, startAudio),
       ]);
 
       final topicsResult = result[0];
@@ -227,18 +230,36 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
                       audioPaginatedObj.items
                           .whereType<AudioRecording>() // Cast to AudioRecording
                           .toList();
-
-                  state = AsyncValue.data(TabDataState(
-                    topics: topics,
-                    notes: notes,
-                    audioRecordings: audioRecordings,
-                    hasMoreTopics: topicsPaginatedObj.hasMore,
-                    hasMoreNotes: notesPaginatedObj.hasMore,
-                    hasMoreAudio: audioPaginatedObj.hasMore,
-                    lastTopicDocument: topicsPaginatedObj.lastDocument,
-                    lastNoteDocument: notesPaginatedObj.lastDocument,
-                    lastAudioDocument: audioPaginatedObj.lastDocument,
-                  ));
+                  if (currentState.value == null) {
+                    state = AsyncValue.data(TabDataState(
+                      topics: topics,
+                      notes: notes,
+                      audioRecordings: audioRecordings,
+                      hasMoreTopics: topicsPaginatedObj.hasMore,
+                      hasMoreNotes: notesPaginatedObj.hasMore,
+                      hasMoreAudio: audioPaginatedObj.hasMore,
+                      lastTopicDocument: topicsPaginatedObj.lastDocument,
+                      lastNoteDocument: notesPaginatedObj.lastDocument,
+                      lastAudioDocument: audioPaginatedObj.lastDocument,
+                    ));
+                  } else {
+                    state = AsyncValue.data(
+                      currentState.value!.copyWith(
+                        topics: [...currentState.value!.topics, ...topics],
+                        notes: [...currentState.value!.notes, ...notes],
+                        audioRecordings: [
+                          ...currentState.value!.audioRecordings,
+                          ...audioRecordings
+                        ],
+                        hasMoreTopics: topicsPaginatedObj.hasMore,
+                        hasMoreNotes: notesPaginatedObj.hasMore,
+                        hasMoreAudio: audioPaginatedObj.hasMore,
+                        lastTopicDocument: topicsPaginatedObj.lastDocument,
+                        lastNoteDocument: notesPaginatedObj.lastDocument,
+                        lastAudioDocument: audioPaginatedObj.lastDocument,
+                      ),
+                    );
+                  }
                 },
               );
             },
@@ -359,5 +380,20 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
           .where((audio) => audio.id != audioId)
           .toList(),
     ));
+  }
+
+  Future<void> loadAllDataMore(String parentTopicId) async {
+    if (isFetchingTopics || isFetchingAudio || isFetchingNotes) return;
+    final currentState = state;
+    if (currentState.value == null ||
+        (!currentState.value!.hasMoreTopics &&
+            !currentState.value!.hasMoreNotes &&
+            !currentState.value!.hasMoreAudio)) return;
+
+    var lastTopic = currentState.value?.lastTopicDocument;
+    var lastNote = currentState.value?.lastNoteDocument;
+    var lastAudio = currentState.value?.lastAudioDocument;
+
+    loadAllData(parentTopicId, lastTopic, lastNote, lastAudio);
   }
 }

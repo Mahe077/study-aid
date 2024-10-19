@@ -37,10 +37,10 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   TopicsNotifier(this.repository, this.userId, this._ref)
       : super(const AsyncValue.loading()) {
-    _loadInitialTopics();
+    loadInitialTopics();
   }
 
-  Future<void> _loadInitialTopics() async {
+  Future<void> loadInitialTopics() async {
     try {
       final result = await repository.fetchUserTopics(userId, 5, 0);
       result.fold(
@@ -93,8 +93,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> createTopic(String? title, String? description, Color color,
       String? parentId, String userId) async {
-    final currentState = state; // Get the current state before changing it
-    // state = const AsyncValue.loading();
+    final currentState = state;
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =

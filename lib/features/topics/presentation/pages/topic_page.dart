@@ -352,7 +352,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
         switch (type) {
           case TopicType.all:
             Logger().i("Load more ${TopicType.all}");
-            notifier.loadAllData(widget.entity.id);
+            notifier.loadAllDataMore(widget.entity.id);
             break;
           case TopicType.topic:
             Logger().i("Load more ${TopicType.topic}");

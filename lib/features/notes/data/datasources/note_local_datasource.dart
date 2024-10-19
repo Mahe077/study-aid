@@ -49,7 +49,7 @@ class LocalDataSourceImpl extends LocalDataSource {
               ? nonNullNotes.sublist(startIndex, endIndex)
               : nonNullNotes.sublist(startIndex),
           hasMore: hasmore,
-          lastDocument: endIndex));
+          lastDocument: hasmore ? endIndex : notes.length));
     } catch (e) {
       return Left(Failure(e.toString()));
     }
