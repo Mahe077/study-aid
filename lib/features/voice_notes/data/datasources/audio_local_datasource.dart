@@ -16,6 +16,7 @@ abstract class LocalDataSource {
   Future<AudioRecordingModel?> getCachedAudioRecording(String audioId);
   Future<List<AudioRecordingModel>> fetchAllAudioRecordings();
   bool audioExists(String audioId);
+  Future<List<AudioRecordingModel>> searchFromLocal(String query);
 }
 
 class LocalDataSourceImpl extends LocalDataSource {
@@ -113,5 +114,18 @@ class LocalDataSourceImpl extends LocalDataSource {
         print('Item $i: ${allAudio[i]}');
       }
     }
+  }
+
+  @override
+  Future<List<AudioRecordingModel>> searchFromLocal(String query) async {
+    final lowerCaseQuery = query.toLowerCase();
+
+    // Fetch all local notes
+    final audios = _audioBox.values
+        .where((audio) =>
+            audio.tags.any((tag) => tag.toLowerCase().contains(lowerCaseQuery)))
+        .toList();
+
+    return audios;
   }
 }

@@ -15,6 +15,7 @@ abstract class LocalDataSource {
   Future<NoteModel?> getCachedNote(String noteId);
   Future<List<NoteModel>> fetchAllNotes();
   bool noteExists(String noteId);
+  Future<List<NoteModel>> searchFromLocal(String query);
 }
 
 class LocalDataSourceImpl extends LocalDataSource {
@@ -104,5 +105,18 @@ class LocalDataSourceImpl extends LocalDataSource {
         print('Item $i: ${allTopics[i]} -> ${allTopics[i].id} ');
       }
     }
+  }
+
+  @override
+  Future<List<NoteModel>> searchFromLocal(String query) async {
+    final lowerCaseQuery = query.toLowerCase();
+
+    // Fetch all local notes
+    final notes = _noteBox.values
+        .where((note) =>
+            note.tags.any((tag) => tag.toLowerCase().contains(lowerCaseQuery)))
+        .toList();
+
+    return notes;
   }
 }

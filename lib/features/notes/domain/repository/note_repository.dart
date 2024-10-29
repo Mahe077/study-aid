@@ -15,4 +15,5 @@ abstract class NoteRepository {
   Future<Either<Failure, void>> updateNoteOfParent(
       String parentId, String noteId);
   Future<Either<Failure, Note?>> getNote(String noteId);
+  Future<Either<Failure, List<Note>>> searchFromTags(String query);
 }

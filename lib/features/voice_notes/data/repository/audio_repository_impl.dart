@@ -46,7 +46,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
             audioRecording, isTranscribe);
 
         return uploadResult.fold(
-              (failure) => Left(failure),
+          (failure) => Left(failure),
           (result) async {
             final syncedAudio = result.value1;
             await _updateLocalAndReferences(
@@ -342,6 +342,26 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       );
 
       return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<AudioRecordingModel>>> searchFromTags(
+      String query) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final remoteAudioResult =
+            await remoteDataSource.searchFromRemote(query);
+        return remoteAudioResult.fold((failure) => Left(failure),
+            (remoteAudio) async {
+          return Right(remoteAudio);
+        });
+      } else {
+        final localAudioResult = await localDataSource.searchFromLocal(query);
+        return Right(localAudioResult);
+      }
     } on Exception catch (e) {
       return Left(Failure(e.toString()));
     }
