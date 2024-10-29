@@ -22,13 +22,16 @@ class CreateAudioRecording {
 
   CreateAudioRecording(this.repository);
 
-  Future<Either<Failure, AudioRecording>> call(
-      AudioRecording audioRecording, String topicId, String userId) async {
-    final result =
-        await repository.createAudioRecording(audioRecording, topicId, userId);
+  Future<Either<Failure, Tuple2<AudioRecording, String>>> call(
+      AudioRecording audioRecording,
+      String topicId,
+      String userId,
+      bool isTranscribe) async {
+    final result = await repository.createAudioRecording(
+        audioRecording, topicId, userId, isTranscribe);
     return result.fold(
       (failure) => Left(failure),
-      (audioRecording) => Right(audioRecording),
+      (R) => Right(R),
     );
   }
 }

@@ -1,6 +1,10 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/constants/constant_strings.dart';
+import 'package:study_aid/features/notes/domain/entities/note.dart';
+import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/recentItem_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
@@ -100,31 +104,55 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
     }
   }
 
-  Future<Either<Failure, AudioRecording>> createAudio(
-      AudioRecording note, String topicId, String userId) async {
+  Future<Either<Failure, AudioRecording>> createAudio(AudioRecording note,
+      String topicId, String userId, bool isTranscribe) async {
     try {
       final createAudio = _ref.read(createAudioRecodingProvider);
-      final result = await createAudio.call(note, topicId, userId);
+      final result =
+          await createAudio.call(note, topicId, userId, isTranscribe);
       return result.fold(
         (failure) {
           state = AsyncValue.error(failure.message, StackTrace.current);
           return Left(failure);
         },
-        (newAudio) async {
+        (R) async {
+          final syncedAudio = R.value1;
           final tabDataNotifier = _ref.read(tabDataProvider(topicId).notifier);
-          tabDataNotifier.updateAudioRecording(newAudio);
+          tabDataNotifier.updateAudioRecording(syncedAudio);
 
           final recentItemNotifier =
               _ref.read(recentItemProvider(userId).notifier);
-          recentItemNotifier.updateAudioRecording(newAudio);
+          recentItemNotifier.updateAudioRecording(syncedAudio);
 
-          return Right(newAudio);
+          if (isTranscribe) {
+            Note note = getNote(syncedAudio, R.value2);
+            final notesNotifier = _ref.read(notesProvider(topicId).notifier);
+            notesNotifier.createNote(note, topicId, userId);
+          }
+
+          return Right(syncedAudio);
         },
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
       return Left(Failure(e.toString()));
     }
+  }
+
+  Note getNote(AudioRecording audio, String content) {
+    return Note(
+        id: UniqueKey().toString(),
+        title: audio.title,
+        content: content,
+        contentJson: '[{"insert":"$content\\n"}]',
+        createdDate: DateTime.now(),
+        color: audio.color,
+        remoteChangeTimestamp: DateTime.now(),
+        tags: audio.tags,
+        updatedDate: DateTime.now(),
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: DateTime.now(),
+        parentId: audio.parentId);
   }
 
   Future<Either<Failure, AudioRecording>> updateAudio(
