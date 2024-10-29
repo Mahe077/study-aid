@@ -31,7 +31,6 @@ class Note extends BaseEntity {
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
     required this.parentId,
-
   });
 
   Note copyWith({
@@ -49,20 +48,19 @@ class Note extends BaseEntity {
     String? parentId,
   }) {
     return Note(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      color: color ?? this.color,
-      tags: tags ?? this.tags,
-      createdDate: createdDate ?? this.createdDate,
-      updatedDate: updatedDate ?? this.updatedDate,
-      content: content ?? this.content,
-      contentJson: contentJson ?? this.contentJson,
-      syncStatus: syncStatus ?? this.syncStatus,
-      localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
-      remoteChangeTimestamp:
-          remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId?? this.parentId
-    );
+        id: id ?? this.id,
+        title: title ?? this.title,
+        color: color ?? this.color,
+        tags: tags ?? this.tags,
+        createdDate: createdDate ?? this.createdDate,
+        updatedDate: updatedDate ?? this.updatedDate,
+        content: content ?? this.content,
+        contentJson: contentJson ?? this.contentJson,
+        syncStatus: syncStatus ?? this.syncStatus,
+        localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
+        remoteChangeTimestamp:
+            remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+        parentId: parentId ?? this.parentId);
   }
 
   Map<String, dynamic> toMap() {
@@ -80,5 +78,22 @@ class Note extends BaseEntity {
       'remoteChangeTimestamp': remoteChangeTimestamp.millisecondsSinceEpoch,
       'parentId': parentId
     };
+  }
+
+  List<dynamic> toList() {
+    return [
+      id,
+      title,
+      color.value,
+      tags,
+      createdDate.millisecondsSinceEpoch,
+      updatedDate.millisecondsSinceEpoch,
+      content,
+      contentJson,
+      syncStatus,
+      localChangeTimestamp.millisecondsSinceEpoch,
+      remoteChangeTimestamp.millisecondsSinceEpoch,
+      parentId,
+    ];
   }
 }

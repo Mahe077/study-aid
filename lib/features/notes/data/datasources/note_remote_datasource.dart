@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
@@ -34,8 +39,15 @@ class RemoteDataSourceImpl extends RemoteDataSource {
   Future<Either<Failure, NoteModel>> createNote(NoteModel note) async {
     try {
       final docRef = _firestore.collection('notes').doc();
-      final topicWithId =
-          note.copyWith(id: docRef.id, syncStatus: ConstantStrings.synced);
+      Map<String, String> content = await uploadImage(note.contentJson);
+
+      final updatedContentJson = content['updatedContentJson'];
+
+      final topicWithId = note.copyWith(
+        id: docRef.id,
+        syncStatus: ConstantStrings.synced,
+        contentJson: updatedContentJson,
+      );
       await docRef.set(topicWithId.toFirestore());
       return Right(topicWithId);
     } on ServerException {
@@ -45,9 +57,65 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     }
   }
 
+  Future<String?> uploadImagetoFirebaseStorage(String imagePath) async {
+    if (imagePath.isEmpty) return null;
+
+    final storageRef = _storage.ref();
+    final fileRef =
+        storageRef.child('Images/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+    await fileRef.putFile(File(imagePath));
+    final downloadUrl = await fileRef.getDownloadURL();
+    return downloadUrl;
+  }
+
+  Future<Map<String, String>> uploadImage(String contentJson) async {
+    List<dynamic> contentList = jsonDecode(contentJson);
+    bool imageUploaded = false;
+
+    for (var item in contentList) {
+      if (item['insert'] is Map && item['insert'].containsKey('image')) {
+        String imagePath = item['insert']['image'];
+
+        // Check if the image is already hosted on Firebase.
+        bool isFirebaseImage =
+            imagePath.startsWith('https://firebasestorage.googleapis.com');
+
+        if (!isFirebaseImage) {
+          // Upload the local image to Firebase Storage.
+          String? uploadedUrl = await uploadImagetoFirebaseStorage(imagePath);
+
+          // Replace the local path with the uploaded Firebase URL.
+          if (uploadedUrl != null) {
+            item['insert'] = {'image': uploadedUrl};
+            imageUploaded = true;
+          }
+        }
+      }
+    }
+
+    if (imageUploaded) {
+      contentJson = jsonEncode(contentList);
+    }
+
+    Logger().d("updatedContentJson:: $contentJson");
+
+    return {
+      'updatedContentJson': contentJson,
+    };
+  }
+
   @override
   Future<Either<Failure, void>> deleteNote(String noteId) async {
     try {
+      final noteResult = await getNoteById(noteId);
+      noteResult.fold(
+        (failure) => throw Exception('Note not found: ${failure.message}'),
+        (note) async {
+          await _deleteImagesFromContent(note.contentJson);
+        },
+      );
+
       await _firestore.collection('notes').doc(noteId).delete();
       return const Right(null);
     } catch (e) {
@@ -61,22 +129,58 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     throw UnimplementedError();
   }
 
+  Future<void> _deleteImagesFromContent(String contentJson) async {
+    List<dynamic> contentList = jsonDecode(contentJson);
+
+    for (var item in contentList) {
+      if (item['insert'] is Map && item['insert'].containsKey('image')) {
+        final imageUrl = item['insert']['image'];
+
+        // Check if it's a Firebase Storage URL and delete it.
+        if (imageUrl.startsWith('https://firebasestorage.googleapis.com/')) {
+          final ref = _storage.refFromURL(imageUrl);
+          await ref.delete();
+        }
+      }
+    }
+  }
+
   @override
   Future<Either<Failure, NoteModel>> getNoteById(String parentId) async {
     try {
-      final querySnapshot =
+      final docSnapshot =
           await _firestore.collection('notes').doc(parentId).get();
-      return Right(NoteModel.fromFirestore(querySnapshot));
+
+      if (docSnapshot.exists && docSnapshot.data() != null) {
+        final note = NoteModel.fromFirestore(docSnapshot);
+        return Right(note);
+      } else {
+        return Left(ServerFailure('Note not found'));
+      }
     } catch (e) {
-      throw Exception('Error in featching a note: $e');
+      throw Exception('Error in fetching a note: $e');
     }
   }
 
   @override
   Future<Either<Failure, NoteModel>> updateNote(NoteModel note) async {
     try {
-      await _firestore.collection('notes').doc(note.id).update(
-          note.copyWith(syncStatus: ConstantStrings.synced).toFirestore());
+      Map<String, String> content = await uploadImage(note.contentJson);
+
+      // Extract content safely from the returned Map
+      final updatedContentJson =
+          content['updatedContentJson'] ?? note.contentJson;
+
+      final updatedNote = note.copyWith(
+        syncStatus: ConstantStrings.synced,
+        contentJson: updatedContentJson,
+      );
+
+      await _firestore
+          .collection('notes')
+          .doc(note.id)
+          .update(updatedNote.toFirestore());
+
       return Right(note.copyWith(syncStatus: ConstantStrings.synced));
     } on Exception catch (e) {
       throw Exception('Error in updating a note: $e');
