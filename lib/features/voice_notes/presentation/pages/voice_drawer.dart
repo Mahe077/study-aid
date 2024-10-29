@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
@@ -19,11 +18,13 @@ class ModalBottomSheet extends ConsumerStatefulWidget {
   final AudioRecording entity;
   final String userId;
   final String parentId;
-  const ModalBottomSheet(
-      {super.key,
-      required this.entity,
-      required this.userId,
-      required this.parentId});
+
+  const ModalBottomSheet({
+    super.key,
+    required this.entity,
+    required this.userId,
+    required this.parentId,
+  });
 
   @override
   ConsumerState<ModalBottomSheet> createState() => _ModalBottomSheetState();
@@ -31,41 +32,50 @@ class ModalBottomSheet extends ConsumerStatefulWidget {
 
 class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
   late PlayerController bottomSheetPlayerController;
-  String? path;
-  late Directory directory;
   StreamSubscription<PlayerState>? _playerStateSubscription;
+  var waveformData;
 
   @override
   void initState() {
     super.initState();
     _initialiseController();
+  }
+
+  Future<void> _initialiseController() async {
+    bottomSheetPlayerController = PlayerController();
 
     if (widget.entity.localpath.isNotEmpty) {
-      // Prepare the player only if the path is valid
-      bottomSheetPlayerController.preparePlayer(path: widget.entity.localpath);
-
-      // Listen for player state changes
-      _playerStateSubscription = bottomSheetPlayerController
-          .onPlayerStateChanged
-          .listen((PlayerState state) {
-        if (mounted) {
-          setState(() {});
-        } // Update the UI based on player state changes
+      await bottomSheetPlayerController.preparePlayer(
+          path: widget.entity.localpath);
+      _playerStateSubscription =
+          bottomSheetPlayerController.onPlayerStateChanged.listen((_) {
+        if (mounted) setState(() {});
       });
+
+      // Get waveform data asynchronously
+      try {
+        final waveStyle = PlayerWaveStyle();
+        final samples = waveStyle.getSamplesForWidth(300.0);
+        waveformData = await bottomSheetPlayerController.extractWaveformData(
+            path: widget.entity.localpath, noOfSamples: samples);
+
+        if (mounted) setState(() {});
+      } catch (e) {
+        Logger().e("Error extracting waveform data: $e");
+      }
     } else {
-      // Log or handle the case where the path is not yet available
       Logger().e("Audio path is null or empty");
     }
   }
 
   @override
   void dispose() {
-    _playerStateSubscription?.cancel(); // Cancel the subscription
+    _playerStateSubscription?.cancel();
     bottomSheetPlayerController.dispose();
     super.dispose();
   }
 
-  void _playandPause() async {
+  void _playAndPause() async {
     if (bottomSheetPlayerController.playerState == PlayerState.playing) {
       await bottomSheetPlayerController.pausePlayer();
     } else {
@@ -75,14 +85,8 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
     setState(() {});
   }
 
-  void _initialiseController() {
-    bottomSheetPlayerController = PlayerController();
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Create a new instance of PlayerController for the BottomSheet
-
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
@@ -91,303 +95,210 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
       height: 500,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Stack(children: [
-          Column(
-            children: [
-              _bottomSheetHeaderAction(context),
-              AppSubHeadings(text: widget.entity.title, size: 18),
-              const SizedBox(height: 8),
-              Text(
-                "Created: ${widget.entity.createdDate}",
-                style:
-                    const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+        child: waveformData == null
+            ? Center(child: CircularProgressIndicator(color: AppColors.white))
+            : Column(
+                children: [
+                  _buildHeader(context),
+                  AppSubHeadings(text: widget.entity.title, size: 18),
+                  const SizedBox(height: 8),
+                  Text("Created: ${widget.entity.createdDate}",
+                      style: const TextStyle(
+                          fontSize: 10, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 10),
+                  _buildTags(),
+                  const SizedBox(height: 20),
+                  _buildWaveform(),
+                  const SizedBox(height: 15),
+                  Text(formatDuration(bottomSheetPlayerController.maxDuration)),
+                  const SizedBox(height: 20),
+                  _buildPlayerControls(),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(context),
+                ],
               ),
-              const SizedBox(height: 10),
-              _bottomSheetTag(),
-              const SizedBox(height: 20),
-              _bottomSheedWaveForm(bottomSheetPlayerController),
-              const SizedBox(height: 15),
-              Text(formatDuration(bottomSheetPlayerController.maxDuration)),
-              const SizedBox(height: 20),
-              _playerButtonArray(bottomSheetPlayerController),
-              const SizedBox(height: 20),
-              _bottomSheetActionButtonArray(context)
-            ],
-          ),
-        ]),
       ),
     );
   }
 
   String formatDuration(int milliseconds) {
-    Duration duration = Duration(milliseconds: milliseconds);
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    String twoDigitHours = twoDigits(duration.inHours.remainder(60));
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-
-    return "$twoDigitHours:$twoDigitMinutes:$twoDigitSeconds";
+    final duration = Duration(milliseconds: milliseconds);
+    return '${duration.inHours.toString().padLeft(2, '0')}:${(duration.inMinutes % 60).toString().padLeft(2, '0')}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}';
   }
 
-  Row _bottomSheetHeaderAction(BuildContext context) {
+  Row _buildHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const FaIcon(
-          FontAwesomeIcons.microphone,
-          size: 20,
-        ),
+        const FaIcon(FontAwesomeIcons.microphone, size: 20),
         IconButton(
           visualDensity: VisualDensity.compact,
-          alignment: Alignment.centerRight,
           padding: EdgeInsets.zero,
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.close,
-            size: 24,
-          ),
+          icon: const Icon(Icons.close, size: 24),
         ),
       ],
     );
   }
 
-  Row _bottomSheetActionButtonArray(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                visualDensity: VisualDensity.compact,
-                backgroundColor: AppColors.black,
-                iconColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.star,
-                  size: 17,
-                ),
-                SizedBox(width: 5),
-                Text(
-                  'Remove from Favourite',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
-            )),
-        const SizedBox(width: 10),
-        ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
-                visualDensity: VisualDensity.compact,
-                backgroundColor: AppColors.black,
-                iconColor: AppColors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10))),
-            onPressed: () => _confirmDelete(),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.delete,
-                  size: 17,
-                ),
-                SizedBox(width: 5),
-                Text(
-                  'Delete',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500),
-                ),
-              ],
-            )),
-      ],
-    );
-  }
-
-  void _confirmDelete() {
-    final toast = CustomToast(context: context);
-    showCustomDialog(context, DialogMode.delete, "Confirm Delete",
-        const Text('Are you sure you want to delete this item?'), () async {
-      final audioRecordingNotifier =
-          ref.read(audioProvider(widget.entity.id).notifier);
-
-      // Stop the player before deleting the audio
-      if (bottomSheetPlayerController.playerState == PlayerState.playing ||
-          bottomSheetPlayerController.playerState == PlayerState.paused) {
-        await bottomSheetPlayerController.stopPlayer();
-      }
-
-      try {
-        Logger()
-            .i("Voice_Drawer:: deleting the audio item ${widget.entity.id}");
-        audioRecordingNotifier.deleteAudio(
-            widget.parentId, widget.entity.id, widget.userId);
-        toast.showWarning(description: "Audio clip deleted successfully.");
-      } catch (e) {
-        toast.showFailure(
-            description: "An error occurred while deleting the audio clip.");
-        Logger().d(e);
-      } finally {
-        Navigator.of(context).pop();
-      }
-    });
-  }
-
-  Row _bottomSheetTag() {
+  Row _buildTags() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: (widget.entity.tags as List<dynamic>)
-          .map<Widget>((tag) => Row(
-                children: [
-                  Tag(text: tag.toString()),
-                  const SizedBox(width: 5),
-                ],
+          .map<Widget>((tag) => Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                child: Tag(text: tag.toString()),
               ))
           .toList(),
     );
   }
 
-  AudioFileWaveforms _bottomSheedWaveForm(
-      PlayerController bottomSheetPlayerController) {
+  AudioFileWaveforms _buildWaveform() {
     return AudioFileWaveforms(
-      size: const Size(300, 40.0),
+      size: const Size(300.0, 40.0),
       playerController: bottomSheetPlayerController,
       enableSeekGesture: true,
       waveformType: WaveformType.fitWidth,
-      // waveformData: bottomSheetPlayerController.waveformData,
+      waveformData: waveformData,
       playerWaveStyle: PlayerWaveStyle(
         fixedWaveColor: AppColors.primary.withOpacity(0.81),
         liveWaveColor: AppColors.primary.withOpacity(0.34),
         spacing: 6,
+        seekLineColor: Colors.white,
       ),
+      continuousWaveform: true,
     );
   }
 
-  Row _playerButtonArray(PlayerController bottomSheetPlayerController) {
+  Row _buildPlayerControls() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _seekButton(
-            bottomSheetPlayerController, widget.entity.localpath, false),
+        _buildSeekButton(false),
         const SizedBox(width: 30),
-        _playButton(bottomSheetPlayerController, widget.entity.localpath),
+        _buildPlayButton(),
         const SizedBox(width: 30),
-        _seekButton(bottomSheetPlayerController, widget.entity.localpath, true),
+        _buildSeekButton(true),
       ],
     );
   }
 
-  GestureDetector _playButton(
-      PlayerController playerController, String recordPath) {
-    return playerController.playerState == PlayerState.playing
-        ? _bottomSheetPauseButton(playerController)
-        : _bottomSheetPlayButton(playerController, recordPath);
-  }
-
-  GestureDetector _bottomSheetPauseButton(PlayerController playerController) {
+  GestureDetector _buildPlayButton() {
     return GestureDetector(
-      onTap: () => _playandPause(),
+      onTap: _playAndPause,
       child: Container(
         height: 46,
         width: 46,
         decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary,
-        ),
+            shape: BoxShape.circle, color: AppColors.primary),
         child: Center(
-          child: Icon(Icons.pause, size: 43, color: widget.entity.color),
+          child: Icon(
+            bottomSheetPlayerController.playerState == PlayerState.playing
+                ? Icons.pause
+                : Icons.play_arrow,
+            size: 43,
+            color: widget.entity.color,
+          ),
         ),
       ),
     );
   }
 
-  GestureDetector _bottomSheetPlayButton(
-      PlayerController playerController, String recordPath) {
+  GestureDetector _buildSeekButton(bool forward) {
     return GestureDetector(
-      onTap: () => _playandPause(),
+      onTap: () => _seekPlayer(forward),
       child: Container(
-        height: 46,
-        width: 46,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: AppColors.primary,
-        ),
+        height: 30,
+        width: 30,
+        decoration: BoxDecoration(
+            shape: BoxShape.circle, color: AppColors.seek.withOpacity(0.72)),
         child: Center(
-          child: Icon(Icons.play_arrow, size: 43, color: widget.entity.color),
+          child: Container(
+            height: 24,
+            width: 24,
+            decoration: BoxDecoration(
+                shape: BoxShape.circle, color: widget.entity.color),
+            child: Center(
+              child: Icon(
+                Icons.fast_forward_outlined,
+                size: 19,
+                color: AppColors.seek.withOpacity(0.72),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  GestureDetector _seekButton(
-      PlayerController playerController, String recordPath, bool forward) {
-    return forward
-        ? GestureDetector(
-            onTap: () => _seekPlayer(playerController, forward),
-            child: Container(
-              height: 30,
-              width: 30,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.seek.withOpacity(0.72)),
-              child: Center(
-                child: Container(
-                  height: 24,
-                  width: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: widget.entity.color,
-                  ),
-                  child: Center(
-                    child: Icon(Icons.fast_forward_outlined,
-                        size: 19, color: AppColors.seek.withOpacity(0.72)),
-                  ),
-                ),
-              ),
-            ),
-          )
-        : GestureDetector(
-            onTap: () => _seekPlayer(playerController, forward),
-            child: Container(
-              height: 30,
-              width: 30,
-              decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.seek.withOpacity(0.72)),
-              child: Center(
-                child: Container(
-                  height: 24,
-                  width: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: widget.entity.color,
-                  ),
-                  child: Center(
-                      child: Transform.rotate(
-                    angle: 3.14159, // 180 degrees in radians
-                    child: Icon(
-                      Icons.fast_forward_outlined,
-                      size: 19,
-                      color: AppColors.seek.withOpacity(0.72),
-                    ),
-                  )),
-                ),
-              ),
-            ),
-          );
+  Row _buildActionButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildActionButton(context, Icons.star, 'Remove from Favourite',
+            _removeFromFavourites),
+        const SizedBox(width: 10),
+        _buildActionButton(context, Icons.delete, 'Delete', _confirmDelete),
+      ],
+    );
   }
 
-  void _seekPlayer(PlayerController playerController, bool forward) async {
-    final currentPos = await playerController.getDuration(DurationType.current);
-    final newPos =
-        forward ? currentPos + 10000 : currentPos - 10000; // Seek 10 seconds
-    await playerController
-        .seekTo(newPos.clamp(0, playerController.maxDuration));
+  ElevatedButton _buildActionButton(BuildContext context, IconData icon,
+      String label, VoidCallback onPressed) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        backgroundColor: AppColors.black,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: onPressed,
+      child: Row(
+        children: [
+          Icon(icon, size: 17, color: AppColors.icon),
+          const SizedBox(width: 5),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete() {
+    final toast = CustomToast(context: context);
+    showCustomDialog(
+      context,
+      DialogMode.delete,
+      "Confirm Delete",
+      const Text('Are you sure you want to delete this item?'),
+      () async {
+        // Stop the player before deleting the audio
+        if (bottomSheetPlayerController.playerState == PlayerState.playing ||
+            bottomSheetPlayerController.playerState == PlayerState.paused) {
+          await bottomSheetPlayerController.stopPlayer();
+        }
+        await ref
+            .read(audioProvider(widget.entity.id).notifier)
+            .deleteAudio(widget.parentId, widget.entity.id, widget.userId);
+        toast.showWarning(description: "Audio clip deleted successfully.");
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Future<void> _removeFromFavourites() async {
+    // Implement the logic to remove from favourites
+    Logger().i('Removing from favourites: ${widget.entity.id}');
+  }
+
+  void _seekPlayer(bool forward) async {
+    final seekAmount = forward ? 1000 : -1000; // Adjust for seconds
+    final currentPosition =
+        await bottomSheetPlayerController.getDuration(DurationType.current);
+    final newPosition = currentPosition + seekAmount;
+    bottomSheetPlayerController
+        .seekTo(newPosition.clamp(0, bottomSheetPlayerController.maxDuration));
   }
 }

@@ -49,6 +49,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   bool isRecording = false;
   bool isPaused = false;
   bool isLoading = true;
+  bool isSaving = false;
   bool recodingInit = false;
   bool _doTranscribe = false;
   bool recordingStarted = false;
@@ -171,13 +172,21 @@ class _VoicePageState extends ConsumerState<VoicePage> {
 
     Logger().i(audioTemp.toString());
 
+    setState(() {
+      isSaving = true;
+    });
+
     final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
-    var updateAudioRes =
-        audioNotifier.createAudio(audioTemp, widget.topicId, widget.userId);
+    var updateAudioRes = audioNotifier.createAudio(
+        audioTemp, widget.topicId, widget.userId, _doTranscribe);
 
     if (!mounted) return;
 
     updateAudioRes.then((either) {
+      setState(() {
+        isSaving = false; // Stop loading once the operation completes
+      });
+
       either.fold(
         (failure) {
           toast.showFailure(
@@ -212,221 +221,242 @@ class _VoicePageState extends ConsumerState<VoicePage> {
               child: CircularProgressIndicator(),
             )
           : SafeArea(
-              child: Column(
+              child: Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Row(
-                      children: [
-                        AppHeadings(
-                          text: widget.topicTitle ?? '',
-                          alignment: TextAlign.left,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(20, 5, 5, 10),
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            topRight: Radius.circular(8)),
-                        color: widget.noteColor ?? AppColors.darkGrey,
-                      ),
-                      child: Column(
-                        children: [
-                          Row(children: [
-                            Expanded(
-                              child: TextField(
-                                focusNode: focusNode,
-                                controller: titleController,
-                                decoration: const InputDecoration(
-                                    isDense: true,
-                                    icon: FaIcon(FontAwesomeIcons.microphone,
-                                        size: 20),
-                                    hintText: ' Enter audio title',
-                                    hintStyle: TextStyle(
-                                      color: AppColors.hintText,
-                                    ),
-                                    filled: true,
-                                    fillColor: Colors.transparent,
-                                    focusedBorder: InputBorder.none),
-                              ),
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Row(
+                          children: [
+                            AppHeadings(
+                              text: widget.topicTitle ?? '',
+                              alignment: TextAlign.left,
                             ),
-                            if (recordingEnded) _saveButton(context),
-                            const SizedBox(width: 2),
-                            IconButton(
-                                visualDensity: VisualDensity.compact,
-                                alignment: Alignment.centerRight,
-                                padding: EdgeInsets.zero,
-                                onPressed: () {
-                                  _discardNote();
-                                },
-                                icon: const Icon(
-                                  Icons.close,
-                                  size: 24,
-                                )),
-                          ]),
-                          Row(
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.fromLTRB(20, 5, 5, 10),
+                          decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(8),
+                                topRight: Radius.circular(8)),
+                            color: widget.noteColor ?? AppColors.darkGrey,
+                          ),
+                          child: Column(
                             children: [
-                              if (audio.tags.isNotEmpty)
-                                ...audio.tags.map((tag) => Row(
-                                      children: [
-                                        Tag(
-                                            text: tag,
-                                            onTap: () {
-                                              _confirmRemoveTag(tag);
-                                            }),
-                                        const SizedBox(width: 5),
-                                      ],
-                                    )),
-                              GestureDetector(
-                                onTap: () {
-                                  _addTagDialog(context);
-                                },
-                                child: Container(
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(5)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 5),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.add,
-                                            size: 10, color: AppColors.primary),
-                                        if (widget.entity?.tags == null) ...[
-                                          const SizedBox(width: 5),
-                                          const Text(
-                                            'Add a tag',
-                                            style: TextStyle(
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w500),
-                                          )
-                                        ]
-                                      ],
-                                    ),
+                              Row(children: [
+                                Expanded(
+                                  child: TextField(
+                                    focusNode: focusNode,
+                                    controller: titleController,
+                                    decoration: const InputDecoration(
+                                        isDense: true,
+                                        icon: FaIcon(
+                                            FontAwesomeIcons.microphone,
+                                            size: 20),
+                                        hintText: ' Enter audio title',
+                                        hintStyle: TextStyle(
+                                          color: AppColors.hintText,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.transparent,
+                                        focusedBorder: InputBorder.none),
                                   ),
                                 ),
-                              )
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          Expanded(
-                              child: Center(
-                            child: !recordingStarted
-                                ? const Text(
-                                    "Click the record button below to start",
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w400))
-                                : !recordingEnded
-                                    ? Column(
-                                        children: [
-                                          const Spacer(),
-                                          AudioWaveforms(
+                                if (recordingEnded) _saveButton(context),
+                                const SizedBox(width: 2),
+                                IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    alignment: Alignment.centerRight,
+                                    padding: EdgeInsets.zero,
+                                    onPressed: () {
+                                      if (!isSaving) _discardNote();
+                                    },
+                                    icon: const Icon(
+                                      Icons.close,
+                                      size: 24,
+                                    )),
+                              ]),
+                              Row(
+                                children: [
+                                  if (audio.tags.isNotEmpty)
+                                    ...audio.tags.map((tag) => Row(
+                                          children: [
+                                            Tag(
+                                                text: tag,
+                                                onTap: () {
+                                                  if (!isSaving) {
+                                                    _confirmRemoveTag(tag);
+                                                  }
+                                                }),
+                                            const SizedBox(width: 5),
+                                          ],
+                                        )),
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (!isSaving) _addTagDialog(context);
+                                    },
+                                    child: Container(
+                                      height: 18,
+                                      decoration: BoxDecoration(
+                                          color: AppColors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(5)),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.add,
+                                                size: 10,
+                                                color: AppColors.primary),
+                                            if (widget.entity?.tags ==
+                                                null) ...[
+                                              const SizedBox(width: 5),
+                                              const Text(
+                                                'Add a tag',
+                                                style: TextStyle(
+                                                    fontSize: 9,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              )
+                                            ]
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Expanded(
+                                  child: Center(
+                                child: !recordingStarted
+                                    ? const Text(
+                                        "Click the record button below to start",
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w400))
+                                    : !recordingEnded
+                                        ? Column(
+                                            children: [
+                                              const Spacer(),
+                                              AudioWaveforms(
+                                                size: Size(
+                                                    MediaQuery.of(context)
+                                                        .size
+                                                        .width,
+                                                    70.0),
+                                                recorderController:
+                                                    recorderController,
+                                                enableGesture: true,
+                                                waveStyle: WaveStyle(
+                                                  waveColor: AppColors.primary
+                                                      .withOpacity(0.81),
+                                                  extendWaveform: true,
+                                                  showMiddleLine: false,
+                                                ),
+                                                padding: const EdgeInsets.only(
+                                                    left: 18),
+                                                margin:
+                                                    const EdgeInsets.fromLTRB(
+                                                        0, 5, 10, 5),
+                                              ),
+                                              const SizedBox(height: 40),
+                                              Text(
+                                                recordedDuration.toHHMMSS(),
+                                                style: const TextStyle(
+                                                    fontSize: 32,
+                                                    fontWeight:
+                                                        FontWeight.w400),
+                                              ),
+                                              const SizedBox(height: 25),
+                                            ],
+                                          )
+                                        : AudioFileWaveforms(
                                             size: Size(
                                                 MediaQuery.of(context)
                                                     .size
                                                     .width,
                                                 70.0),
-                                            recorderController:
-                                                recorderController,
-                                            enableGesture: true,
-                                            waveStyle: WaveStyle(
-                                              waveColor: AppColors.primary
+                                            playerController: playerController,
+                                            enableSeekGesture: true,
+                                            waveformType: WaveformType.fitWidth,
+                                            waveformData: waveformData,
+                                            playerWaveStyle: PlayerWaveStyle(
+                                              fixedWaveColor: AppColors.primary
+                                                  .withOpacity(0.34),
+                                              liveWaveColor: AppColors.primary
                                                   .withOpacity(0.81),
-                                              extendWaveform: true,
-                                              showMiddleLine: false,
+                                              spacing: 6,
                                             ),
                                             padding:
                                                 const EdgeInsets.only(left: 18),
                                             margin: const EdgeInsets.fromLTRB(
                                                 0, 5, 10, 5),
+                                            continuousWaveform: true,
                                           ),
-                                          const SizedBox(height: 40),
-                                          Text(
-                                            recordedDuration.toHHMMSS(),
-                                            style: const TextStyle(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.w400),
-                                          ),
-                                          const SizedBox(height: 25),
-                                        ],
-                                      )
-                                    : AudioFileWaveforms(
-                                        size: Size(
-                                            MediaQuery.of(context).size.width,
-                                            70.0),
-                                        playerController: playerController,
-                                        enableSeekGesture: true,
-                                        waveformType: WaveformType.fitWidth,
-                                        waveformData: waveformData,
-                                        playerWaveStyle: PlayerWaveStyle(
-                                          fixedWaveColor: AppColors.primary
-                                              .withOpacity(0.34),
-                                          liveWaveColor: AppColors.primary
-                                              .withOpacity(0.81),
-                                          spacing: 6,
+                              )),
+                              isRecording
+                                  ? _pauseButton(_pauseRecording)
+                                  : _recordButton(),
+                              const SizedBox(height: 25),
+                              isPaused
+                                  ? ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              10, 0, 10, 0),
+                                          visualDensity: VisualDensity.compact,
+                                          backgroundColor: AppColors.primary,
+                                          iconColor: AppColors.white,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(10))),
+                                      onPressed: () => _stopRecording(),
+                                      child: const Text(
+                                        'Complete Recording',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.white,
+                                            fontWeight: FontWeight.w500),
+                                      ))
+                                  : recordingStarted
+                                      ? const SizedBox(height: 40)
+                                      : Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Checkbox(
+                                              value: _doTranscribe,
+                                              onChanged: (bool? newValue) {
+                                                setState(() {
+                                                  _doTranscribe = newValue!;
+                                                });
+                                              },
+                                              activeColor: AppColors.primary,
+                                            ),
+                                            const Text("Enable Transcribe",
+                                                style: TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight:
+                                                        FontWeight.w400))
+                                          ],
                                         ),
-                                        padding:
-                                            const EdgeInsets.only(left: 18),
-                                        margin: const EdgeInsets.fromLTRB(
-                                            0, 5, 10, 5),
-                                      ),
-                          )),
-                          isRecording
-                              ? _pauseButton(_pauseRecording)
-                              : _recordButton(),
-                          const SizedBox(height: 25),
-                          isPaused
-                              ? ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          10, 0, 10, 0),
-                                      visualDensity: VisualDensity.compact,
-                                      backgroundColor: AppColors.primary,
-                                      iconColor: AppColors.white,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10))),
-                                  onPressed: () => _stopRecording(),
-                                  child: const Text(
-                                    'Complete Recording',
-                                    style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.w500),
-                                  ))
-                              : recordingStarted
-                                  ? const SizedBox(height: 40)
-                                  : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Checkbox(
-                                          value: _doTranscribe,
-                                          onChanged: (bool? newValue) {
-                                            setState(() {
-                                              _doTranscribe = newValue!;
-                                            });
-                                          },
-                                          activeColor: AppColors.primary,
-                                        ),
-                                        const Text("Enable Transcribe",
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w400))
-                                      ],
-                                    ),
-                          const SizedBox(height: 25)
-                        ],
-                      ),
-                    ),
-                  )
+                              const SizedBox(height: 25)
+                            ],
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  if (isSaving)
+                    const Center(
+                      child: CircularProgressIndicator(color: AppColors.black),
+                    )
                 ],
               ),
             ),
@@ -623,13 +653,10 @@ class _VoicePageState extends ConsumerState<VoicePage> {
           iconColor: AppColors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-      onPressed: () => _saveNote(context, ref),
-      child: const Row(
+      onPressed: () => isSaving ? () : _saveNote(context, ref),
+      child: Row(
         children: [
-          Icon(
-            Icons.save,
-            size: 17,
-          ),
+          Icon(Icons.save, size: 17, color: AppColors.white),
           SizedBox(width: 5),
           Text(
             'Save',
