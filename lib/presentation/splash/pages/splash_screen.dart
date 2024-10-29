@@ -38,42 +38,6 @@ class _State extends ConsumerState<SplashScreen>
     super.dispose();
   }
 
-  void _checkLoginStatus() async {
-    await Future.delayed(
-        const Duration(seconds: 2)); // Simulate a splash screen delay
-
-    if (!mounted) return;
-
-    final userState = ref.watch(userProvider);
-
-    userState.when(
-      data: (user) {
-        if (user != null) {
-          const Text("User not logged in");
-          // Navigator.pushReplacement(
-          //     context,
-          //     MaterialPageRoute(
-          //         builder: (context) =>
-          //             HomePage(user:user)));
-        } else {
-          Logger().i(user);
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const SigninPage()),
-          // );
-        }
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, stack) {
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const GetStartedPage()),
-        // );
-        Logger().e(e);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userProvider);

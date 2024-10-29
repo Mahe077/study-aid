@@ -59,7 +59,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SvgPicture.asset(AppVectors.logo),
+                Image.asset(
+                  AppVectors.logo,
+                  height: 100,
+                  alignment: Alignment(-1, -1),
+                ),
+                // SvgPicture.asset(AppVectors.logo),
                 const SizedBox(height: 10),
                 _buildWelcomeText(),
                 const SizedBox(height: 25),

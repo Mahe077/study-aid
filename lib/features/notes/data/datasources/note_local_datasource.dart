@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
@@ -48,7 +49,7 @@ class LocalDataSourceImpl extends LocalDataSource {
               ? nonNullNotes.sublist(startIndex, endIndex)
               : nonNullNotes.sublist(startIndex),
           hasMore: hasmore,
-          lastDocument: endIndex));
+          lastDocument: hasmore ? endIndex : notes.length));
     } catch (e) {
       return Left(Failure(e.toString()));
     }
@@ -57,6 +58,7 @@ class LocalDataSourceImpl extends LocalDataSource {
   @override
   Future<NoteModel?> getCachedNote(String noteId) async {
     try {
+      printNoteBoxContents();
       return _noteBox.get(noteId);
     } catch (e) {
       return null;
@@ -94,9 +96,13 @@ class LocalDataSourceImpl extends LocalDataSource {
     Logger().d('All keys in topicBox: $allKeys');
 
     var allTopics = _noteBox.values.toList();
-    print('All items in topicBox:');
+    if (kDebugMode) {
+      print('All items in topicBox:');
+    }
     for (var i = 0; i < allTopics.length; i++) {
-      print('Item $i: ${allTopics[i]}');
+      if (kDebugMode) {
+        print('Item $i: ${allTopics[i]} -> ${allTopics[i].id} ');
+      }
     }
   }
 }

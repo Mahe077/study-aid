@@ -20,6 +20,7 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       syncStatus: reader.readString(),
       localChangeTimestamp: reader.read(),
       remoteChangeTimestamp: reader.read(),
+        parentId: reader.readString()
     );
   }
 
@@ -36,5 +37,6 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
     writer.writeString(obj.syncStatus);
     writer.write(obj.localChangeTimestamp);
     writer.write(obj.remoteChangeTimestamp);
+    writer.writeString(obj.parentId);
   }
 }

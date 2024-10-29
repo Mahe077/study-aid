@@ -19,8 +19,7 @@ class LocalDataSourceImpl implements LocalDataSource {
   Future<void> cacheUser(UserModel user) async {
     try {
       await _userBox.put(user.id, user);
-      // Fetch the user from the box to print it
-      final cachedUser = await _userBox.get(user.id);
+      final cachedUser = _userBox.get(user.id);
       Logger().d('Cached user: $cachedUser');
     } catch (e) {
       // Handle or log error

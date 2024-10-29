@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
@@ -94,16 +95,68 @@ class UserRepositoryImpl implements UserRepository {
     try {
       var localUser = await localDataSource.getCachedUser(userId);
 
+      // Compare updatedDate to decide whether to sync
       if (localUser != null &&
-          localUser.syncStatus == ConstantStrings.pending) {
-        localUser = localUser.copyWith(syncStatus: ConstantStrings.synced);
+          localUser.updatedDate.isAfter(localUser.updatedDate)) {
+        // Local topic is newer, update the remote topic
         await remoteDataSource.updateUser(localUser);
-        await localDataSource.updateUser(localUser);
+        // Update the local copy to ensure sync status is correct
+        await localDataSource
+            .updateUser(localUser.copyWith(syncStatus: ConstantStrings.synced));
+      } else if (localUser != null &&
+          localUser.updatedDate.isAfter(localUser.updatedDate)) {
+        // Remote topic is newer, update the local topic
+        await localDataSource
+            .updateUser(localUser.copyWith(syncStatus: ConstantStrings.synced));
       }
 
       return const Right(null);
     } catch (e) {
       return Left(Failure(e.toString()));
+    }
+  }
+
+  // Helper method to update recent items
+  @override
+  Future<void> updateRecentItems(String userId, String itemId, String itemType,
+      {bool isDelete = false}) async {
+    try {
+      var localUser = await localDataSource.getCachedUser(userId);
+
+      if (localUser != null) {
+        List<Map<String, dynamic>> recentItems =
+            List.from(localUser.recentItems);
+
+        // Remove the item if it already exists in the list
+        recentItems.removeWhere(
+            (item) => item['id'] == itemId && item['type'] == itemType);
+
+        // If the list exceeds 10 items, remove the oldest (last) item
+        if (recentItems.length >= 10) {
+          recentItems.removeAt(recentItems.length - 1);
+        }
+
+        if (!isDelete) {
+          recentItems = [
+            {'id': itemId, 'type': itemType},
+            ...recentItems
+          ];
+          // recentItems.insert(0, {'id': itemId, 'type': itemType});
+        }
+
+        var newUser = localUser.copyWith(recentItems: recentItems);
+
+        if (await networkInfo.isConnected) {
+          newUser = newUser.copyWith(syncStatus: ConstantStrings.synced);
+          await remoteDataSource.updateUser(UserModel.fromEntity(newUser));
+        } else {
+          newUser = newUser.copyWith(syncStatus: ConstantStrings.pending);
+        }
+        await localDataSource.updateUser(newUser);
+      }
+    } on Exception catch (e) {
+      Logger().e("Error updating recent items: $e");
+      // Handle any other specific errors if needed
     }
   }
 }

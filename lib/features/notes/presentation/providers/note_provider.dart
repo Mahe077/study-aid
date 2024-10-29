@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/notes/data/datasources/note_local_datasource.dart';
 import 'package:study_aid/features/notes/data/datasources/note_remote_datasource.dart';
 import 'package:study_aid/features/notes/data/models/note.dart';
@@ -23,12 +24,13 @@ final noteRepositoryProvider = Provider<NoteRepository>((ref) {
   final localDataSource = ref.read(localDataSourceProvider);
   final networkInfo = ref.read(networkInfoProvider);
   final topicRepository = ref.read(topicRepositoryProvider);
+  final userRepository = ref.read(userRepositoryProvider);
   return NoteRepositoryImpl(
-    remoteDataSource: remoteDataSource,
-    localDataSource: localDataSource,
-    networkInfo: networkInfo,
-    topicRepository: topicRepository,
-  );
+      remoteDataSource: remoteDataSource,
+      localDataSource: localDataSource,
+      networkInfo: networkInfo,
+      topicRepository: topicRepository,
+      userRepository: userRepository);
 });
 
 // Use case providers

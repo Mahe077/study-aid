@@ -1,14 +1,16 @@
 import 'dart:convert';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/appbar/bottom_navbar.dart';
-import 'package:study_aid/common/widgets/bannerbars/success_bannerbar.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
 import 'package:study_aid/common/widgets/toolbars/custom_quill_toolbar.dart';
@@ -24,15 +26,16 @@ class NotePage extends ConsumerStatefulWidget {
   Note? entity;
   bool isNewNote;
   Color? noteColor;
+  String userId;
 
-  NotePage({
-    super.key,
-    this.topicTitle,
-    this.entity,
-    required this.isNewNote,
-    this.noteColor,
-    required this.topicId,
-  });
+  NotePage(
+      {super.key,
+      this.topicTitle,
+      this.entity,
+      required this.isNewNote,
+      this.noteColor,
+      required this.topicId,
+      required this.userId});
 
   @override
   ConsumerState<NotePage> createState() => _NotePageState();
@@ -43,7 +46,7 @@ class _NotePageState extends ConsumerState<NotePage> {
   late final TextEditingController titleController;
   late final QuillController quillController;
   late final FocusNode focusNode;
-  late final Note note;
+  late Note note;
   late bool isSaved;
 
   @override
@@ -106,111 +109,140 @@ class _NotePageState extends ConsumerState<NotePage> {
       quillController.readOnly = false; // Set to false to allow editing
       isSaved = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit mode activated')),
-    );
+    // ScaffoldMessenger.of(context).showSnackBar(
+    //   const SnackBar(content: Text('Edit mode activated')),
+    // );
   }
 
   void _confirmDelete() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete'),
-          content: const Text('Are you sure you want to delete this item?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                SuccessBannerbar(context, "Item deleted").show();
-                // ScaffoldMessenger.of(context).showSnackBar(
-                //   const SnackBar(content: Text('Item deleted')),
-                // );
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
+    final toast = CustomToast(context: context);
+
+    showCustomDialog(
+      context,
+      DialogMode.delete,
+      "Confirm Delete",
+      const Text('Are you sure you want to delete this item?'),
+      () async {
+        final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
+
+        try {
+          await noteNotifier.deleteNote(
+              widget.topicId, widget.entity!.id, widget.userId);
+          toast.showWarning(description: 'Item deleted successfully');
+        } catch (e) {
+          toast.showFailure(
+              description: 'An error occurred while deleting the note.');
+          Logger().d(e.toString());
+        } finally {
+          Navigator.of(context).pop();
+        }
       },
     );
   }
 
   Note getNote() {
     return Note(
-      id: UniqueKey().toString(),
-      title: '',
-      content: '',
-      contentJson: '',
-      createdDate: DateTime.now(),
-      color: widget.noteColor ?? AppColors.grey,
-      remoteChangeTimestamp: DateTime.now(),
-      tags: [],
-      updatedDate: DateTime.now(),
-      syncStatus: ConstantStrings.pending,
-      localChangeTimestamp: DateTime.now(),
-    );
+        id: UniqueKey().toString(),
+        title: '',
+        content: '',
+        contentJson: '',
+        createdDate: DateTime.now(),
+        color: widget.noteColor ?? AppColors.grey,
+        remoteChangeTimestamp: DateTime.now(),
+        tags: [],
+        updatedDate: DateTime.now(),
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: DateTime.now(),
+        parentId: widget.topicId);
   }
 
   void addTag(String tag) {
-    if (tag.isNotEmpty) {
-      tagController.clear();
+    if (tag.isNotEmpty && !note.tags.contains(tag)) {
       setState(() {
         note.tags.add(tag);
+        tagController.clear();
       });
-      // Navigator.of(context).pop();
     }
   }
 
-  // void removeTag(int index) {
-  //   _tags.removeAt(index);
-  // }
-
-  // void updateTag(String tag, int index) {
-  //   _tags[index] = tag;
-  // }
-
   void _saveNote(BuildContext context, WidgetRef ref) {
-    final noteTemp = Note(
-      id: note.id,
-      title: titleController.text.trim(),
-      content: quillController.document.toPlainText().trim(),
-      contentJson: jsonEncode(quillController.document.toDelta().toJson()),
-      createdDate: note.createdDate,
-      color: widget.noteColor ?? note.color,
-      remoteChangeTimestamp: note.remoteChangeTimestamp,
-      tags: note.tags,
-      updatedDate: DateTime.now(),
-      syncStatus: ConstantStrings.pending,
-      localChangeTimestamp: DateTime.now(),
-    );
+    final toast = CustomToast(context: context);
 
-    Logger().i(noteTemp.toString());
-    Logger().i(noteTemp.title);
+    final noteTemp = Note(
+        id: note.id,
+        title: titleController.text.trim(),
+        content: quillController.document.toPlainText().trim(),
+        contentJson: jsonEncode(quillController.document.toDelta().toJson()),
+        createdDate: note.createdDate,
+        color: widget.noteColor ?? note.color,
+        remoteChangeTimestamp: note.remoteChangeTimestamp,
+        tags: note.tags,
+        updatedDate: DateTime.now(),
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: DateTime.now(),
+        parentId: note.parentId);
 
     final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
-    if (widget.isNewNote) {
-      noteNotifier.createNote(noteTemp, widget.topicId);
-    } else {
-      noteNotifier.updateNote(noteTemp, widget.topicId);
+    try {
+      if (widget.isNewNote) {
+        var result = noteNotifier.createNote(
+          noteTemp,
+          widget.topicId,
+          widget.userId,
+        );
+        result.then((either) {
+          either.fold(
+            (failure) {
+              toast.showFailure(
+                  description: 'An error occurred while creating the note.');
+              Logger().d(failure.message);
+            },
+            (newNote) {
+              if (!mounted) return;
+              setState(() {
+                note = newNote;
+                widget.entity = newNote;
+                isSaved = true;
+                widget.isNewNote = false;
+                quillController.readOnly = true;
+              });
+              toast.showSuccess(description: 'Note saved successfully.');
+            },
+          );
+        });
+      } else {
+        var updateNoteRes = noteNotifier.updateNote(
+          noteTemp,
+          widget.topicId,
+          widget.userId,
+        );
+
+        updateNoteRes.then((either) {
+          either.fold(
+            (failure) {
+              toast.showFailure(
+                  description: 'An error occurred while saving the note.');
+              Logger().d(failure.message);
+            },
+            (newNote) {
+              if (!mounted) return;
+              setState(() {
+                note = newNote;
+                widget.entity = newNote;
+                isSaved = true;
+                widget.isNewNote = false;
+                quillController.readOnly = true;
+              });
+              toast.showSuccess(description: 'Note updated successfully.');
+            },
+          );
+        });
+      }
+    } on Exception catch (e) {
+      Logger().e('Save Note Error :$e');
+      toast.showFailure(
+          description: 'Unexpected error occurred while saving the note.');
     }
-
-    if (!mounted) return;
-
-    SuccessBannerbar(context, 'Topic Saved.').show();
-
-    // Switch toolbar to BottomNavbar
-    setState(() {
-      widget.entity = noteTemp;
-      widget.isNewNote = false;
-      quillController.readOnly = true; // Make the editor read-only after saving
-      isSaved = true;
-    });
   }
 
   @override
@@ -225,7 +257,10 @@ class _NotePageState extends ConsumerState<NotePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const BasicAppbar(hideBack: true),
+      appBar: const BasicAppbar(
+        hideBack: true,
+        showMenu: true,
+      ),
       body: Column(
         children: [
           Padding(
@@ -268,6 +303,7 @@ class _NotePageState extends ConsumerState<NotePage> {
                             fillColor: Colors.transparent,
                             focusedBorder: InputBorder.none),
                         canRequestFocus: !quillController.readOnly,
+                        maxLength: 25,
                       ),
                     ),
                     if (!isSaved) _saveButton(context),
@@ -335,7 +371,7 @@ class _NotePageState extends ConsumerState<NotePage> {
                     Row(
                       children: [
                         Text(
-                          "Created: ${widget.entity?.createdDate}",
+                          "Created: ${formatDateTime(widget.entity!.createdDate)}",
                           style: const TextStyle(
                               fontSize: 10, fontWeight: FontWeight.w500),
                         )
@@ -344,12 +380,26 @@ class _NotePageState extends ConsumerState<NotePage> {
                   ],
                   const SizedBox(height: 20),
                   Expanded(
-                    child: QuillEditor.basic(
-                      configurations: QuillEditorConfigurations(
-                        controller: quillController,
-                        expands: true,
+                    child: Padding(
+                      padding: EdgeInsets.only(right: 10),
+                      child: QuillEditor.basic(
+                        configurations: QuillEditorConfigurations(
+                          embedBuilders: FlutterQuillEmbeds.editorBuilders(
+                            imageEmbedConfigurations:
+                                QuillEditorImageEmbedConfigurations(
+                              imageProviderBuilder: (context, imageUrl) {
+                                return CachedNetworkImageProvider(
+                                  imageUrl,
+                                  cacheKey: imageUrl,
+                                );
+                              },
+                            ),
+                          ),
+                          controller: quillController,
+                          expands: true,
+                        ),
+                        focusNode: focusNode,
                       ),
-                      focusNode: focusNode,
                     ),
                   ),
                   quillController.readOnly
@@ -418,6 +468,7 @@ class _NotePageState extends ConsumerState<NotePage> {
             decoration: const InputDecoration(
               hintText: "Enter tag here",
             ).applyDefaults(Theme.of(context).inputDecorationTheme),
+            maxLength: 10,
           ),
         ],
       ),

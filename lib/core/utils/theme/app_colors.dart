@@ -11,4 +11,6 @@ class AppColors {
   static const icon = Color.fromARGB(255, 255, 255, 255);
   static const white = Color.fromARGB(255, 255, 255, 255);
   static const black = Colors.black;
+  static const hintText = Color.fromARGB(190, 65, 63, 63);
+  static const seek = Color(0xff1B1F26);
 }

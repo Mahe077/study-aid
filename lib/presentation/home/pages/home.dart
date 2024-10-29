@@ -13,8 +13,8 @@ import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
-import 'package:study_aid/example_data.dart';
-import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart'; // Import the sample data
+import 'package:study_aid/features/topics/presentation/providers/recentItem_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   final User user;
@@ -37,13 +37,29 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(topicsProvider(widget.user.id).notifier).loadInitialTopics();
+      ref
+          .read(recentItemProvider(widget.user.id).notifier)
+          .loadRecentItems(widget.user.id);
+    });
+  }
+
+  @override
   Widget build(
     BuildContext context,
   ) {
     final topicsState = ref.watch(topicsProvider(widget.user.id));
+    final recentItemState = ref.watch(recentItemProvider(widget.user.id));
 
     return Scaffold(
-      appBar: const BasicAppbar(hideBack: true),
+      appBar: const BasicAppbar(
+        hideBack: true,
+        showMenu: true,
+      ),
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: FAB(userId: widget.user.id),
       body: Padding(
@@ -80,39 +96,56 @@ class _HomePageState extends ConsumerState<HomePage> {
                   }
                   return Column(
                     children: [
-                      const Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: AppSubHeadings(
-                          text: 'Recent Items',
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        child: Row(
-                          children: [
-                            for (int i = 0; i < recent.length; i++)
-                              Row(
-                                children: [
-                                  RecentTile(
-                                    title: recent[i].title,
-                                    entity: recent[i],
-                                    type: (recent[i] is Topic)
-                                        ? TopicType.topic
-                                        : (recent[i] is Note)
-                                            ? TopicType.note
-                                            : TopicType.audio,
-                                  ),
-                                  if (i < recent.length - 1)
-                                    const SizedBox(width: 15),
-                                ],
+                      recentItemState.when(
+                        data: (recentItems) {
+                          if (recentItems.recentItems.isEmpty) {
+                            return Container();
+                          }
+                          return Column(
+                            children: [
+                              const Align(
+                                alignment: AlignmentDirectional.topStart,
+                                child: AppSubHeadings(
+                                  text: 'Recent Items',
+                                  size: 20,
+                                ),
                               ),
-                          ],
-                        ),
+                              const SizedBox(height: 8),
+                              Align(
+                                alignment: AlignmentDirectional.topStart,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  clipBehavior: Clip.none,
+                                  child: Row(
+                                    children:
+                                        recentItems.recentItems.map((item) {
+                                      return Row(
+                                        children: [
+                                          RecentTile(
+                                              entity: item,
+                                              type: item is Topic
+                                                  ? TopicType.topic
+                                                  : item is Note
+                                                      ? TopicType.note
+                                                      : TopicType.audio,
+                                              userId: widget.user.id,
+                                              parentTopicId: item.parentId),
+                                          const SizedBox(width: 15),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                            ],
+                          );
+                        },
+                        loading: () =>
+                            const Center(child: CircularProgressIndicator()),
+                        error: (error, stack) => const Center(
+                            child: Center(child: Text("No item to show"))),
                       ),
-                      const SizedBox(height: 15),
                       const Align(
                         alignment: AlignmentDirectional.topStart,
                         child: AppSubHeadings(

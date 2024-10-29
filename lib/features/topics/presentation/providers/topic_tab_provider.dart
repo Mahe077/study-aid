@@ -5,7 +5,7 @@ import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
-// import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
+import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
 class TabDataState {
   final List<Topic> topics;
@@ -64,12 +64,17 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
   final Ref ref;
   final String parentTopicId;
 
+  bool isFetchingTopics = false; // Flag to prevent duplicate loads
+  bool isFetchingNotes = false; // Flag to prevent duplicate loads
+  bool isFetchingAudio = false; // Flag to prevent duplicate loads
+
   TabDataNotifier(this.ref, this.parentTopicId)
       : super(const AsyncValue.loading()) {
-    loadAllData(parentTopicId);
+    loadAllData(parentTopicId, 0, 0, 0);
   }
 
   Future<void> loadMoreTopics(String topicId) async {
+    if (isFetchingTopics) return; // Prevent duplicate fetches
     final currentState = state;
     if (currentState.value == null || !currentState.value!.hasMoreTopics) {
       return;
@@ -77,6 +82,7 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
 
     final lastDocument = currentState.value!.lastTopicDocument;
     try {
+      isFetchingTopics = true; // Set the flag before fetching
       final repository = ref.read(topicRepositoryProvider);
       final result = await repository.fetchSubTopics(topicId, 5, lastDocument);
       result.fold(
@@ -100,15 +106,19 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+    } finally {
+      isFetchingTopics = false; // Reset the flag after fetching
     }
   }
 
   Future<void> loadMoreNotes(String topicId) async {
+    if (isFetchingNotes) return; // Prevent duplicate fetches
     final currentState = state;
     if (currentState.value == null || !currentState.value!.hasMoreNotes) return;
 
     final lastDocument = currentState.value!.lastNoteDocument;
     try {
+      isFetchingNotes = true; // Set the flag before fetching
       final repository = ref.read(noteRepositoryProvider);
       final result = await repository.fetchNotes(topicId, 5, lastDocument);
       result.fold(
@@ -131,59 +141,69 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
       );
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+    } finally {
+      isFetchingNotes = false; // Reset the flag after fetching
     }
   }
 
-  Future<void> loadMoreAudio() async {
-    // final currentState = state;
-    // if (currentState.value == null || !currentState.value!.hasMoreAudio) return;
+  Future<void> loadMoreAudio(String topicId) async {
+    if (isFetchingAudio) return; // Prevent duplicate fetches
+    final currentState = state;
+    if (currentState.value == null || !currentState.value!.hasMoreAudio) return;
 
-    // final lastDocument = currentState.value!.lastAudioDocument;
-    // try {
-    //   final repository = ref.read(audioRepositoryProvider);
-    //   final result =
-    //       await repository.fetchAudioRecordings(userId, 5, lastDocument);
-    //   result.fold(
-    //     (failure) =>
-    //         state = AsyncValue.error(failure.message, StackTrace.current),
-    //     (paginatedObj) {
-    //       final newAudio = paginatedObj.items
-    //           .where((item) => !currentState.value!.audioRecordings
-    //               .any((audio) => audio.id == item.id))
-    //           .toList();
+    final lastDocument = currentState.value!.lastAudioDocument;
+    try {
+      isFetchingAudio = true; // Set the flag before fetching
+      final repository = ref.read(audioRepositoryProvider);
+      final result =
+          await repository.fetchAudioRecordings(topicId, 5, lastDocument);
 
-    //       state = AsyncValue.data(
-    //         currentState.value!.copyWith(
-    //           audioRecordings: [
-    //             ...currentState.value!.audioRecordings,
-    //             ...newAudio
-    //           ],
-    //           hasMoreAudio: paginatedObj.hasMore,
-    //           lastAudioDocument: paginatedObj.lastDocument,
-    //         ),
-    //       );
-    //     },
-    //   );
-    // } catch (e, stackTrace) {
-    //   state = AsyncValue.error(e, stackTrace);
-    // }
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (paginatedObj) {
+          final newAudio = paginatedObj.items
+              .where((item) => !currentState.value!.audioRecordings
+                  .any((audio) => audio.id == item.id))
+              .toList();
+
+          state = AsyncValue.data(
+            currentState.value!.copyWith(
+              audioRecordings: [
+                ...currentState.value!.audioRecordings,
+                ...newAudio
+              ],
+              hasMoreAudio: paginatedObj.hasMore,
+              lastAudioDocument: paginatedObj.lastDocument,
+            ),
+          );
+        },
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    } finally {
+      isFetchingAudio = false; // Reset the flag after fetching
+    }
   }
 
-  Future<void> loadAllData(String parentTopicId) async {
+  Future<void> loadAllData(String parentTopicId, int startTopic, int startNote,
+      int startAudio) async {
     try {
+      final currentState = state;
+
       final topicRepository = ref.read(topicRepositoryProvider);
       final noteRepository = ref.read(noteRepositoryProvider);
-      // final audioRepository = ref.read(audioRepositoryProvider);
+      final audioRepository = ref.read(audioRepositoryProvider);
 
       final result = await Future.wait([
-        topicRepository.fetchSubTopics(parentTopicId, 5, 0),
-        noteRepository.fetchNotes(parentTopicId, 5, 0),
-        // audioRepository.fetchAudioRecordings(parentTopicId, 5),
+        topicRepository.fetchSubTopics(parentTopicId, 5, startTopic),
+        noteRepository.fetchNotes(parentTopicId, 5, startNote),
+        audioRepository.fetchAudioRecordings(parentTopicId, 5, startAudio),
       ]);
 
       final topicsResult = result[0];
       final notesResult = result[1];
-      // final audioResult = result[2];
+      final audioResult = result[2];
 
       topicsResult.fold(
         (failure) =>
@@ -193,43 +213,57 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
             (failure) =>
                 state = AsyncValue.error(failure.message, StackTrace.current),
             (notesPaginatedObj) {
-              //     audioResult.fold(
-              //       (failure) => state =
-              //           AsyncValue.error(failure.message, StackTrace.current),
-              //       (audioPaginatedObj) {
-              // Cast and filter items to their specific types
-              final List<Topic> topics = topicsPaginatedObj.items
-                  .whereType<Topic>() // Cast to Topic
-                  .toList();
+              audioResult.fold(
+                (failure) => state =
+                    AsyncValue.error(failure.message, StackTrace.current),
+                (audioPaginatedObj) {
+                  // Cast and filter items to their specific types
+                  final List<Topic> topics = topicsPaginatedObj.items
+                      .whereType<Topic>() // Cast to Topic
+                      .toList();
 
-              final List<Note> notes = notesPaginatedObj.items
-                  .whereType<Note>() // Cast to Note
-                  .toList();
+                  final List<Note> notes = notesPaginatedObj.items
+                      .whereType<Note>() // Cast to Note
+                      .toList();
 
-              // final List<AudioRecording> audioRecordings =
-              //     audioPaginatedObj.items
-              //         .whereType<AudioRecording>() // Cast to AudioRecording
-              //         .toList();
-
-              state = AsyncValue.data(TabDataState(
-                topics: topics,
-                // notes: [],
-                audioRecordings: [],
-                notes: notes,
-                // audioRecordings: audioRecordings,
-                hasMoreTopics: topicsPaginatedObj.hasMore,
-                // hasMoreNotes: false,
-                hasMoreAudio: false,
-                hasMoreNotes: notesPaginatedObj.hasMore,
-                // hasMoreAudio: audioPaginatedObj.hasMore,
-                lastTopicDocument: topicsPaginatedObj.lastDocument,
-                lastNoteDocument: notesPaginatedObj.lastDocument,
-                // lastAudioDocument: audioPaginatedObj.lastDocument,
-              ));
+                  final List<AudioRecording> audioRecordings =
+                      audioPaginatedObj.items
+                          .whereType<AudioRecording>() // Cast to AudioRecording
+                          .toList();
+                  if (currentState.value == null) {
+                    state = AsyncValue.data(TabDataState(
+                      topics: topics,
+                      notes: notes,
+                      audioRecordings: audioRecordings,
+                      hasMoreTopics: topicsPaginatedObj.hasMore,
+                      hasMoreNotes: notesPaginatedObj.hasMore,
+                      hasMoreAudio: audioPaginatedObj.hasMore,
+                      lastTopicDocument: topicsPaginatedObj.lastDocument,
+                      lastNoteDocument: notesPaginatedObj.lastDocument,
+                      lastAudioDocument: audioPaginatedObj.lastDocument,
+                    ));
+                  } else {
+                    state = AsyncValue.data(
+                      currentState.value!.copyWith(
+                        topics: [...currentState.value!.topics, ...topics],
+                        notes: [...currentState.value!.notes, ...notes],
+                        audioRecordings: [
+                          ...currentState.value!.audioRecordings,
+                          ...audioRecordings
+                        ],
+                        hasMoreTopics: topicsPaginatedObj.hasMore,
+                        hasMoreNotes: notesPaginatedObj.hasMore,
+                        hasMoreAudio: audioPaginatedObj.hasMore,
+                        lastTopicDocument: topicsPaginatedObj.lastDocument,
+                        lastNoteDocument: notesPaginatedObj.lastDocument,
+                        lastAudioDocument: audioPaginatedObj.lastDocument,
+                      ),
+                    );
+                  }
+                },
+              );
             },
           );
-          // },
-          // );
         },
       );
     } catch (e, stackTrace) {
@@ -262,6 +296,19 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
         notes: updatedNoteList,
       ),
     );
+  }
+
+  void deleteNote(String noteId) {
+    final currentState = state;
+
+    // Return if the state is null or if there is no data yet
+    if (currentState.value == null) return;
+
+    // Update the state with the new list of notes
+    state = AsyncValue.data(currentState.value!.copyWith(
+      notes:
+          currentState.value!.notes.where((note) => note.id != noteId).toList(),
+    ));
   }
 
   void updateTopic(Topic updatedTopic) {
@@ -314,15 +361,39 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
       ];
     }
 
-    // final updatedAudioRecordings =
-    //     currentState.value!.audioRecordings.map((audio) {
-    //   return audio.id == updatedAudio.id ? updatedAudio : audio;
-    // }).toList();
-
     state = AsyncValue.data(
       currentState.value!.copyWith(
         audioRecordings: updatedAudioRecordingsList,
       ),
     );
+  }
+
+  void deleteAudio(String audioId) {
+    final currentState = state;
+
+    // Return if the state is null or if there is no data yet
+    if (currentState.value == null) return;
+
+    // Update the state with the new list of notes
+    state = AsyncValue.data(currentState.value!.copyWith(
+      audioRecordings: currentState.value!.audioRecordings
+          .where((audio) => audio.id != audioId)
+          .toList(),
+    ));
+  }
+
+  Future<void> loadAllDataMore(String parentTopicId) async {
+    if (isFetchingTopics || isFetchingAudio || isFetchingNotes) return;
+    final currentState = state;
+    if (currentState.value == null ||
+        (!currentState.value!.hasMoreTopics &&
+            !currentState.value!.hasMoreNotes &&
+            !currentState.value!.hasMoreAudio)) return;
+
+    var lastTopic = currentState.value?.lastTopicDocument;
+    var lastNote = currentState.value?.lastNoteDocument;
+    var lastAudio = currentState.value?.lastAudioDocument;
+
+    loadAllData(parentTopicId, lastTopic, lastNote, lastAudio);
   }
 }

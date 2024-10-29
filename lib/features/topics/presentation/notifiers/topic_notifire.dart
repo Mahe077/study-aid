@@ -37,10 +37,10 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   TopicsNotifier(this.repository, this.userId, this._ref)
       : super(const AsyncValue.loading()) {
-    _loadInitialTopics();
+    loadInitialTopics();
   }
 
-  Future<void> _loadInitialTopics() async {
+  Future<void> loadInitialTopics() async {
     try {
       final result = await repository.fetchUserTopics(userId, 5, 0);
       result.fold(
@@ -93,8 +93,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> createTopic(String? title, String? description, Color color,
       String? parentId, String userId) async {
-    final currentState = state; // Get the current state before changing it
-    // state = const AsyncValue.loading();
+    final currentState = state;
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =
@@ -221,9 +220,9 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
   }
 
   Future<void> createTopic(String? title, String? description, Color color,
-      String? parentId, String userId) async {
+      String parentId, String userId) async {
     final currentState = state; // Get the current state before changing it
-    // state = const AsyncValue.loading();
+
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =
@@ -233,11 +232,6 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (newTopic) {
-          Logger().d(
-              'createSubTopic:: Current state: ${currentState.value.toString()}');
-          Logger().d('createSubTopic:: State: ${state.value.toString()}');
-          Logger().d('createSubTopic:: New topic created: $newTopic');
-
           // If the state is loading or null, initialize the state with the new topic
           if (currentState.value == null ||
               currentState.value!.topics.isEmpty) {
@@ -259,6 +253,9 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
               ),
             );
           }
+
+          // final tabDataNotifier = _ref.read(tabDataProvider(parentId).notifier);
+          // tabDataNotifier.updateTopic(newTopic);
         },
       );
     } catch (e, stackTrace) {

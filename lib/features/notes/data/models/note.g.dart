@@ -28,13 +28,14 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       syncStatus: fields[9] as String,
       localChangeTimestamp: fields[10] as DateTime,
       remoteChangeTimestamp: fields[11] as DateTime,
+      parentId: fields[12] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, NoteModel obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(12)
       ..writeByte(1)
       ..write(obj.id)
       ..writeByte(2)
@@ -56,7 +57,9 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       ..writeByte(10)
       ..write(obj.localChangeTimestamp)
       ..writeByte(11)
-      ..write(obj.remoteChangeTimestamp);
+      ..write(obj.remoteChangeTimestamp)
+      ..writeByte(12)
+      ..write(obj.parentId);
   }
 
   @override
