@@ -8,12 +8,13 @@ import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
+import 'package:study_aid/features/transcribe/domain/usecases/start_transcription_usecase.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:http/http.dart' as http;
 
 abstract class RemoteDataSource {
-  Future<Either<Failure, AudioRecordingModel>> createAudioRecording(
-      AudioRecordingModel audio);
+  Future<Either<Failure, Tuple2<AudioRecordingModel, String>>>
+      createAudioRecording(AudioRecordingModel audio, bool isTranscribe);
   Future<Either<Failure, AudioRecordingModel>> updateAudioRecording(
       AudioRecordingModel audio);
   Future<Either<Failure, void>> deleteAudioRecording(String audioId);
@@ -27,6 +28,9 @@ abstract class RemoteDataSource {
 class RemoteDataSourceImpl extends RemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final _storage = FirebaseStorage.instance;
+  final StartTranscriptionUseCase transcribeAudioUseCase;
+
+  RemoteDataSourceImpl(this.transcribeAudioUseCase);
 
   @override
   Future<bool> audioExists(String audioId) async {
@@ -40,8 +44,8 @@ class RemoteDataSourceImpl extends RemoteDataSource {
   }
 
   @override
-  Future<Either<Failure, AudioRecordingModel>> createAudioRecording(
-      AudioRecordingModel audio) async {
+  Future<Either<Failure, Tuple2<AudioRecordingModel, String>>>
+      createAudioRecording(AudioRecordingModel audio, bool isTranscribe) async {
     try {
       final docRef = _firestore.collection('audios').doc();
 
@@ -51,20 +55,12 @@ class RemoteDataSourceImpl extends RemoteDataSource {
         return Left(Failure('Local file does not exist: $localFilePath'));
       }
 
-      // Firebase storage reference
-      var storageRef = _storage.ref();
-
-      // Reference to the folder where the file will be stored
-      String filename = localFilePath.split('/').last; // Get only the file name
-      Reference audiosRef = storageRef.child("Audio/$filename");
-
-      try {
-        // Upload the audio file to Firebase Storage
-        await audiosRef.putFile(audioFile);
-
-        //You can retrieve the download URL if needed
-        String downloadUrl = await audiosRef.getDownloadURL();
-
+      // Upload the audio file to Firebase Storage and get the download URL
+      final uploadResult = await _uploadAudioToFirebase(audioFile);
+      return uploadResult.fold(
+        (failure) => Left(failure), // Return the failure if upload fails
+        (downloadUrl) async {
+          // Create the audio recording with the download URL
         final audioWithId = audio.copyWith(
             id: docRef.id,
             syncStatus: ConstantStrings.synced,
@@ -72,20 +68,71 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
         await docRef.set(audioWithId.toFirestore());
 
-        return Right(audioWithId);
-      } on FirebaseException catch (e) {
-        return Left(Failure('Failed to upload audio: ${e.message}'));
-      }
+          String transcribeText =
+              ''; // Call transcription if isTranscribe is true
+          if (isTranscribe) {
+            transcribeText =
+                await _handleTranscription(localFilePath, audioWithId.id);
+          }
+
+          return Right(Tuple2(audioWithId, transcribeText));
+        },
+      );
     } on ServerException {
       return Left(ServerFailure('Failed to sign in'));
     } on Exception catch (e) {
-      throw Exception('Error in creating a audio: $e');
+      throw Exception('Error in creating an audio: $e');
+    }
+  }
+
+  /// Handle transcription using the local MP3 file.
+  Future<String> _handleTranscription(String mp3File, String audioId) async {
+    try {
+      final transcriptionResult = await transcribeAudioUseCase.call(mp3File);
+      Logger().d("Transcription for $audioId: ${transcriptionResult.text}");
+      return transcriptionResult.text;
+      // TODO: Save transcription result as a note in Firestore if needed
+    } catch (e) {
+      Logger().e('Transcription failed: $e');
+    }
+    return '';
+  }
+
+  Future<Either<Failure, String>> _uploadAudioToFirebase(File audioFile) async {
+    try {
+      var storageRef = _storage.ref();
+
+      // Reference to the folder where the file will be stored
+      String filename =
+          audioFile.path.split('/').last; // Get only the file name
+      Reference audiosRef = storageRef.child("Audio/$filename");
+
+      // Upload the audio file to Firebase Storage
+      await audiosRef.putFile(audioFile);
+
+      // Retrieve the download URL
+      String downloadUrl = await audiosRef.getDownloadURL();
+
+      return Right(downloadUrl);
+    } on FirebaseException catch (e) {
+      return Left(Failure('Failed to upload audio: ${e.message}'));
     }
   }
 
   @override
   Future<Either<Failure, void>> deleteAudioRecording(String audioId) async {
     try {
+      final audioResult = await getAudioRecordingById(audioId);
+      audioResult.fold(
+        (failure) => throw Exception('Audio not found: ${failure.message}'),
+        (audio) async {
+          final deleteFileResult = await _deleteAudioFile(audio.url);
+          if (deleteFileResult.isLeft()) {
+            return deleteFileResult; // Return error if file deletion fails
+          }
+        },
+      );
+
       await _firestore.collection('audios').doc(audioId).delete();
       return const Right(null);
     } catch (e) {
@@ -105,9 +152,15 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     try {
       final querySnapshot =
           await _firestore.collection('audios').doc(parentId).get();
-      return Right(AudioRecordingModel.fromFirestore(querySnapshot));
+
+      if (querySnapshot.exists && querySnapshot.data() != null) {
+        final audio = AudioRecordingModel.fromFirestore(querySnapshot);
+        return Right(audio);
+      } else {
+        return Left(ServerFailure('Audio not found'));
+      }
     } catch (e) {
-      throw Exception('Error in updating a audio: $e');
+      throw Exception('Error in fetching a audio: $e');
     }
   }
 
@@ -164,30 +217,22 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     }
 
     return null;
-    // Return null if download fails
-    //   var storageRef = _storage.ref();
-    //   try {
-    //     final chlidRef = storageRef.child(url);
-
-    //     final file = File(filePath);
-
-    //     final downloadTask = chlidRef.writeToFile(file);
-
-    //     // Wait for the task to complete
-    //     final taskSnapshot = await downloadTask;
-
-    //     // Check if the download was successful
-    //     if (taskSnapshot.state == TaskState.success) {
-    //       Logger().d("File downloaded successfully to $filePath");
-    //       return file; // Return the file after successful download
-    //     } else {
-    //       Logger().d(
-    //           "Failed to download the file: Task state is ${taskSnapshot.state}");
-    //       return null; // Return null in case of failure
-    //     }
-    //   } catch (e) {
-    //     Logger().d("Error downloading file: $e");
-    //   }
-    //   return null;
   }
+
+  Future<Either<Failure, void>> _deleteAudioFile(String audioUrl) async {
+    try {
+      // Create a reference to the audio file in Firebase Storage using the URL
+      final storageRef = _storage.refFromURL(audioUrl);
+
+      // Delete the audio file from Firebase Storage
+      await storageRef.delete();
+
+      return const Right(null);
+    } on FirebaseException catch (e) {
+      return Left(Failure('Failed to delete audio file: ${e.message}'));
+    } catch (e) {
+      return Left(Failure('Error in deleting audio file: $e'));
+    }
+  }
+
 }

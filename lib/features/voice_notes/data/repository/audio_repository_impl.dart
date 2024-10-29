@@ -30,41 +30,66 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       required this.userRepository});
 
   @override
-  Future<Either<Failure, AudioRecording>> createAudioRecording(
-      AudioRecording audio, String topicId, String userId) async {
-
-    // Convert AudioRecording domain entity to AudioRecordingModel
+  Future<Either<Failure, Tuple2<AudioRecording, String>>> createAudioRecording(
+    AudioRecording audio,
+    String topicId,
+    String userId,
+    bool isTranscribe,
+  ) async {
+    // Convert domain entity to model
     AudioRecordingModel audioRecording = AudioRecordingModel.fromDomain(audio);
 
     try {
       if (await networkInfo.isConnected) {
-        // Upload audio recording to remote
-        final result = await remoteDataSource.createAudioRecording(audioRecording);
+        // Online: Upload audio to remote and sync local storage
+        final uploadResult = await remoteDataSource.createAudioRecording(
+            audioRecording, isTranscribe);
 
-        return await result.fold(
+        return uploadResult.fold(
               (failure) => Left(failure),
-              (remoteAudio) async {
-            // Store remote audio locally and update references
-            await localDataSource.createAudioRecording(remoteAudio);
-            await topicRepository.updateAudioOfParent(topicId, remoteAudio.id);
-            await userRepository.updateRecentItems(
-                userId, remoteAudio.id, ConstantStrings.audio);
-            return Right(remoteAudio.toDomain());
+          (result) async {
+            final syncedAudio = result.value1;
+            await _updateLocalAndReferences(
+                syncedAudio, topicId, userId, ConstantStrings.audio);
+
+            return Right(Tuple2(syncedAudio.toDomain(), result.value2));
           },
         );
       } else {
-        // Store audio locally when offline
-        await localDataSource.createAudioRecording(audioRecording);
-        await topicRepository.updateAudioOfParent(topicId, audioRecording.id);
-        await userRepository.updateRecentItems(
-            userId, audioRecording.id, ConstantStrings.audio);
-        return Right(audioRecording.toDomain());
+        // Offline: Save only to local storage
+        await _saveAudioOffline(audioRecording, topicId, userId);
+        return Right(Tuple2(audioRecording.toDomain(), ''));
       }
     } catch (e) {
-      return Left(Failure('AudioRecordingRepositoryImpl:: Error in creating audio recording: $e'));
+      Logger().e('Error creating audio recording: $e');
+      return Left(Failure(
+          'AudioRecordingRepositoryImpl:: Error in creating audio recording: $e'));
     }
   }
 
+// Helper function to update local storage and references
+  Future<void> _updateLocalAndReferences(
+    AudioRecordingModel audio,
+    String topicId,
+    String userId,
+    String itemType,
+  ) async {
+    await localDataSource.createAudioRecording(audio);
+    await topicRepository.updateAudioOfParent(topicId, audio.id);
+    await userRepository.updateRecentItems(userId, audio.id, itemType);
+  }
+
+// Helper function to save audio offline
+  Future<void> _saveAudioOffline(
+    AudioRecordingModel audio,
+    String topicId,
+    String userId,
+  ) async {
+    await localDataSource.createAudioRecording(audio);
+    await topicRepository.updateAudioOfParent(topicId, audio.id);
+    await userRepository.updateRecentItems(
+        userId, audio.id, ConstantStrings.audio);
+  }
 
   @override
   Future<Either<Failure, PaginatedObj<AudioRecording>>> fetchAudioRecordings(
@@ -169,13 +194,15 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
 
         await remoteAudioOrFailure.fold((failure) async {
           // If the audio recording doesn't exist on the remote source, create it remotely
-          final newAudioResult =
-              await remoteDataSource.createAudioRecording(localAudio);
-          newAudioResult.fold((failure) => Left(Failure(failure.toString())),
-              (newAudio) async {
+          final uploadResult = await remoteDataSource.createAudioRecording(
+              localAudio,
+              false); //TODO:check this what should we do  for syncing beacuse no transcibe happend yet
+          uploadResult.fold((failure) => Left(Failure(failure.toString())),
+              (result) async {
+            final syncedAudio = result.value1;
             // Replace the old local audio with the newly created one
             await localDataSource.deleteAudioRecording(localAudio.id);
-            await localDataSource.createAudioRecording(newAudio);
+            await localDataSource.createAudioRecording(syncedAudio);
           });
         }, (remoteAudio) async {
           // Compare updatedDate to decide whether to sync
@@ -273,9 +300,16 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
         return remoteAudioRecordingResult.fold(
           (failure) => Left(failure),
           (remoteAudioRecording) async {
+            final file = await remoteDataSource.downloadFile(
+                remoteAudioRecording.url, remoteAudioRecording.localpath);
+
+            if (file != null) {
+              await localDataSource.createAudioRecording(remoteAudioRecording);
+              return Right(remoteAudioRecording);
+            } else {
+              return Left(Failure("Failed to download audio file."));
+            }
             // Cache the remote audioRecording locally
-            await localDataSource.createAudioRecording(remoteAudioRecording);
-            return Right(remoteAudioRecording);
           },
         );
       } else {
