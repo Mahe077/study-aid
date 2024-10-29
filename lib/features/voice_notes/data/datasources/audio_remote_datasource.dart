@@ -23,6 +23,8 @@ abstract class RemoteDataSource {
       String parentId);
   Future<bool> audioExists(String audioId);
   Future<File?> downloadFile(String url, String filePath, {int retries = 3});
+  Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
+      String query);
 }
 
 class RemoteDataSourceImpl extends RemoteDataSource {
@@ -61,12 +63,12 @@ class RemoteDataSourceImpl extends RemoteDataSource {
         (failure) => Left(failure), // Return the failure if upload fails
         (downloadUrl) async {
           // Create the audio recording with the download URL
-        final audioWithId = audio.copyWith(
-            id: docRef.id,
-            syncStatus: ConstantStrings.synced,
-            url: downloadUrl);
+          final audioWithId = audio.copyWith(
+              id: docRef.id,
+              syncStatus: ConstantStrings.synced,
+              url: downloadUrl);
 
-        await docRef.set(audioWithId.toFirestore());
+          await docRef.set(audioWithId.toFirestore());
 
           String transcribeText =
               ''; // Call transcription if isTranscribe is true
@@ -235,4 +237,22 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     }
   }
 
+  @override
+  Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
+      String query) async {
+    try {
+      //   final lowerCaseQuery = query.toLowerCase();
+
+      final audiosSnapshot = await _firestore
+          .collection('audios')
+          .where('tags', arrayContainsAny: [query]).get();
+
+      final audios = audiosSnapshot.docs
+          .map((doc) => AudioRecordingModel.fromFirestore(doc))
+          .toList();
+      return Right(audios);
+    } catch (e) {
+      throw Exception('Error in fetching audios from tags: $e');
+    }
+  }
 }

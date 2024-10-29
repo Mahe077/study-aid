@@ -14,6 +14,7 @@ import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
+import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 
@@ -93,6 +94,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
   @override
   Widget build(BuildContext context) {
     final tabDataState = ref.watch(tabDataProvider(widget.entity.id));
+    final searchState = ref.watch(searchNotifireProvider);
 
     return DefaultTabController(
       length: 4,
@@ -111,15 +113,19 @@ class _TopicPageState extends ConsumerState<TopicPage>
             children: [
               _buildHeadingSection(),
               Expanded(
-                child: Column(
-                  children: [
-                    _buildRecentItemsSection(tabDataState),
-                    const SizedBox(height: 10),
-                    _buildTabBar(),
-                    const SizedBox(height: 8),
-                    _buildTabView(tabDataState),
-                  ],
-                ),
+                child: searchState.isSearchActive
+                    ? searchState.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : _buildSearchResults(searchState.searchResults)
+                    : Column(
+                        children: [
+                          _buildRecentItemsSection(tabDataState),
+                          const SizedBox(height: 10),
+                          _buildTabBar(),
+                          const SizedBox(height: 8),
+                          _buildTabView(tabDataState),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -137,7 +143,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
           alignment: TextAlign.left,
         ),
         const SizedBox(height: 10),
-        _searchField(),
+        _searchField(ref),
         const SizedBox(height: 15),
       ],
     );
@@ -372,13 +378,73 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _searchField() {
+  Widget _searchField(WidgetRef ref) {
     return TextField(
       controller: _search,
-      decoration: const InputDecoration(
-        suffixIcon: Icon(Icons.search),
+      decoration: InputDecoration(
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                final query = _search.text.trim();
+                if (query.isNotEmpty) {
+                  ref
+                      .read(searchNotifireProvider.notifier)
+                      .performSearch(query);
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                // Clear search and reset to the default view
+                _search.clear();
+                ref.read(searchNotifireProvider.notifier).resetSearch();
+              },
+            ),
+          ],
+        ),
         hintText: 'Search anything',
       ),
+    );
+  }
+
+  Widget _buildSearchResults(List<dynamic> results) {
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'No results found',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: results.length,
+      itemBuilder: (context, index) {
+        final item = results[index];
+
+        if (item is Note) {
+          return ContentTile(
+            entity: item,
+            type: TopicType.note,
+            userId: widget.userId,
+            parentTopicId: widget.entity.id,
+          );
+        } else if (item is AudioRecording) {
+          return ContentTile(
+            entity: item,
+            type: TopicType.audio,
+            userId: widget.userId,
+            parentTopicId: widget.entity.id,
+          );
+        }
+
+        return const SizedBox
+            .shrink(); // Handle unexpected item types gracefully
+      },
     );
   }
 }

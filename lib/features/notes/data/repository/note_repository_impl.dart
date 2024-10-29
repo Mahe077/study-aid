@@ -243,4 +243,22 @@ class NoteRepositoryImpl extends NoteRepository {
       return Left(Failure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<NoteModel>>> searchFromTags(String query) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final remoteNoteResult = await remoteDataSource.searchFromRemote(query);
+        return remoteNoteResult.fold((failure) => Left(failure),
+            (remoteNote) async {
+          return Right(remoteNote);
+        });
+      } else {
+        final localNoteResult = await localDataSource.searchFromLocal(query);
+        return Right(localNoteResult);
+      }
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
 }

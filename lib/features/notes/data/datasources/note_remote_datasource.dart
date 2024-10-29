@@ -12,10 +12,12 @@ abstract class RemoteDataSource {
   Future<Either<Failure, void>> fetchAllNotes();
   Future<Either<Failure, NoteModel>> getNoteById(String parentId);
   Future<bool> noteExists(String noteId);
+  Future<Either<Failure, List<NoteModel>>> searchFromRemote(String query);
 }
 
 class RemoteDataSourceImpl extends RemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   @override
   Future<bool> noteExists(String noteId) async {
@@ -78,6 +80,23 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       return Right(note.copyWith(syncStatus: ConstantStrings.synced));
     } on Exception catch (e) {
       throw Exception('Error in updating a note: $e');
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<NoteModel>>> searchFromRemote(
+      String query) async {
+    try {
+      final notesSnapshot = await _firestore
+          .collection('notes')
+          .where('tags', arrayContainsAny: [query]).get();
+
+      final notes = notesSnapshot.docs
+          .map((doc) => NoteModel.fromFirestore(doc))
+          .toList();
+      return Right(notes);
+    } catch (e) {
+      throw Exception('Error in fetching notes from tags: $e');
     }
   }
 }
