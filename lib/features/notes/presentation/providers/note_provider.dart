@@ -51,9 +51,3 @@ final notesProvider = StateNotifierProvider.autoDispose
 
 final syncNotesUseCaseProvider =
     Provider((ref) => SyncNotesUseCase(ref.read(noteRepositoryProvider)));
-
-// final noteChildProvider = StateNotifierProvider.autoDispose
-//     .family<NoteChildNotifier, AsyncValue<NotesState>, String>((ref, userId) {
-//   final repository = ref.read(noteRepositoryProvider);
-//   return NoteChildNotifier(repository, userId, ref);
-// });

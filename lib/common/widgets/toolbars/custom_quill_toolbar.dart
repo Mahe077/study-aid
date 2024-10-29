@@ -1,10 +1,6 @@
-import 'dart:io';
-
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 class CustomQuillToolbar extends StatelessWidget {
@@ -14,31 +10,6 @@ class CustomQuillToolbar extends StatelessWidget {
   });
 
   final QuillController quillController;
-
-  /// Function to Insert an Image at the Current Cursor Position.
-  Future<void> insertImage(String imageUrl) async {
-    final index = quillController.selection.baseOffset;
-    final length = quillController.selection.extentOffset - index;
-
-    quillController.replaceText(
-      index,
-      length,
-      BlockEmbed.image(imageUrl), // Embed the image.
-      TextSelection.collapsed(offset: index + 1),
-    );
-  }
-
-  Future<String?> uploadImage(String imagePath) async {
-    if (imagePath.isEmpty) return null;
-
-    final storageRef = FirebaseStorage.instance.ref();
-    final fileRef =
-        storageRef.child('Images/${DateTime.now().millisecondsSinceEpoch}.jpg');
-
-    await fileRef.putFile(File(imagePath));
-    final downloadUrl = await fileRef.getDownloadURL();
-    return downloadUrl;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,14 +25,7 @@ class CustomQuillToolbar extends StatelessWidget {
         configurations: QuillSimpleToolbarConfigurations(
           embedButtons: FlutterQuillEmbeds.toolbarButtons(
               imageButtonOptions: QuillToolbarImageButtonOptions(
-                  imageButtonConfigurations: QuillToolbarImageConfigurations(
-                onImageInsertCallback: (image, controller) async {
-                  final imageUrl = await uploadImage(image);
-                  if (imageUrl != null) {
-                    insertImage(imageUrl);
-                  }
-                },
-              )),
+                  imageButtonConfigurations: QuillToolbarImageConfigurations()),
               videoButtonOptions: null),
           decoration: BoxDecoration(
             color: AppColors.toolbar,
