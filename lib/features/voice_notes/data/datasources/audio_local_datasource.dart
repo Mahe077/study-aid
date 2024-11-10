@@ -123,7 +123,9 @@ class LocalDataSourceImpl extends LocalDataSource {
     // Fetch all local notes
     final audios = _audioBox.values
         .where((audio) =>
-            audio.tags.any((tag) => tag.toLowerCase().contains(lowerCaseQuery)))
+            audio.tags
+                .any((tag) => tag.toLowerCase().contains(lowerCaseQuery)) ||
+            (audio.title.toLowerCase().contains(lowerCaseQuery)))
         .toList();
 
     return audios;

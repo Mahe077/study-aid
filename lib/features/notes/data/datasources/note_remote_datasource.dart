@@ -191,13 +191,25 @@ class RemoteDataSourceImpl extends RemoteDataSource {
   Future<Either<Failure, List<NoteModel>>> searchFromRemote(
       String query) async {
     try {
+      // Query for documents where the 'tags' array contains the query
       final notesSnapshot = await _firestore
           .collection('notes')
           .where('tags', arrayContainsAny: [query]).get();
 
-      final notes = notesSnapshot.docs
-          .map((doc) => NoteModel.fromFirestore(doc))
-          .toList();
+      // Query for documents where the 'title' matches the query
+      final titleQuerySnapshot = await _firestore
+          .collection('notes')
+          .where('title',
+              isGreaterThanOrEqualTo: query, isLessThan: '${query}z')
+          .get();
+
+      // Combine the results, removing duplicates
+      final combinedResults = <DocumentSnapshot>{}
+        ..addAll(notesSnapshot.docs)
+        ..addAll(titleQuerySnapshot.docs);
+
+      final notes =
+          combinedResults.map((doc) => NoteModel.fromFirestore(doc)).toList();
       return Right(notes);
     } catch (e) {
       throw Exception('Error in fetching notes from tags: $e');
