@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
+import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/content_tile.dart';
@@ -297,16 +299,22 @@ class EmptyHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.0),
-            child: Text(
-              'Looks like you haven’t created anything yet. Click on the + button in the bottom left corner to get started.',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              textAlign: TextAlign.center,
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                SvgPicture.asset(AppVectors.home),
+                const SizedBox(height: 20),
+                const Text(
+                  'Looks like you haven’t created anything yet. Click on the + button in the bottom left corner to get started.',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ],
