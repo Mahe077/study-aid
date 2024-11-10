@@ -52,7 +52,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           createdDate: DateTime.now(),
           updatedDate: DateTime.now(),
           createdTopics: [],
-          syncStatus: ConstantStrings.synced);
+          syncStatus: ConstantStrings.synced,
+          recentItems: []);
       await updateUser(user);
       return user;
     } on Exception catch (e) {
@@ -123,7 +124,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
             createdDate: DateTime.now(),
             updatedDate: DateTime.now(),
             createdTopics: [],
-            syncStatus: ConstantStrings.synced);
+            syncStatus: ConstantStrings.synced,
+            recentItems: []);
         await updateUser(user);
         return user;
       } else {
@@ -161,7 +163,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
             createdDate: DateTime.now(),
             updatedDate: DateTime.now(),
             createdTopics: [],
-            syncStatus: ConstantStrings.synced);
+            syncStatus: ConstantStrings.synced,
+            recentItems: []);
         await updateUser(user);
         return user;
       } else {

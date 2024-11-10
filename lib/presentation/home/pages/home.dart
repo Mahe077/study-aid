@@ -13,8 +13,10 @@ import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
-import 'package:study_aid/example_data.dart';
-import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart'; // Import the sample data
+import 'package:study_aid/features/topics/presentation/providers/recentItem_provider.dart';
+import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   final User user;
@@ -37,13 +39,30 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    Future.microtask(() {
+      ref.read(topicsProvider(widget.user.id).notifier).loadInitialTopics();
+      ref
+          .read(recentItemProvider(widget.user.id).notifier)
+          .loadRecentItems(widget.user.id);
+    });
+  }
+
+  @override
   Widget build(
     BuildContext context,
   ) {
     final topicsState = ref.watch(topicsProvider(widget.user.id));
+    final recentItemState = ref.watch(recentItemProvider(widget.user.id));
+    final searchState = ref.watch(searchNotifireProvider);
 
     return Scaffold(
-      appBar: const BasicAppbar(hideBack: true),
+      appBar: const BasicAppbar(
+        hideBack: true,
+        showMenu: true,
+      ),
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: FAB(userId: widget.user.id),
       body: Padding(
@@ -65,7 +84,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       const SizedBox(height: 10),
                       widget.user.createdTopics.isEmpty
                           ? _emptyHomeText()
-                          : _searchField(),
+                          : _searchField(ref),
                       const SizedBox(height: 15),
                     ],
                   ),
@@ -73,90 +92,115 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
             Expanded(
-              child: topicsState.when(
-                data: (state) {
-                  if (state.topics.isEmpty) {
-                    return const EmptyHome();
-                  }
-                  return Column(
-                    children: [
-                      const Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: AppSubHeadings(
-                          text: 'Recent Items',
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        child: Row(
+              child: searchState.isSearchActive
+                  ? searchState.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildSearchResults(searchState.searchResults)
+                  : topicsState.when(
+                      data: (state) {
+                        if (state.topics.isEmpty) {
+                          return const EmptyHome();
+                        }
+                        return Column(
                           children: [
-                            for (int i = 0; i < recent.length; i++)
-                              Row(
-                                children: [
-                                  RecentTile(
-                                    title: recent[i].title,
-                                    entity: recent[i],
-                                    type: (recent[i] is Topic)
-                                        ? TopicType.topic
-                                        : (recent[i] is Note)
-                                            ? TopicType.note
-                                            : TopicType.audio,
-                                  ),
-                                  if (i < recent.length - 1)
-                                    const SizedBox(width: 15),
-                                ],
+                            recentItemState.when(
+                              data: (recentItems) {
+                                if (recentItems.recentItems.isEmpty) {
+                                  return Container();
+                                }
+                                return Column(
+                                  children: [
+                                    const Align(
+                                      alignment: AlignmentDirectional.topStart,
+                                      child: AppSubHeadings(
+                                        text: 'Recent Items',
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Align(
+                                      alignment: AlignmentDirectional.topStart,
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        clipBehavior: Clip.none,
+                                        child: Row(
+                                          children: recentItems.recentItems
+                                              .map((item) {
+                                            return Row(
+                                              children: [
+                                                RecentTile(
+                                                    entity: item,
+                                                    type: item is Topic
+                                                        ? TopicType.topic
+                                                        : item is Note
+                                                            ? TopicType.note
+                                                            : TopicType.audio,
+                                                    userId: widget.user.id,
+                                                    parentTopicId:
+                                                        item.parentId),
+                                                const SizedBox(width: 15),
+                                              ],
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 15),
+                                  ],
+                                );
+                              },
+                              loading: () => const Center(
+                                  child: CircularProgressIndicator()),
+                              error: (error, stack) => const Center(
+                                  child:
+                                      Center(child: Text("No item to show"))),
+                            ),
+                            const Align(
+                              alignment: AlignmentDirectional.topStart,
+                              child: AppSubHeadings(
+                                text: 'Topics',
+                                size: 20,
                               ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      const Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: AppSubHeadings(
-                          text: 'Topics',
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: ListView(
-                          children: [
-                            for (int i = 0; i < state.topics.length; i++)
-                              Column(
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: ListView(
                                 children: [
-                                  ContentTile(
-                                    // title: state.topics[i].title,
-                                    userId: widget.user.id,
-                                    entity: state.topics[i],
-                                    type: TopicType.topic,
-                                    parentTopicId: '',
-                                  ),
-                                  if (i < state.topics.length - 1)
+                                  for (int i = 0; i < state.topics.length; i++)
+                                    Column(
+                                      children: [
+                                        ContentTile(
+                                          // title: state.topics[i].title,
+                                          userId: widget.user.id,
+                                          entity: state.topics[i],
+                                          type: TopicType.topic,
+                                          parentTopicId: '',
+                                        ),
+                                        if (i < state.topics.length - 1)
+                                          const SizedBox(height: 10),
+                                      ],
+                                    ),
+                                  if (state.hasMore) ...[
+                                    ElevatedButton(
+                                      onPressed: _loadMoreTopics,
+                                      child: const Icon(
+                                        Icons.keyboard_arrow_down,
+                                        size: 25,
+                                      ),
+                                    ),
+                                  ] else
                                     const SizedBox(height: 10),
                                 ],
                               ),
-                            if (state.hasMore) ...[
-                              ElevatedButton(
-                                onPressed: _loadMoreTopics,
-                                child: const Icon(
-                                  Icons.keyboard_arrow_down,
-                                  size: 25,
-                                ),
-                              ),
-                            ] else
-                              const SizedBox(height: 10),
+                            ),
                           ],
-                        ),
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(child: Text('Error: $error')),
-              ),
+                        );
+                      },
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) =>
+                          Center(child: Text('Error: $error')),
+                    ),
             ),
           ],
         ),
@@ -164,11 +208,34 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _searchField() {
+  Widget _searchField(WidgetRef ref) {
     return TextField(
       controller: _search,
-      decoration: const InputDecoration(
-        suffixIcon: Icon(Icons.search),
+      decoration: InputDecoration(
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                final query = _search.text.trim();
+                if (query.isNotEmpty) {
+                  ref
+                      .read(searchNotifireProvider.notifier)
+                      .performSearch(query);
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                // Clear search and reset to the default view
+                _search.clear();
+                ref.read(searchNotifireProvider.notifier).resetSearch();
+              },
+            ),
+          ],
+        ),
         hintText: 'Search anything',
       ),
     );
@@ -183,6 +250,44 @@ class _HomePageState extends ConsumerState<HomePage> {
         fontSize: 16,
       ),
       textAlign: TextAlign.left,
+    );
+  }
+
+  Widget _buildSearchResults(List<dynamic> results) {
+    if (results.isEmpty) {
+      return Center(
+        child: Text(
+          'No results found',
+          style: TextStyle(fontSize: 16, color: AppColors.black),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: results.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 15),
+      itemBuilder: (context, index) {
+        final item = results[index];
+
+        if (item is Note) {
+          return ContentTile(
+            entity: item,
+            type: TopicType.note,
+            userId: widget.user.id,
+            parentTopicId: item.parentId,
+          );
+        } else if (item is AudioRecording) {
+          return ContentTile(
+            entity: item,
+            type: TopicType.audio,
+            userId: widget.user.id,
+            parentTopicId: item.parentId,
+          );
+        }
+
+        // Handle unexpected item types gracefully
+        return const SizedBox.shrink();
+      },
     );
   }
 }

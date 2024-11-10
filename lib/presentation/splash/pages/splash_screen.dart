@@ -38,42 +38,6 @@ class _State extends ConsumerState<SplashScreen>
     super.dispose();
   }
 
-  void _checkLoginStatus() async {
-    await Future.delayed(
-        const Duration(seconds: 2)); // Simulate a splash screen delay
-
-    if (!mounted) return;
-
-    final userState = ref.watch(userProvider);
-
-    userState.when(
-      data: (user) {
-        if (user != null) {
-          const Text("User not logged in");
-          // Navigator.pushReplacement(
-          //     context,
-          //     MaterialPageRoute(
-          //         builder: (context) =>
-          //             HomePage(user:user)));
-        } else {
-          Logger().i(user);
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const SigninPage()),
-          // );
-        }
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, stack) {
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const GetStartedPage()),
-        // );
-        Logger().e(e);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final userState = ref.watch(userProvider);
@@ -81,19 +45,32 @@ class _State extends ConsumerState<SplashScreen>
     userState.when(
       data: (user) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (user != null) {
+          if (user == null) {
+            // If user is null, check if the box exists
+            final userBox = ref.watch(userBoxProvider).value;
+            if (userBox == null || userBox.isEmpty) {
+              // If the userBox is empty, navigate to the Welcome page
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const GetStartedPage()),
+              );
+            } else {
+              // If userBox exists but no user, navigate to the Sign-In page
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const SigninPage()),
+              );
+            }
+          } else {
             Navigator.pushReplacement(context,
                 MaterialPageRoute(builder: (context) => HomePage(user: user)));
-          } else {
-            Logger().i(user);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const SigninPage()),
-            );
           }
         });
       },
-      loading: () => Logger().i('Loading user data...'),
+      loading: () => {
+        const Center(child: CircularProgressIndicator()),
+        Logger().i('Loading user data...')
+      },
       error: (e, stack) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           Navigator.pushReplacement(

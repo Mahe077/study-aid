@@ -63,8 +63,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPageCopy> {
               height: 20,
             ),
             BasicAppButton(
-              onPressed:
-                  _verifyOTP, //TODO:implement correctly adding logic onPrecessd
+              onPressed: _verifyOTP,
               title: "Verify",
             ),
             const SizedBox(
@@ -78,7 +77,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPageCopy> {
   }
 
   Future<void> _verifyOTP() async {
-    String otp = _otp.join();
+    // String otp = _otp.join();
     // if (await EmailOTP.verifyOTP(otp: otp)) {
     //   ScaffoldMessenger.of(context).showSnackBar(
     //     const SnackBar(content: Text("OTP verification success")),
@@ -97,7 +96,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPageCopy> {
   }
 
   Widget _textFieldOTP({required int index}) {
-    return Container(
+    return SizedBox(
       height: 50,
       child: AspectRatio(
         aspectRatio: 1.0,

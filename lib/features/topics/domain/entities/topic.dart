@@ -16,6 +16,7 @@ class Topic extends BaseEntity {
   final String syncStatus;
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
+  final String parentId;
 
   Topic({
     required this.id,
@@ -30,5 +31,6 @@ class Topic extends BaseEntity {
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
+    required this.parentId
   });
 }

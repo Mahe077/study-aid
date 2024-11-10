@@ -1,5 +1,5 @@
 name: study_aid
-description: "A new Flutter project."
+description: "Study Aid."
 publish_to: 'none' 
 version: 1.0.0+1
 environment:
@@ -15,7 +15,7 @@ dependencies:
   flutter_drawing_board: ^0.7.0+2
   flutter_colorpicker: ^1.1.0
   stack_board: ^0.2.5
-  flutter_quill: ^9.5.13
+  flutter_quill: ^10.8.2
   screenshot: ^3.0.0
   path_provider: ^2.1.3
   flutter_svg: ^2.0.10+1
@@ -24,7 +24,7 @@ dependencies:
   intl: ^0.19.0
   font_awesome_flutter: ^10.7.0
   dartz: ^0.10.1
-  get_it: ^7.7.0
+  get_it: ^8.0.0
   cloud_firestore: ^5.1.0
   google_sign_in: ^6.2.1
   flutter_facebook_auth: ^7.0.1
@@ -38,11 +38,25 @@ dependencies:
   build_runner: ^2.4.11
   loader_overlay: ^4.0.1
   awesome_snackbar_content: ^0.1.3
+  flutter_speed_dial: ^7.0.0
+  flutter_launcher_icons: ^0.14.1
+  audio_waveforms: ^1.0.5
+  file_picker: ^8.1.2
+  firebase_storage: ^12.3.1
+  widgets_easier: ^0.0.10
+  http: ^1.2.2
+  just_audio: ^0.9.41
+  just_audio_background: ^0.0.1-beta.13
+  audio_service: ^0.18.15
+  freezed_annotation: ^2.4.4
+  toastification: ^2.3.0
+  flutter_quill_extensions: ^10.8.2
+  cached_network_image: ^3.4.1
   
 dev_dependencies:
   flutter_test:
     sdk: flutter  
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
   riverpod_generator: ^2.4.2
   custom_lint: ^0.6.4
   riverpod_lint: ^2.3.12
@@ -67,3 +81,22 @@ flutter:
           weight: 400
         - asset: assets/fonts/Ubuntu-Italic.ttf
           weight: 300
+
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21 # android min sdk min:16, default 21
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#hexcode"
+    theme_color: "#hexcode"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/images/logo.png"

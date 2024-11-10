@@ -8,6 +8,7 @@ import 'package:study_aid/features/authentication/data/repositories/user_reposit
 import 'package:study_aid/features/authentication/data/datasources/auth_local_storage.dart';
 import 'package:study_aid/features/authentication/domain/repositories/user_repository.dart';
 import 'package:study_aid/features/authentication/domain/usecases/load_user.dart';
+import 'package:study_aid/features/authentication/presentation/notifiers/user_notifire.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
 
 // Data source providers for UserRepository
@@ -78,4 +79,9 @@ final loadUserProvider = Provider<LoadUser>((ref) {
 final syncUserUseCaseProvider = Provider<SyncUserUseCase>((ref) {
   final repository = ref.read(userRepositoryProvider);
   return SyncUserUseCase(repository);
+});
+
+final userNotifierProvider =
+    AsyncNotifierProvider<UserNotifier, UserModel?>(() {
+  return UserNotifier();
 });

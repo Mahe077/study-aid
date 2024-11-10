@@ -30,19 +30,19 @@ class TopicRepositoryImpl implements TopicRepository {
     try {
       final now = DateTime.now();
       var topicModel = TopicModel(
-        id: UniqueKey().toString(), // Temporary unique ID
-        title: title ?? '',
-        description: description ?? '',
-        color: color,
-        createdDate: now,
-        updatedDate: now,
-        subTopics: [],
-        notes: [],
-        audioRecordings: [],
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: now,
-        remoteChangeTimestamp: now,
-      );
+          id: UniqueKey().toString(), // Temporary unique ID
+          title: title ?? '',
+          description: description ?? '',
+          color: color,
+          createdDate: now,
+          updatedDate: now,
+          subTopics: [],
+          notes: [],
+          audioRecordings: [],
+          syncStatus: ConstantStrings.pending,
+          localChangeTimestamp: now,
+          remoteChangeTimestamp: now,
+          parentId: parentId ?? '');
 
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.createTopic(topicModel);
@@ -90,8 +90,8 @@ class TopicRepositoryImpl implements TopicRepository {
           (topic) async {
             topic.subTopics.add(subTopicId);
             final updateResult = await remoteDataSource.updateTopic(topic);
-            return updateResult.fold((failure) => Left(failure), (_) async {
-              await localDataSource.updateTopic(topic);
+            return updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
               return const Right(null);
             });
           },
@@ -122,7 +122,11 @@ class TopicRepositoryImpl implements TopicRepository {
           (failure) => Left(failure),
           (topic) async {
             topic.notes.add(noteId);
-            await remoteDataSource.updateTopic(topic);
+            final updateResult = await remoteDataSource.updateTopic(topic);
+            return updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
+              return const Right(null);
+            });
           },
         );
       } else {
@@ -150,7 +154,11 @@ class TopicRepositoryImpl implements TopicRepository {
           (failure) => Left(failure),
           (topic) async {
             topic.audioRecordings.add(audioId);
-            await remoteDataSource.updateTopic(topic);
+            final updateResult = await remoteDataSource.updateTopic(topic);
+            return updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
+              return const Right(null);
+            });
           },
         );
       } else {
@@ -211,7 +219,7 @@ class TopicRepositoryImpl implements TopicRepository {
   @override
   Future<Either<Failure, List<Topic>>> fetchAllTopics() async {
     try {
-      final topics = await localDataSource.fetchAllTopics();
+      final topics = localDataSource.fetchAllTopics();
       return Right(topics.map((topicModel) => topicModel.toDomain()).toList());
     } catch (e) {
       return Left(Failure(e.toString()));
@@ -273,9 +281,10 @@ class TopicRepositoryImpl implements TopicRepository {
     try {
       final parentTopic = await localDataSource.getCachedTopic(topicId);
 
-      if (parentTopic == null || parentTopic.subTopics.isEmpty) {
-        return Left(
-            Failure('Topic was not found or has no created sub topics'));
+      if (parentTopic == null) {
+        return Left(Failure('Topic: Topic was not found'));
+      } else if (parentTopic.subTopics.isEmpty) {
+        return Right(PaginatedObj(items: [], hasMore: false, lastDocument: 0));
       } else {
         final topicRefs = List.from(parentTopic.subTopics);
 
@@ -312,24 +321,37 @@ class TopicRepositoryImpl implements TopicRepository {
   @override
   Future<Either<Failure, void>> syncTopics() async {
     try {
+      // Fetch all topics from the local data source
       var localTopics = await localDataSource.fetchAllTopics();
-      localTopics = localTopics
-          .where((topic) => topic.syncStatus == ConstantStrings.pending)
-          .toList();
 
-      for (var topic in localTopics) {
-        topic = topic.copyWith(syncStatus: ConstantStrings.synced);
-        if (await remoteDataSource.topicExists(topic.id)) {
-          await remoteDataSource.updateTopic(topic);
-          await localDataSource.updateTopic(topic);
-        } else {
-          final newTopicResult = await remoteDataSource.createTopic(topic);
+      for (var localTopic in localTopics) {
+        // Fetch the remote topic if it exists
+        final remoteTopicOrFailure =
+            await remoteDataSource.getTopicById(localTopic.id);
+
+        await remoteTopicOrFailure.fold((failure) async {
+          // If the topic doesn't exist on the remote source, create it remotely
+          final newTopicResult = await remoteDataSource.createTopic(localTopic);
           newTopicResult.fold((failure) => Left(Failure(failure.toString())),
               (newTopic) async {
-            await localDataSource.deleteTopic(topic.id);
+            // Replace the old local topic with the newly created one
+            await localDataSource.deleteTopic(localTopic.id);
             await localDataSource.createTopic(newTopic);
           });
-        }
+        }, (remoteTopic) async {
+          // Compare updatedDate to decide whether to sync
+          if (localTopic.updatedDate.isAfter(remoteTopic.updatedDate)) {
+            // Local topic is newer, update the remote topic
+            await remoteDataSource.updateTopic(localTopic);
+            // Update the local copy to ensure sync status is correct
+            await localDataSource.updateTopic(
+                localTopic.copyWith(syncStatus: ConstantStrings.synced));
+          } else if (remoteTopic.updatedDate.isAfter(localTopic.updatedDate)) {
+            // Remote topic is newer, update the local topic
+            await localDataSource.updateTopic(
+                remoteTopic.copyWith(syncStatus: ConstantStrings.synced));
+          }
+        });
       }
       return const Right(null);
     } catch (e) {
@@ -340,7 +362,28 @@ class TopicRepositoryImpl implements TopicRepository {
   @override
   Future<Either<Failure, Topic?>> getTopic(String topicId) async {
     try {
-      return Right(await localDataSource.getCachedTopic(topicId));
+      // Check if the topic exists locally
+      final localTopic = await localDataSource.getCachedTopic(topicId);
+      if (localTopic != null) {
+        return Right(localTopic);
+      }
+
+      // Proceed to check remotely if the device is connected
+      if (await networkInfo.isConnected) {
+        final remoteTopicResult = await remoteDataSource.getTopicById(topicId);
+
+        return remoteTopicResult.fold(
+          (failure) => Left(failure),
+          (remoteTopic) async {
+            // Cache the remote topic locally
+            await localDataSource.createTopic(remoteTopic);
+            return Right(remoteTopic);
+          },
+        );
+      } else {
+        // If not connected and no local data, return null
+        return Right(null);
+      }
     } catch (e) {
       return Left(Failure(e.toString()));
     }

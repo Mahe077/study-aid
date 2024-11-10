@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 class TopicsState {
   final List<Topic> topics;
@@ -36,10 +37,10 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   TopicsNotifier(this.repository, this.userId, this._ref)
       : super(const AsyncValue.loading()) {
-    _loadInitialTopics();
+    loadInitialTopics();
   }
 
-  Future<void> _loadInitialTopics() async {
+  Future<void> loadInitialTopics() async {
     try {
       final result = await repository.fetchUserTopics(userId, 5, 0);
       result.fold(
@@ -92,8 +93,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> createTopic(String? title, String? description, Color color,
       String? parentId, String userId) async {
-    final currentState = state; // Get the current state before changing it
-    // state = const AsyncValue.loading();
+    final currentState = state;
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =
@@ -103,31 +103,38 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (newTopic) {
-          Logger().d(
-              'createTopic:: Current state: ${currentState.value.toString()}');
-          Logger().d('createTopic:: State: ${state.value.toString()}');
-          Logger().d('createTopic:: New topic created: $newTopic');
+          if (parentId == null) {
+            Logger().d(
+                'createTopic:: Current state: ${currentState.value.toString()}');
+            Logger().d('createTopic:: State: ${state.value.toString()}');
+            Logger().d('createTopic:: New topic created: $newTopic');
 
-          // If the state is loading or null, initialize the state with the new topic
-          if (currentState.value == null ||
-              currentState.value!.topics.isEmpty) {
-            // Initialize state
-            state = AsyncValue.data(
-              TopicsState(
-                topics: [newTopic],
-                hasMore: false,
-                lastDocument: 0,
-              ),
-            );
+            // If the state is loading or null, initialize the state with the new topic
+            if (currentState.value == null ||
+                currentState.value!.topics.isEmpty) {
+              // Initialize state
+              state = AsyncValue.data(
+                TopicsState(
+                  topics: [newTopic],
+                  hasMore: false,
+                  lastDocument: 0,
+                ),
+              );
+            } else {
+              // If we already have some topics, merge the new one
+              state = AsyncValue.data(
+                currentState.value!.copyWith(
+                  topics: [newTopic, ...currentState.value!.topics],
+                  hasMore: currentState.value!.hasMore,
+                  lastDocument: currentState.value!.lastDocument,
+                ),
+              );
+            }
           } else {
-            // If we already have some topics, merge the new one
-            state = AsyncValue.data(
-              currentState.value!.copyWith(
-                topics: [newTopic, ...currentState.value!.topics],
-                hasMore: currentState.value!.hasMore,
-                lastDocument: currentState.value!.lastDocument,
-              ),
-            );
+            // Notify TabDataNotifier to update state
+            final tabDataNotifier =
+                _ref.read(tabDataProvider(parentId).notifier);
+            tabDataNotifier.updateTopic(newTopic);
           }
         },
       );
@@ -213,9 +220,9 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
   }
 
   Future<void> createTopic(String? title, String? description, Color color,
-      String? parentId, String userId) async {
+      String parentId, String userId) async {
     final currentState = state; // Get the current state before changing it
-    // state = const AsyncValue.loading();
+
     try {
       final createTopic = _ref.read(createTopicProvider);
       final result =
@@ -225,11 +232,6 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (newTopic) {
-          Logger().d(
-              'createSubTopic:: Current state: ${currentState.value.toString()}');
-          Logger().d('createSubTopic:: State: ${state.value.toString()}');
-          Logger().d('createSubTopic:: New topic created: $newTopic');
-
           // If the state is loading or null, initialize the state with the new topic
           if (currentState.value == null ||
               currentState.value!.topics.isEmpty) {
@@ -251,6 +253,9 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
               ),
             );
           }
+
+          // final tabDataNotifier = _ref.read(tabDataProvider(parentId).notifier);
+          // tabDataNotifier.updateTopic(newTopic);
         },
       );
     } catch (e, stackTrace) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 Widget buildLoadingMask() {
   return const Center(child: CircularProgressIndicator());
@@ -10,10 +9,10 @@ class FullScreenLoader extends StatelessWidget {
   final bool isLoading;
 
   const FullScreenLoader({
-    Key? key,
+    super.key,
     required this.child,
     required this.isLoading,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

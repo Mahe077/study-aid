@@ -2,7 +2,6 @@ import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -59,7 +58,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SvgPicture.asset(AppVectors.logo),
+                Image.asset(
+                  AppVectors.logo,
+                  height: 100,
+                  alignment: Alignment(-1, -1),
+                ),
+                // SvgPicture.asset(AppVectors.logo),
                 const SizedBox(height: 10),
                 _buildWelcomeText(),
                 const SizedBox(height: 25),
@@ -110,10 +114,17 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
     switch (authMethod) {
       case AuthMethod.emailAndPassword:
-        if (!_signUpKey.currentState!.validate()) return;
-        result = await ref
-            .read(signUpWithEmailProvider)
-            .call(email, password, username);
+        if (_signUpKey.currentState!.validate()) {
+          result = await ref
+              .read(signUpWithEmailProvider)
+              .call(email, password, username);
+        } else {
+          // If validation fails, show an error and return early
+          setState(() {
+            _isLoading = false; // Hide loading mask
+          });
+          return; // Exit early if form is not valid
+        }
         break;
       case AuthMethod.google:
         result = await ref.read(signInWithGoogleProvider).call();
@@ -330,7 +341,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 _log.i("Terms of Use clicked");
-                // Navigate to Terms of Use page
+                //TODO: Navigate to Terms of Use page
               },
           ),
         ],

@@ -1,17 +1,37 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 
-class AudioRecordingModel {
+part 'audio_recording.g.dart';
+
+@HiveType(typeId: 4)
+class AudioRecordingModel extends AudioRecording {
+  @HiveField(1)
   final String id;
+  @HiveField(2)
   final String title;
+  @HiveField(3)
   final Color color;
+  @HiveField(4)
   final List<String> tags;
+  @HiveField(5)
   final DateTime createdDate;
+  @HiveField(6)
   final DateTime updatedDate;
+  @HiveField(7)
   final String url;
+  @HiveField(8)
+  final String localpath;
+  @HiveField(9)
   final String syncStatus;
+  @HiveField(10)
   final DateTime localChangeTimestamp;
+  @HiveField(11)
   final DateTime remoteChangeTimestamp;
+  @HiveField(12)
+  final String parentId;
 
   AudioRecordingModel({
     required this.id,
@@ -21,10 +41,24 @@ class AudioRecordingModel {
     required this.createdDate,
     required this.updatedDate,
     required this.url,
+    required this.localpath,
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
-  });
+    required this.parentId,
+  }) : super(
+            id: id,
+            title: title,
+            color: color,
+            tags: tags,
+            createdDate: createdDate,
+            updatedDate: updatedDate,
+            url: url,
+            localpath: localpath,
+            syncStatus: syncStatus,
+            localChangeTimestamp: localChangeTimestamp,
+            remoteChangeTimestamp: remoteChangeTimestamp,
+            parentId: parentId);
 
   factory AudioRecordingModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -36,11 +70,13 @@ class AudioRecordingModel {
       createdDate: (data['createdDate'] as Timestamp).toDate(),
       updatedDate: (data['updatedDate'] as Timestamp).toDate(),
       url: data['url'],
+      localpath: data['localpath'],
       syncStatus: data['syncStatus'],
       localChangeTimestamp:
           (data['localChangeTimestamp'] as Timestamp).toDate(),
       remoteChangeTimestamp:
           (data['remoteChangeTimestamp'] as Timestamp).toDate(),
+        parentId:data['parentId']
     );
   }
 
@@ -53,9 +89,75 @@ class AudioRecordingModel {
       'createdDate': Timestamp.fromDate(createdDate),
       'updatedDate': Timestamp.fromDate(updatedDate),
       'url': url,
+      'localpath': localpath,
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
+      'parentId': parentId
     };
+  }
+
+  @override
+  AudioRecordingModel copyWith({
+    String? id,
+    String? title,
+    Color? color,
+    List<String>? tags,
+    DateTime? createdDate,
+    DateTime? updatedDate,
+    String? url,
+    String? localpath,
+    String? syncStatus,
+    DateTime? localChangeTimestamp,
+    DateTime? remoteChangeTimestamp,
+    String? parentId
+  }) {
+    return AudioRecordingModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      color: color ?? this.color,
+      tags: tags ?? this.tags,
+      createdDate: createdDate ?? this.createdDate,
+      updatedDate: updatedDate ?? this.updatedDate,
+      url: url ?? this.url,
+      localpath: localpath ?? this.localpath,
+      syncStatus: syncStatus ?? this.syncStatus,
+      localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
+      remoteChangeTimestamp:
+          remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+        parentId: parentId ?? this.parentId
+    );
+  }
+
+  factory AudioRecordingModel.fromDomain(AudioRecording audio) {
+    return AudioRecordingModel(
+      id: audio.id,
+      title: audio.title,
+      color: audio.color,
+      tags: audio.tags,
+      createdDate: audio.createdDate,
+      updatedDate: audio.updatedDate,
+      url: audio.url,
+      localpath: audio.localpath,
+      syncStatus: audio.syncStatus,
+      localChangeTimestamp: audio.localChangeTimestamp,
+      remoteChangeTimestamp: audio.remoteChangeTimestamp,
+        parentId: audio.parentId
+    );
+  }
+  AudioRecording toDomain() {
+    return AudioRecording(
+        id: id,
+        title: title,
+        color: color,
+        tags: tags,
+        createdDate: createdDate,
+        updatedDate: updatedDate,
+        url: url,
+        localpath: localpath,
+        syncStatus: syncStatus,
+        localChangeTimestamp: localChangeTimestamp,
+        remoteChangeTimestamp: remoteChangeTimestamp,
+        parentId:parentId);
   }
 }
