@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -56,12 +57,12 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.asset(
-                AppVectors.logo,
-                height: 100,
-                alignment: Alignment(-1, -1),
-              ),
-              // SvgPicture.asset(AppVectors.logo),
+              // Image.asset(
+              //   AppVectors.logo,
+              //   height: 100,
+              //   alignment: Alignment(-1, -1),
+              // ),
+              SvgPicture.asset(AppVectors.signin),
               const SizedBox(height: 10),
               _buildWelcomeText(),
               const SizedBox(height: 30),
