@@ -114,7 +114,9 @@ class LocalDataSourceImpl extends LocalDataSource {
     // Fetch all local notes
     final notes = _noteBox.values
         .where((note) =>
-            note.tags.any((tag) => tag.toLowerCase().contains(lowerCaseQuery)))
+            note.tags
+                .any((tag) => tag.toLowerCase().contains(lowerCaseQuery)) ||
+            (note.title.toLowerCase().contains(lowerCaseQuery)))
         .toList();
 
     return notes;

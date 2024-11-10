@@ -247,7 +247,19 @@ class RemoteDataSourceImpl extends RemoteDataSource {
           .collection('audios')
           .where('tags', arrayContainsAny: [query]).get();
 
-      final audios = audiosSnapshot.docs
+      // Query for documents where the 'title' matches the query
+      final titleQuerySnapshot = await _firestore
+          .collection('notes')
+          .where('title',
+              isGreaterThanOrEqualTo: query, isLessThan: '${query}z')
+          .get();
+
+      // Combine the results, removing duplicates
+      final combinedResults = <DocumentSnapshot>{}
+        ..addAll(audiosSnapshot.docs)
+        ..addAll(titleQuerySnapshot.docs);
+
+      final audios = combinedResults
           .map((doc) => AudioRecordingModel.fromFirestore(doc))
           .toList();
       return Right(audios);

@@ -421,8 +421,9 @@ class _TopicPageState extends ConsumerState<TopicPage>
       );
     }
 
-    return ListView.builder(
+    return ListView.separated(
       itemCount: results.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 15),
       itemBuilder: (context, index) {
         final item = results[index];
 
