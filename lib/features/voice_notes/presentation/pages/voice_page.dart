@@ -153,7 +153,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     }
   }
 
-  void _saveNote(BuildContext context, WidgetRef ref) {
+  void _saveNote(BuildContext context, WidgetRef ref) async {
     final toast = CustomToast(context: context);
 
     final audioTemp = AudioRecording(
@@ -177,36 +177,30 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     });
 
     final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
-    var updateAudioRes = audioNotifier.createAudio(
+    var updateAudioRes = await audioNotifier.createAudio(
         audioTemp, widget.topicId, widget.userId, _doTranscribe);
 
     if (!mounted) return;
 
-    updateAudioRes.then((either) {
-      setState(() {
-        isSaving = false; // Stop loading once the operation completes
-      });
-
-      either.fold(
-        (failure) {
-          toast.showFailure(
-              description: 'An error occurred while saving the audio clip.');
-          Logger().d(failure.message);
-        },
-        (newNote) {
-          if (!mounted) return;
-          toast.showSuccess(description: 'Audio Clip updated successfully.');
-          setState(() {
-            isSaved = true;
-          });
-          Future.delayed(const Duration(seconds: 1), () {
-            if (mounted) {
-              Navigator.pop(context);
-            }
-          });
-        },
-      );
-    });
+    updateAudioRes.fold(
+      (failure) {
+        toast.showFailure(
+            description: 'An error occurred while saving the audio clip.');
+        Logger().d(failure.message);
+      },
+      (newNote) {
+        if (!mounted) return;
+        toast.showSuccess(description: 'Audio Clip updated successfully.');
+        setState(() {
+          isSaved = true;
+        });
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        });
+      },
+    );
   }
 
   @override
@@ -418,7 +412,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                                                   BorderRadius.circular(10))),
                                       onPressed: () => _stopRecording(),
                                       child: const Text(
-                                        'Complete Recording',
+                                        'Stop',
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: AppColors.white,
@@ -653,20 +647,30 @@ class _VoicePageState extends ConsumerState<VoicePage> {
           iconColor: AppColors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-      onPressed: () => isSaving ? () : _saveNote(context, ref),
-      child: Row(
-        children: [
-          Icon(Icons.save, size: 17, color: AppColors.white),
-          SizedBox(width: 5),
-          Text(
-            'Save',
-            style: TextStyle(
-                fontSize: 12,
-                color: AppColors.white,
-                fontWeight: FontWeight.w500),
-          )
-        ],
-      ),
+      onPressed: () => isSaving ? null : _saveNote(context, ref),
+      child: isSaving
+          ? Container(
+              height: 9,
+              width: 9,
+              margin: EdgeInsets.all(2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.0,
+                valueColor: AlwaysStoppedAnimation(Colors.white),
+              ),
+            )
+          : Row(
+              children: [
+                Icon(Icons.save, size: 17, color: AppColors.white),
+                SizedBox(width: 5),
+                Text(
+                  'Save',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w500),
+                )
+              ],
+            ),
     );
   }
 

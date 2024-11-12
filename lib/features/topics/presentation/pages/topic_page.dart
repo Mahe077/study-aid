@@ -59,36 +59,156 @@ class _TopicPageState extends ConsumerState<TopicPage>
     super.dispose();
   }
 
-  // Function to play audio files in sequence
+  int _currentAudioIndex = 0; // Track the current audio index
+
   void _playAllAudio(List<dynamic> audioList) async {
     _audioQueue = List.from(audioList); // Copy the list of audio recordings
+    _currentAudioIndex = 0; // Reset index when a new list is set
 
     if (_audioQueue.isNotEmpty) {
-      _playNextAudio(); // Start playing the first audio in the queue
+      _playCurrentAudio(); // Start playing the first audio in the queue
+      _showAudioBottomSheet(); // Show bottom sheet with playback controls
     }
+
+    // Set up a listener to automatically play the next audio when one completes
+    _audioPlayer.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        _playNextAudio(); // Automatically play the next audio when one finishes
+      }
+    });
   }
 
-  // Function to play the next audio file in the queue
-  void _playNextAudio() async {
-    if (_audioQueue.isEmpty) return; // If queue is empty, stop playing
+// Function to play the current audio file based on _currentAudioIndex
+  void _playCurrentAudio() async {
+    if (_currentAudioIndex < 0 || _currentAudioIndex >= _audioQueue.length) {
+      return;
+    }
 
     final currentAudio =
-        _audioQueue.removeAt(0); // Get the first audio in the queue
+        _audioQueue[_currentAudioIndex]; // Get the current audio by index
 
     try {
       await _audioPlayer.setUrl(currentAudio.localpath); // Load the audio URL
       _audioPlayer.play(); // Start playing
-
-      // Listen for when the current audio finishes
-      _audioPlayer.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
-          _playNextAudio(); // Play the next audio when the current one finishes
-        }
-      });
     } catch (e) {
-      // Handle audio loading error (e.g., log error, show message)
+      // Handle audio loading error
       Logger().e("Error playing audio: $e");
     }
+  }
+
+// Function to play the next audio in the queue
+  void _playNextAudio() {
+    if (_currentAudioIndex < _audioQueue.length - 1) {
+      _currentAudioIndex++; // Move to the next audio
+      _playCurrentAudio(); // Play the next audio
+    } else {
+      _audioPlayer.stop(); // Stop if at the end of the queue
+    }
+  }
+
+// Function to play the previous audio in the queue
+  void _playPreviousAudio() {
+    if (_currentAudioIndex > 0) {
+      _currentAudioIndex--; // Move to the previous audio
+      _playCurrentAudio(); // Play the previous audio
+    }
+  }
+
+// Bottom sheet showing playback info and control buttons
+  void _showAudioBottomSheet() {
+    showModalBottomSheet(
+      isDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return StreamBuilder<Duration>(
+          stream: _audioPlayer.positionStream,
+          builder: (context, snapshot) {
+            final currentPosition = snapshot.data ?? Duration.zero;
+            final totalDuration = _audioPlayer.duration ?? Duration.zero;
+            final currentAudioName = _audioQueue[_currentAudioIndex].title;
+
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, size: 24),
+                    ),
+                  ),
+                  SizedBox(height: 15),
+                  Text(
+                    currentAudioName,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+
+                  // Progress display
+                  Text(
+                    "${_formatDuration(currentPosition)} / ${_formatDuration(totalDuration)}",
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  SizedBox(height: 8),
+
+                  // Progress bar
+                  LinearProgressIndicator(
+                    value: totalDuration.inMilliseconds > 0
+                        ? currentPosition.inMilliseconds /
+                            totalDuration.inMilliseconds
+                        : 0.0,
+                  ),
+                  SizedBox(height: 16),
+
+                  // Control buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.skip_previous),
+                        onPressed: _currentAudioIndex > 0
+                            ? _playPreviousAudio
+                            : null, // Enable if there's a previous audio
+                      ),
+                      IconButton(
+                        icon: Icon(_audioPlayer.playing
+                            ? Icons.pause
+                            : Icons.play_arrow),
+                        onPressed: () {
+                          if (_audioPlayer.playing) {
+                            _audioPlayer.pause();
+                          } else {
+                            _audioPlayer.play();
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.skip_next),
+                        onPressed: _currentAudioIndex < _audioQueue.length - 1
+                            ? _playNextAudio
+                            : null, // Enable if there's a next audio
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+// Utility function to format duration for display
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    return "${twoDigits(duration.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
   }
 
   @override
@@ -334,8 +454,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
           },
           child: const Row(
             children: [
-              Icon(Icons.play_arrow, size: 10),
-              SizedBox(width: 2),
+              Icon(Icons.play_arrow, size: 15, color: AppColors.icon),
+              SizedBox(width: 5),
               Text(
                 'Play All',
                 style: TextStyle(
