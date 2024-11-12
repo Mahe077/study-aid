@@ -16,7 +16,7 @@ class GetStartedPage extends StatefulWidget {
 class _GetStartedPageState extends State<GetStartedPage> {
   final PageController _pageController = PageController();
 
-  List images = ["holder.svg", "holder.svg", "holder.svg"];
+  List images = ["1.svg", "2.svg", "3.svg"];
   List headings = ["Stay Organized", "Make Voice", "Sync Everything"];
   List subHeadings = [
     'Organize your notes in a way they are welcoming you every time you see them.',
@@ -70,50 +70,59 @@ class _GetStartedPageState extends State<GetStartedPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (index != (images.length - 1)) const Spacer(flex: 1),
                         Expanded(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(3, (indexDots) {
-                              return Container(
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 4),
-                                height: 45,
-                                width: 8,
-                                decoration: BoxDecoration(
-                                  color: index == indexDots
-                                      ? AppColors.primary
-                                      : AppColors.grey,
-                                  shape: BoxShape.circle,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(3, (indexDots) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 4),
+                                    height: 8,
+                                    width: 8,
+                                    decoration: BoxDecoration(
+                                      color: index == indexDots
+                                          ? AppColors.primary
+                                          : AppColors.grey,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  );
+                                }),
+                              ),
+                              // Right-align the Next button
+                              if (index != (images.length - 1))
+                                Positioned(
+                                  right: 0,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      _pageController.nextPage(
+                                        duration:
+                                            const Duration(milliseconds: 300),
+                                        curve: Curves.ease,
+                                      );
+                                    },
+                                    child: const Row(
+                                      children: [
+                                        Text(
+                                          'Next',
+                                          style: TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 16),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_forward,
+                                          color: AppColors.primary,
+                                          size: 17,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-                              );
-                            }),
+                            ],
                           ),
                         ),
-                        // Spacer(),
-                        if (index != (images.length - 1))
-                          ElevatedButton(
-                            onPressed: () {
-                              _pageController.nextPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.ease);
-                            },
-                            child: const Row(
-                              // crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Next',
-                                  style: TextStyle(
-                                      color: AppColors.primary, fontSize: 16),
-                                ),
-                                Icon(
-                                  Icons.arrow_forward,
-                                  color: AppColors.primary,
-                                  size: 17,
-                                ),
-                              ],
-                            ),
-                          ),
                         const SizedBox(
                           height: 20,
                         ),
