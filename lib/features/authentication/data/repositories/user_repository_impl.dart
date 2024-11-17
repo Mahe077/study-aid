@@ -159,4 +159,18 @@ class UserRepositoryImpl implements UserRepository {
       // Handle any other specific errors if needed
     }
   }
+
+  @override
+  Future<Either<Failure, void>> updatePassword(String password) async {
+    try {
+      if (await networkInfo.isConnected) {
+        final res = await remoteDataSource.updatePassword(password);
+        return res;
+      } else {
+        return Left(NoInternetFailure());
+      }
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
 }

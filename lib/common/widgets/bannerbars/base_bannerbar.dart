@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:toastification/toastification.dart';
 
 class CustomToast {
@@ -43,8 +44,9 @@ class CustomToast {
       dragToClose: true,
       pauseOnHover: true,
       callbacks: ToastificationCallbacks(
-        onTap: (toastItem) => print('Toast ${toastItem.id} tapped'),
-        onDismissed: (toastItem) => print('Toast ${toastItem.id} dismissed'),
+        onTap: (toastItem) => Logger().d('Toast ${toastItem.id} tapped'),
+        onDismissed: (toastItem) =>
+            Logger().d('Toast ${toastItem.id} dismissed'),
       ),
     );
   }

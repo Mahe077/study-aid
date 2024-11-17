@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
@@ -328,77 +329,101 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                               ),
                               const SizedBox(height: 20),
                               Expanded(
-                                  child: Center(
-                                child: !recordingStarted
-                                    ? const Text(
-                                        "Click the record button below to start",
-                                        style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w400))
-                                    : !recordingEnded
-                                        ? Column(
-                                            children: [
-                                              const Spacer(),
-                                              AudioWaveforms(
-                                                size: Size(
-                                                    MediaQuery.of(context)
-                                                        .size
-                                                        .width,
-                                                    70.0),
-                                                recorderController:
-                                                    recorderController,
-                                                enableGesture: true,
-                                                waveStyle: WaveStyle(
-                                                  waveColor: AppColors.primary
-                                                      .withOpacity(0.81),
-                                                  extendWaveform: true,
-                                                  showMiddleLine: false,
+                                child: Center(
+                                  child: !recordingStarted
+                                      ? const Text(
+                                          "Click the record button below to start",
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w400))
+                                      : !recordingEnded
+                                          ? Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                AudioWaveforms(
+                                                  size: Size(
+                                                      MediaQuery.of(context)
+                                                          .size
+                                                          .width,
+                                                      70.0),
+                                                  recorderController:
+                                                      recorderController,
+                                                  enableGesture: true,
+                                                  waveStyle: WaveStyle(
+                                                    waveColor: AppColors.primary
+                                                        .withOpacity(0.81),
+                                                    extendWaveform: true,
+                                                    showMiddleLine: false,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          left: 18),
+                                                  margin:
+                                                      const EdgeInsets.fromLTRB(
+                                                          0, 5, 10, 5),
                                                 ),
-                                                padding: const EdgeInsets.only(
-                                                    left: 18),
-                                                margin:
-                                                    const EdgeInsets.fromLTRB(
-                                                        0, 5, 10, 5),
+                                                const SizedBox(height: 40),
+                                                Text(
+                                                  recordedDuration.toHHMMSS(),
+                                                  style: const TextStyle(
+                                                      fontSize: 32,
+                                                      fontWeight:
+                                                          FontWeight.w400),
+                                                ),
+                                                const SizedBox(height: 25),
+                                              ],
+                                            )
+                                          : AudioFileWaveforms(
+                                              size: Size(
+                                                  MediaQuery.of(context)
+                                                      .size
+                                                      .width,
+                                                  70.0),
+                                              playerController:
+                                                  playerController,
+                                              enableSeekGesture: true,
+                                              waveformType:
+                                                  WaveformType.fitWidth,
+                                              waveformData: waveformData,
+                                              playerWaveStyle: PlayerWaveStyle(
+                                                fixedWaveColor: AppColors
+                                                    .primary
+                                                    .withOpacity(0.34),
+                                                liveWaveColor: AppColors.primary
+                                                    .withOpacity(0.81),
+                                                spacing: 6,
                                               ),
-                                              const SizedBox(height: 40),
-                                              Text(
-                                                recordedDuration.toHHMMSS(),
-                                                style: const TextStyle(
-                                                    fontSize: 32,
-                                                    fontWeight:
-                                                        FontWeight.w400),
-                                              ),
-                                              const SizedBox(height: 25),
-                                            ],
-                                          )
-                                        : AudioFileWaveforms(
-                                            size: Size(
-                                                MediaQuery.of(context)
-                                                    .size
-                                                    .width,
-                                                70.0),
-                                            playerController: playerController,
-                                            enableSeekGesture: true,
-                                            waveformType: WaveformType.fitWidth,
-                                            waveformData: waveformData,
-                                            playerWaveStyle: PlayerWaveStyle(
-                                              fixedWaveColor: AppColors.primary
-                                                  .withOpacity(0.34),
-                                              liveWaveColor: AppColors.primary
-                                                  .withOpacity(0.81),
-                                              spacing: 6,
+                                              padding: const EdgeInsets.only(
+                                                  left: 18),
+                                              margin: const EdgeInsets.fromLTRB(
+                                                  0, 5, 10, 5),
+                                              continuousWaveform: true,
                                             ),
-                                            padding:
-                                                const EdgeInsets.only(left: 18),
-                                            margin: const EdgeInsets.fromLTRB(
-                                                0, 5, 10, 5),
-                                            continuousWaveform: true,
-                                          ),
-                              )),
+                                ),
+                              ),
                               isRecording
-                                  ? _pauseButton(_pauseRecording)
-                                  : _recordButton(),
-                              const SizedBox(height: 25),
+                                  ? Column(
+                                      children: [
+                                        _pauseButton(_pauseRecording),
+                                        const SizedBox(height: 25),
+                                      ],
+                                    )
+                                  : isPaused
+                                      ? Column(
+                                          children: [
+                                            _playPauseButton(),
+                                            const SizedBox(height: 25),
+                                          ],
+                                        )
+                                      : recordingEnded
+                                          ? const SizedBox()
+                                          : Column(
+                                              children: [
+                                                _recordButton(),
+                                                const SizedBox(height: 25),
+                                              ],
+                                            ),
                               isPaused
                                   ? ElevatedButton(
                                       style: ElevatedButton.styleFrom(
@@ -412,14 +437,36 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                                                   BorderRadius.circular(10))),
                                       onPressed: () => _stopRecording(),
                                       child: const Text(
-                                        'Stop',
+                                        'Stop Recording',
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: AppColors.white,
                                             fontWeight: FontWeight.w500),
-                                      ))
+                                      ),
+                                    )
                                   : recordingStarted
-                                      ? const SizedBox(height: 40)
+                                      ? recordingEnded
+                                          ? Center(
+                                              child: Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  vertical: 10, horizontal: 30),
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      "Recording completed.Click Save button to save the recording.",
+                                                      style: TextStyle(
+                                                          fontSize: 14,
+                                                          fontWeight:
+                                                              FontWeight.w400)),
+                                                  const SizedBox(height: 70)
+                                                ],
+                                              ),
+                                            ))
+                                          : const SizedBox(height: 40)
                                       : Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.center,
@@ -515,6 +562,37 @@ class _VoicePageState extends ConsumerState<VoicePage> {
               size: 43,
               color: AppColors.primary.withOpacity(0.81),
             )),
+          ),
+        ),
+      ),
+    );
+  }
+
+  GestureDetector _playPauseButton() {
+    return GestureDetector(
+      onTap: _startRecording,
+      child: Container(
+        height: 84,
+        width: 84,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.primary.withOpacity(0.34),
+        ),
+        child: Center(
+          child: Container(
+            height: 72,
+            width: 72,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: widget.noteColor,
+            ),
+            child: Center(
+              child: Icon(
+                Symbols.play_pause,
+                size: 60,
+                color: AppColors.primary.withOpacity(0.81),
+              ),
+            ),
           ),
         ),
       ),

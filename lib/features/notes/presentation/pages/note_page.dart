@@ -114,9 +114,6 @@ class _NotePageState extends ConsumerState<NotePage> {
       quillController.readOnly = false; // Set to false to allow editing
       isSaved = false;
     });
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text('Edit mode activated')),
-    // );
   }
 
   void _confirmDelete() {

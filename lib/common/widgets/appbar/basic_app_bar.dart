@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:study_aid/presentation/settings/pages/settings_page.dart';
+import 'package:study_aid/features/settings/presentation/pages/settings_page.dart';
 
 class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
   final Widget? title;

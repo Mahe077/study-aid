@@ -61,17 +61,16 @@ class _ContentTileState extends State<ContentTile> {
   void _preparePlayer(PlayerController controller, String? localPath) async {
     try {
       if (localPath != null) {
-        Logger().i("Audio file path: $localPath");
+        // Logger().i("Audio file path: $localPath");
         File file = File(localPath);
         if (await file.exists()) {
           await controller.extractWaveformData(path: file.path);
-          Logger().i("Waveform Data: ${controller.waveformData}");
         } else {
-          Logger().e("File does not exist at the provided path: $file");
+          // Logger().e("File does not exist at the provided path: $file");
         }
       }
     } catch (e) {
-      Logger().e("Error preparing player: $e");
+      // Logger().e("Error preparing player: $e");
     }
   }
 
