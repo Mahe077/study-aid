@@ -20,9 +20,6 @@ void showCustomDialog(
   VoidCallback onConfirm, {
   GlobalKey<FormState>? formKey, // Make formKey optional
 }) {
-  // If no formKey is passed, create one
-  formKey ??= GlobalKey<FormState>();
-
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -30,7 +27,7 @@ void showCustomDialog(
         title: _getDialogTitle(mode, component),
         content: content,
         actions:
-            _getDialogActions(context, mode, component, onConfirm, formKey!),
+            _getDialogActions(context, mode, component, onConfirm, formKey),
       );
     },
   );
@@ -54,7 +51,7 @@ List<Widget> _getDialogActions(
   DialogMode mode,
   String component,
   VoidCallback onConfirm,
-  GlobalKey<FormState> formKey,
+  GlobalKey<FormState>? formKey,
 ) {
   switch (mode) {
     case DialogMode.view:
@@ -89,7 +86,8 @@ List<Widget> _getDialogActions(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8))),
               onPressed: () {
-                if (formKey.currentState?.validate() ?? false) {
+                if (formKey == null ||
+                    formKey.currentState?.validate() == true) {
                   onConfirm();
                   Navigator.of(context).pop(); // Close dialog
                 }

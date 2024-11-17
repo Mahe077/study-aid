@@ -2,6 +2,8 @@ import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:logger/logger.dart';
+import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -17,6 +19,7 @@ abstract class RemoteDataSource {
   Future<Unit> signOut();
   Future<Unit> resetPassword(String newPassword);
   Future<Unit> sendPasswordResetEmail(String email);
+  Future<Either<Failure, void>> updatePassword(String password);
 }
 
 class RemoteDataSourceImpl implements RemoteDataSource {
@@ -197,6 +200,37 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       return unit;
     } catch (e) {
       throw Exception('Error password reset email: $e');
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updatePassword(String password) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        await user.updatePassword(password);
+        Logger().d("Successfully changed password");
+        return const Right(null); // Success, no error message
+      } on FirebaseAuthException catch (e) {
+        Logger().e("Password update error: ${e.code}, ${e.message}");
+        switch (e.code) {
+          case 'requires-recent-login':
+            return Left(Failure(
+                'Please log in again to update your password for security reasons.'));
+          case 'weak-password':
+            return Left(Failure('The password provided is too weak.'));
+          case 'network-request-failed':
+            return Left(NoInternetFailure());
+          default:
+            return Left(Failure('An unexpected error occurred: ${e.message}'));
+        }
+      } catch (e) {
+        Logger().e("Unexpected error during password update: $e");
+        return Left(
+            Failure('An unexpected error occurred. Please try again later.'));
+      }
+    } else {
+      return Left(Failure('No user is currently signed in.'));
     }
   }
 }

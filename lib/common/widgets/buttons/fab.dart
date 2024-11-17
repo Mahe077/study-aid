@@ -126,7 +126,7 @@ class _FABState extends ConsumerState<FAB> {
     if (currentState.hasError) {
       toast.showFailure(
           description: 'An error occurred while creating the topic.');
-      Logger().d(currentState.error.toString());
+      // Logger().d(currentState.error.toString());
     } else if (currentState.isLoading) {
       const Center(child: CircularProgressIndicator());
     } else {

@@ -41,7 +41,6 @@ class _RecentTileState extends State<RecentTile> {
         File file = File(localPath);
         if (await file.exists()) {
           await controller.extractWaveformData(path: file.path);
-          Logger().i("Waveform Data: ${controller.waveformData}");
         } else {
           Logger().e("File does not exist at the provided path: $file");
         }

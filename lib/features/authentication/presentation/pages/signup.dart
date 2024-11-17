@@ -17,6 +17,7 @@ import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
@@ -157,6 +158,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       (user) {
         _log.d(user);
         if (user != null) {
+          ref.invalidate(userProvider);
+
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomePage(user: user)),

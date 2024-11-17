@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,6 +43,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
   late AudioPlayer _audioPlayer;
   bool _recordExists = false;
 
+  StreamSubscription? _playerStateSubscription;
+
   List<AudioRecording> _audioQueue =
       []; // To hold the list of audio recordings to be played
 
@@ -56,6 +60,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     _tabController.dispose();
     _search.dispose();
     _audioPlayer.dispose();
+    _playerStateSubscription?.cancel();
     super.dispose();
   }
 
@@ -71,7 +76,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     }
 
     // Set up a listener to automatically play the next audio when one completes
-    _audioPlayer.playerStateStream.listen((state) {
+    _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _playNextAudio(); // Automatically play the next audio when one finishes
       }
@@ -137,7 +142,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
                     child: IconButton(
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        _audioPlayer.stop();
+                        Navigator.pop(context);
+                      },
                       icon: const Icon(Icons.close, size: 24),
                     ),
                   ),

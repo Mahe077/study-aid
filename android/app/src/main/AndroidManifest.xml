@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
-        android:label="study_aid"
+        android:label="Study Aid"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
