@@ -240,6 +240,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
   @override
   Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
       String query) async {
+    query = query.toLowerCase();
     try {
       //   final lowerCaseQuery = query.toLowerCase();
 
@@ -250,8 +251,8 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       // Query for documents where the 'title' matches the query
       final titleQuerySnapshot = await _firestore
           .collection('notes')
-          .where('title',
-              isGreaterThanOrEqualTo: query, isLessThan: '${query}z')
+          .where('titleLowerCase',
+              isGreaterThanOrEqualTo: query, isLessThan: '$query\uf8ff')
           .get();
 
       // Combine the results, removing duplicates

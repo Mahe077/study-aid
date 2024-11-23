@@ -6,6 +6,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
@@ -148,12 +149,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     result.fold(
       (failure) {
         _log.e(failure.message);
-        showSnackBar(
-          context,
-          failure is ServerFailure
-              ? failure.message
-              : 'An unknown error occurred',
-        );
+        CustomToast(context: context).showFailure(description: failure.message);
       },
       (user) {
         _log.d(user);

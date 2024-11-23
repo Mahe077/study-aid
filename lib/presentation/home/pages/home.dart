@@ -19,12 +19,13 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/presentation/providers/recentItem_provider.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 
 class HomePage extends ConsumerStatefulWidget {
-  final User user;
+  User user;
 
-  const HomePage({super.key, required this.user});
+  HomePage({super.key, required this.user});
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -32,13 +33,19 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final TextEditingController _search = TextEditingController();
-
-  // List<Note> notes = [sampleNote];
-  // List<Topic> topics = [sampleTopic];
+  final Map<String, String> sortOptions = {
+    'updatedDate': 'Last Updated',
+    'createdDate': 'Date Created',
+    'title': 'Title',
+  };
+  String dropdownValue = 'updatedDate';
 
   void _loadMoreTopics() {
     Logger().d("_loadMoreTopics clicked");
-    ref.read(topicsProvider(widget.user.id).notifier).loadMoreTopics();
+    ref
+        .read(
+            topicsProvider(TopicParams(widget.user.id, dropdownValue)).notifier)
+        .loadMoreTopics();
   }
 
   @override
@@ -46,7 +53,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
 
     Future.microtask(() {
-      ref.read(topicsProvider(widget.user.id).notifier).loadInitialTopics();
+      ref
+          .read(topicsProvider(TopicParams(widget.user.id, dropdownValue))
+              .notifier)
+          .loadInitialTopics();
       ref
           .read(recentItemProvider(widget.user.id).notifier)
           .loadRecentItems(widget.user.id);
@@ -58,7 +68,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     BuildContext context,
   ) {
     final userState = ref.watch(userProvider);
-    final topicsState = ref.watch(topicsProvider(widget.user.id));
+    final topicsState =
+        ref.watch(topicsProvider(TopicParams(widget.user.id, dropdownValue)));
     final recentItemState = ref.watch(recentItemProvider(widget.user.id));
     final searchState = ref.watch(searchNotifireProvider);
 
@@ -68,7 +79,10 @@ class _HomePageState extends ConsumerState<HomePage> {
         showMenu: true,
       ),
       floatingActionButtonLocation: ExpandableFab.location,
-      floatingActionButton: FAB(userId: widget.user.id),
+      floatingActionButton: FAB(
+        userId: widget.user.id,
+        dropdownValue: dropdownValue,
+      ),
       body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: userState.when(
@@ -101,43 +115,56 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: searchState.isSearchActive
                         ? searchState.isLoading
                             ? const Center(child: CircularProgressIndicator())
-                            : _buildSearchResults(searchState.searchResults)
+                            : _buildSearchResults(
+                                searchState.searchResults, dropdownValue)
                         : topicsState.when(
                             data: (state) {
+                              setState(
+                                () {
+                                  widget.user.copyWith(
+                                      createdTopics: state.topics
+                                          .map((topic) => topic.id)
+                                          .toList());
+                                },
+                              );
                               if (state.topics.isEmpty) {
                                 return const EmptyHome();
                               }
                               return Column(
                                 children: [
                                   recentItemState.when(
-                                    data: (recentItems) {
-                                      if (recentItems.recentItems.isEmpty) {
-                                        return Container();
-                                      }
-                                      return Column(
-                                        children: [
-                                          const Align(
-                                            alignment:
-                                                AlignmentDirectional.topStart,
-                                            child: AppSubHeadings(
-                                              text: 'Recent Items',
-                                              size: 20,
+                                      data: (recentItems) {
+                                        Logger().d(recentItems
+                                            .recentItems.isEmpty
+                                            .toString());
+                                        if (recentItems.recentItems.isEmpty) {
+                                          return Container();
+                                        }
+                                        return Column(
+                                          children: [
+                                            const Align(
+                                              alignment:
+                                                  AlignmentDirectional.topStart,
+                                              child: AppSubHeadings(
+                                                text: 'Recent Items',
+                                                size: 20,
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Align(
-                                            alignment:
-                                                AlignmentDirectional.topStart,
-                                            child: SingleChildScrollView(
-                                              scrollDirection: Axis.horizontal,
-                                              clipBehavior: Clip.none,
-                                              child: Row(
-                                                children: recentItems
-                                                    .recentItems
-                                                    .map((item) {
-                                                  return Row(
-                                                    children: [
-                                                      RecentTile(
+                                            const SizedBox(height: 8),
+                                            Align(
+                                              alignment:
+                                                  AlignmentDirectional.topStart,
+                                              child: SingleChildScrollView(
+                                                scrollDirection:
+                                                    Axis.horizontal,
+                                                clipBehavior: Clip.none,
+                                                child: Row(
+                                                  children: recentItems
+                                                      .recentItems
+                                                      .map((item) {
+                                                    return Row(
+                                                      children: [
+                                                        RecentTile(
                                                           entity: item,
                                                           type: item is Topic
                                                               ? TopicType.topic
@@ -149,24 +176,73 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                           userId:
                                                               widget.user.id,
                                                           parentTopicId:
-                                                              item.parentId),
-                                                      const SizedBox(width: 15),
-                                                    ],
-                                                  );
-                                                }).toList(),
+                                                              item.parentId,
+                                                          dropdownValue:
+                                                              dropdownValue,
+                                                        ),
+                                                        const SizedBox(
+                                                            width: 15),
+                                                      ],
+                                                    );
+                                                  }).toList(),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(height: 15),
-                                        ],
-                                      );
-                                    },
-                                    loading: () => const Center(
-                                        child: CircularProgressIndicator()),
-                                    error: (error, stack) => const Center(
-                                        child: Center(
-                                            child: Text("No item to show"))),
+                                            const SizedBox(height: 15),
+                                          ],
+                                        );
+                                      },
+                                      loading: () => const Center(
+                                          child: CircularProgressIndicator()),
+                                      error: (error, stack) {
+                                        Logger().e(error);
+                                        return Container();
+                                      }),
+                                  Row(
+                                    children: [
+                                      Spacer(),
+                                      Text(
+                                        "Sort by :",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.primary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      SizedBox(width: 5),
+                                      DropdownButton<String>(
+                                        dropdownColor: AppColors.white,
+                                        isDense: true,
+                                        borderRadius: BorderRadius.circular(8),
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.primary,
+                                          fontSize: 12,
+                                        ),
+                                        value: dropdownValue,
+                                        onChanged: (newValue) {
+                                          if (newValue != null
+                                              // && newValue != dropdownValue
+                                              ) {
+                                            setState(() {
+                                              dropdownValue =
+                                                  newValue; // Update the value and rebuild the widget
+                                            });
+                                            ref.invalidate(tabDataProvider);
+                                            Logger().d(
+                                                "Sort value: $dropdownValue");
+                                          }
+                                        },
+                                        items: sortOptions.entries.map((entry) {
+                                          return DropdownMenuItem<String>(
+                                            value: entry.key,
+                                            child: Text(entry.value),
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
                                   ),
+                                  const SizedBox(height: 10),
                                   const Align(
                                     alignment: AlignmentDirectional.topStart,
                                     child: AppSubHeadings(
@@ -189,6 +265,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 entity: state.topics[i],
                                                 type: TopicType.topic,
                                                 parentTopicId: '',
+                                                dropdownValue: dropdownValue,
                                               ),
                                               if (i < state.topics.length - 1)
                                                 const SizedBox(height: 10),
@@ -212,8 +289,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                             },
                             loading: () => const Center(
                                 child: CircularProgressIndicator()),
-                            error: (error, stack) =>
-                                Center(child: Text('Error: $error')),
+                            error: (error, stack) {
+                              Logger().e(error);
+                              return Center(
+                                  child: Text('Something went wrong'));
+                            },
                           ),
                   ),
                 ],
@@ -270,7 +350,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildSearchResults(List<dynamic> results) {
+  Widget _buildSearchResults(List<dynamic> results, String dropdownValue) {
     if (results.isEmpty) {
       return Center(
         child: Text(
@@ -292,6 +372,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             type: TopicType.note,
             userId: widget.user.id,
             parentTopicId: item.parentId,
+            dropdownValue: dropdownValue,
           );
         } else if (item is AudioRecording) {
           return ContentTile(
@@ -299,6 +380,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             type: TopicType.audio,
             userId: widget.user.id,
             parentTopicId: item.parentId,
+            dropdownValue: dropdownValue,
           );
         }
 

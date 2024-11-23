@@ -8,7 +8,7 @@ abstract class TopicRepository {
   Future<Either<Failure, Topic>> createTopic(String? title, String? description,
       Color color, String? parentId, String userId);
   Future<Either<Failure, Topic>> updateTopic(Topic topic);
-  Future<void> deleteTopic(String topicId);
+  Future<void> deleteTopic(String topicId, String? parentId, String userId);
   Future<Either<Failure, Topic?>> getTopic(String topicId);
   Future<Either<Failure, List<Topic>>> fetchAllTopics();
   Future<Either<Failure, void>> updateSubTopicOfParent(
@@ -18,8 +18,8 @@ abstract class TopicRepository {
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId);
   Future<Either<Failure, PaginatedObj<Topic>>> fetchUserTopics(
-      String userId, int limit, int startAfter);
+      String userId, int limit, int startAfter, String sortBy);
   Future<Either<Failure, PaginatedObj<Topic>>> fetchSubTopics(
-      String topicId, int limit, int startAfter);
+      String topicId, int limit, int startAfter, String sortBy);
   Future<Either<Failure, void>> syncTopics();
 }

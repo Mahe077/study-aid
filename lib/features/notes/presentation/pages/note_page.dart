@@ -19,6 +19,7 @@ import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 class NotePage extends ConsumerStatefulWidget {
   final String topicId;
@@ -27,15 +28,18 @@ class NotePage extends ConsumerStatefulWidget {
   bool isNewNote;
   Color? noteColor;
   String userId;
+  String dropdownValue;
 
-  NotePage(
-      {super.key,
-      this.topicTitle,
-      this.entity,
-      required this.isNewNote,
-      this.noteColor,
-      required this.topicId,
-      required this.userId});
+  NotePage({
+    super.key,
+    this.topicTitle,
+    this.entity,
+    required this.isNewNote,
+    this.noteColor,
+    required this.topicId,
+    required this.userId,
+    required this.dropdownValue,
+  });
 
   @override
   ConsumerState<NotePage> createState() => _NotePageState();
@@ -125,11 +129,13 @@ class _NotePageState extends ConsumerState<NotePage> {
       "Confirm Delete",
       const Text('Are you sure you want to delete this item?'),
       () async {
-        final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
+        final noteNotifier = ref.read(
+            notesProvider(TabDataParams(widget.topicId, widget.dropdownValue))
+                .notifier);
 
         try {
-          await noteNotifier.deleteNote(
-              widget.topicId, widget.entity!.id, widget.userId);
+          await noteNotifier.deleteNote(widget.topicId, widget.entity!.id,
+              widget.userId, widget.dropdownValue);
           toast.showWarning(description: 'Item deleted successfully');
         } catch (e) {
           toast.showFailure(
@@ -155,7 +161,8 @@ class _NotePageState extends ConsumerState<NotePage> {
         updatedDate: DateTime.now(),
         syncStatus: ConstantStrings.pending,
         localChangeTimestamp: DateTime.now(),
-        parentId: widget.topicId);
+        parentId: widget.topicId,
+        titleLowerCase: '');
   }
 
   void addTag(String tag) {
@@ -185,9 +192,12 @@ class _NotePageState extends ConsumerState<NotePage> {
         updatedDate: DateTime.now(),
         syncStatus: ConstantStrings.pending,
         localChangeTimestamp: DateTime.now(),
-        parentId: note.parentId);
+        parentId: note.parentId,
+        titleLowerCase: titleController.text.trim().toLowerCase());
 
-    final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
+    final noteNotifier = ref.read(
+        notesProvider(TabDataParams(widget.topicId, widget.dropdownValue))
+            .notifier);
 
     try {
       if (widget.isNewNote) {
@@ -195,6 +205,7 @@ class _NotePageState extends ConsumerState<NotePage> {
           noteTemp,
           widget.topicId,
           widget.userId,
+          widget.dropdownValue,
         );
         result.fold(
           (failure) {
@@ -219,6 +230,7 @@ class _NotePageState extends ConsumerState<NotePage> {
           noteTemp,
           widget.topicId,
           widget.userId,
+          widget.dropdownValue,
         );
 
         updateNoteRes.fold(

@@ -55,22 +55,41 @@ class TabDataState {
   }
 }
 
+class TabDataParams {
+  final String parentTopicId;
+  final String sortBy;
+
+  TabDataParams(this.parentTopicId, this.sortBy);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TabDataParams &&
+          runtimeType == other.runtimeType &&
+          parentTopicId == other.parentTopicId &&
+          sortBy == other.sortBy;
+
+  @override
+  int get hashCode => parentTopicId.hashCode ^ sortBy.hashCode;
+}
+
 final tabDataProvider = StateNotifierProvider.family<TabDataNotifier,
-    AsyncValue<TabDataState>, String>(
-  (ref, parentTopicId) => TabDataNotifier(ref, parentTopicId),
+    AsyncValue<TabDataState>, TabDataParams>(
+  (ref, params) => TabDataNotifier(ref, params.parentTopicId, params.sortBy),
 );
 
 class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
   final Ref ref;
   final String parentTopicId;
+  final String sortBy;
 
   bool isFetchingTopics = false; // Flag to prevent duplicate loads
   bool isFetchingNotes = false; // Flag to prevent duplicate loads
   bool isFetchingAudio = false; // Flag to prevent duplicate loads
 
-  TabDataNotifier(this.ref, this.parentTopicId)
+  TabDataNotifier(this.ref, this.parentTopicId, this.sortBy)
       : super(const AsyncValue.loading()) {
-    loadAllData(parentTopicId, 0, 0, 0);
+    loadAllData(parentTopicId, 0, 0, 0, sortBy);
   }
 
   Future<void> loadMoreTopics(String topicId) async {
@@ -84,7 +103,8 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     try {
       isFetchingTopics = true; // Set the flag before fetching
       final repository = ref.read(topicRepositoryProvider);
-      final result = await repository.fetchSubTopics(topicId, 5, lastDocument);
+      final result =
+          await repository.fetchSubTopics(topicId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -120,7 +140,8 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     try {
       isFetchingNotes = true; // Set the flag before fetching
       final repository = ref.read(noteRepositoryProvider);
-      final result = await repository.fetchNotes(topicId, 5, lastDocument);
+      final result =
+          await repository.fetchNotes(topicId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -155,8 +176,8 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     try {
       isFetchingAudio = true; // Set the flag before fetching
       final repository = ref.read(audioRepositoryProvider);
-      final result =
-          await repository.fetchAudioRecordings(topicId, 5, lastDocument);
+      final result = await repository.fetchAudioRecordings(
+          topicId, 5, lastDocument, sortBy);
 
       result.fold(
         (failure) =>
@@ -187,7 +208,7 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
   }
 
   Future<void> loadAllData(String parentTopicId, int startTopic, int startNote,
-      int startAudio) async {
+      int startAudio, String sortBy) async {
     try {
       final currentState = state;
 
@@ -196,9 +217,10 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
       final audioRepository = ref.read(audioRepositoryProvider);
 
       final result = await Future.wait([
-        topicRepository.fetchSubTopics(parentTopicId, 5, startTopic),
-        noteRepository.fetchNotes(parentTopicId, 5, startNote),
-        audioRepository.fetchAudioRecordings(parentTopicId, 5, startAudio),
+        topicRepository.fetchSubTopics(parentTopicId, 5, startTopic, sortBy),
+        noteRepository.fetchNotes(parentTopicId, 5, startNote, sortBy),
+        audioRepository.fetchAudioRecordings(
+            parentTopicId, 5, startAudio, sortBy),
       ]);
 
       final topicsResult = result[0];
@@ -340,6 +362,25 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     );
   }
 
+  void deleteTopic(String deletedTopicId) {
+    final currentState = state;
+
+    // Ensure the current state is not null
+    if (currentState.value == null) return;
+
+    // Filter out the topic with the matching ID
+    final updatedTopicsList = currentState.value!.topics
+        .where((topic) => topic.id != deletedTopicId)
+        .toList();
+
+    // Update the state with the modified topics list
+    state = AsyncValue.data(
+      currentState.value!.copyWith(
+        topics: updatedTopicsList,
+      ),
+    );
+  }
+
   void updateAudioRecording(AudioRecording updatedAudio) {
     final currentState = state;
     if (currentState.value == null) return;
@@ -394,6 +435,6 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     var lastNote = currentState.value?.lastNoteDocument;
     var lastAudio = currentState.value?.lastAudioDocument;
 
-    loadAllData(parentTopicId, lastTopic, lastNote, lastAudio);
+    loadAllData(parentTopicId, lastTopic, lastNote, lastAudio, sortBy);
   }
 }
