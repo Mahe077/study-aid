@@ -12,7 +12,6 @@ import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
-import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';

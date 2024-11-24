@@ -816,7 +816,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                   audio.tags.remove(tag);
                 });
                 CustomToast(context: context)
-                    .showWarning(description: 'Tag "$tag" removed');
+                    .showSuccess(description: 'Tag "$tag" removed');
               },
               child: const Text('Remove'),
             ),

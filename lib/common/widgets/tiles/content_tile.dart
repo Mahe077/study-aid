@@ -356,7 +356,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
                   .notifier)
               .deleteTopic(widget.entity.id, widget.parentTopicId,
                   widget.userId, widget.dropdownValue);
-          toast.showWarning(description: "Topic deleted successfully.");
+          toast.showSuccess(description: "Topic deleted successfully.");
         } catch (e) {
           // Log the error and notify the user
           Logger().e("Error deleting topic: $e");

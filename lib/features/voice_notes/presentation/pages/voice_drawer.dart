@@ -293,7 +293,7 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
                 .notifier)
             .deleteAudio(widget.parentId, widget.entity.id, widget.userId,
                 widget.dropdownValue);
-        toast.showWarning(description: "Audio clip deleted successfully.");
+        toast.showSuccess(description: "Audio clip deleted successfully.");
         Navigator.pop(context);
       },
     );

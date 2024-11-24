@@ -136,7 +136,7 @@ class _NotePageState extends ConsumerState<NotePage> {
         try {
           await noteNotifier.deleteNote(widget.topicId, widget.entity!.id,
               widget.userId, widget.dropdownValue);
-          toast.showWarning(description: 'Item deleted successfully');
+          toast.showSuccess(description: 'Item deleted successfully');
         } catch (e) {
           toast.showFailure(
               description: 'An error occurred while deleting the note.');

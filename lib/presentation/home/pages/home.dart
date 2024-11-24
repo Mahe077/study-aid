@@ -121,10 +121,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                             data: (state) {
                               setState(
                                 () {
-                                  widget.user.copyWith(
+                                  if (state.topics.isNotEmpty) {
+                                    widget.user = widget.user.copyWith(
                                       createdTopics: state.topics
                                           .map((topic) => topic.id)
-                                          .toList());
+                                          .toList(),
+                                    );
+                                  } else {
+                                    widget.user =
+                                        widget.user.copyWith(createdTopics: []);
+                                  }
                                 },
                               );
                               if (state.topics.isEmpty) {

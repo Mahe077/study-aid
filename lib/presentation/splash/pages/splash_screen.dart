@@ -69,7 +69,7 @@ class _State extends ConsumerState<SplashScreen>
       },
       loading: () => {
         const Center(child: CircularProgressIndicator()),
-        Logger().i('Loading user data...')
+        // Logger().i('Loading user data...')
       },
       error: (e, stack) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
