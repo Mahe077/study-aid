@@ -35,23 +35,26 @@ class TopicModel extends Topic {
   final String parentId;
   @HiveField(13)
   final String titleLowerCase;
+  @HiveField(14)
+  final String userId;
 
-  TopicModel(
-      {required this.id,
-      required this.title,
-      required this.description,
-      required this.color,
-      required this.createdDate,
-      required this.updatedDate,
-      required this.subTopics,
-      required this.notes,
-      required this.audioRecordings,
-      required this.syncStatus,
-      required this.localChangeTimestamp,
-      required this.remoteChangeTimestamp,
-      required this.parentId,
-      required this.titleLowerCase})
-      : super(
+  TopicModel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.createdDate,
+    required this.updatedDate,
+    required this.subTopics,
+    required this.notes,
+    required this.audioRecordings,
+    required this.syncStatus,
+    required this.localChangeTimestamp,
+    required this.remoteChangeTimestamp,
+    required this.parentId,
+    required this.titleLowerCase,
+    required this.userId,
+  }) : super(
           id: id,
           title: title,
           description: description,
@@ -66,6 +69,7 @@ class TopicModel extends Topic {
           remoteChangeTimestamp: remoteChangeTimestamp,
           parentId: parentId,
           titleLowerCase: titleLowerCase,
+          userId: userId,
         );
 
   factory TopicModel.fromFirestore(DocumentSnapshot doc) {
@@ -87,6 +91,7 @@ class TopicModel extends Topic {
           (data['remoteChangeTimestamp'] as Timestamp).toDate(),
       parentId: data['parentId'],
       titleLowerCase: data['titleLowerCase'],
+      userId: data['userId'],
     );
   }
 
@@ -106,24 +111,27 @@ class TopicModel extends Topic {
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
       'parentId': parentId,
       'titleLowerCase': titleLowerCase,
+      'userId': userId,
     };
   }
 
-  TopicModel copyWith(
-      {String? id,
-      String? title,
-      String? description,
-      Color? color,
-      DateTime? createdDate,
-      DateTime? updatedDate,
-      List<String>? subTopics,
-      List<String>? notes,
-      List<String>? audioRecordings,
-      String? syncStatus,
-      DateTime? localChangeTimestamp,
-      DateTime? remoteChangeTimestamp,
-      String? parentId,
-      String? titleLowerCase}) {
+  TopicModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    Color? color,
+    DateTime? createdDate,
+    DateTime? updatedDate,
+    List<String>? subTopics,
+    List<String>? notes,
+    List<String>? audioRecordings,
+    String? syncStatus,
+    DateTime? localChangeTimestamp,
+    DateTime? remoteChangeTimestamp,
+    String? parentId,
+    String? titleLowerCase,
+    String? userId,
+  }) {
     return TopicModel(
       id: id ?? this.id,
       title: title ?? this.title,
@@ -140,6 +148,7 @@ class TopicModel extends Topic {
           remoteChangeTimestamp ?? this.remoteChangeTimestamp,
       parentId: parentId ?? this.parentId,
       titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -159,6 +168,7 @@ class TopicModel extends Topic {
       remoteChangeTimestamp: topic.remoteChangeTimestamp,
       parentId: topic.parentId,
       titleLowerCase: topic.titleLowerCase,
+      userId: topic.userId,
     );
   }
 
@@ -178,6 +188,7 @@ class TopicModel extends Topic {
       remoteChangeTimestamp: remoteChangeTimestamp,
       parentId: parentId,
       titleLowerCase: titleLowerCase,
+      userId: userId,
     );
   }
 }

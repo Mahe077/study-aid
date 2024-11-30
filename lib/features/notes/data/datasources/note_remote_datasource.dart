@@ -17,7 +17,8 @@ abstract class RemoteDataSource {
   Future<Either<Failure, void>> fetchAllNotes();
   Future<Either<Failure, NoteModel>> getNoteById(String parentId);
   Future<bool> noteExists(String noteId);
-  Future<Either<Failure, List<NoteModel>>> searchFromRemote(String query);
+  Future<Either<Failure, List<NoteModel>>> searchFromRemote(
+      String query, String userId);
 }
 
 class RemoteDataSourceImpl extends RemoteDataSource {
@@ -189,28 +190,37 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
   @override
   Future<Either<Failure, List<NoteModel>>> searchFromRemote(
-      String query) async {
+      String query, String userId) async {
     query = query.toLowerCase();
     try {
       // Query for documents where the 'tags' array contains the query
       final notesSnapshot = await _firestore
           .collection('notes')
+          .where('userId', isEqualTo: userId)
           .where('tags', arrayContainsAny: [query]).get();
 
       // Query for documents where the 'title' matches the query
       final titleQuerySnapshot = await _firestore
           .collection('notes')
+          .where('userId', isEqualTo: userId)
           .where('titleLowerCase',
               isGreaterThanOrEqualTo: query, isLessThan: '$query\uf8ff')
           .get();
 
-      // Combine the results, removing duplicates
-      final combinedResults = <DocumentSnapshot>{}
-        ..addAll(notesSnapshot.docs)
-        ..addAll(titleQuerySnapshot.docs);
+      final Map<String, DocumentSnapshot> uniqueDocs = {};
+
+      // Add docs from tags search to the map
+      for (var doc in notesSnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
+
+      // Add docs from title search to the map (duplicate IDs will be ignored)
+      for (var doc in titleQuerySnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
 
       final notes =
-          combinedResults.map((doc) => NoteModel.fromFirestore(doc)).toList();
+          uniqueDocs.values.map((doc) => NoteModel.fromFirestore(doc)).toList();
       return Right(notes);
     } catch (e) {
       throw Exception('Error in fetching notes from tags: $e');

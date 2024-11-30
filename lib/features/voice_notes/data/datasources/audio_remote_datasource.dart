@@ -24,7 +24,7 @@ abstract class RemoteDataSource {
   Future<bool> audioExists(String audioId);
   Future<File?> downloadFile(String url, String filePath, {int retries = 3});
   Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
-      String query);
+      String query, String userId);
 }
 
 class RemoteDataSourceImpl extends RemoteDataSource {
@@ -239,28 +239,38 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
   @override
   Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
-      String query) async {
+      String query, String userId) async {
     query = query.toLowerCase();
     try {
       //   final lowerCaseQuery = query.toLowerCase();
 
       final audiosSnapshot = await _firestore
           .collection('audios')
+          .where('userId', isEqualTo: userId)
           .where('tags', arrayContainsAny: [query]).get();
 
       // Query for documents where the 'title' matches the query
       final titleQuerySnapshot = await _firestore
-          .collection('notes')
+          .collection('audios')
+          .where('userId', isEqualTo: userId)
           .where('titleLowerCase',
               isGreaterThanOrEqualTo: query, isLessThan: '$query\uf8ff')
           .get();
 
       // Combine the results, removing duplicates
-      final combinedResults = <DocumentSnapshot>{}
-        ..addAll(audiosSnapshot.docs)
-        ..addAll(titleQuerySnapshot.docs);
+      final Map<String, DocumentSnapshot> uniqueDocs = {};
 
-      final audios = combinedResults
+      // Add docs from tags search to the map
+      for (var doc in audiosSnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
+
+      // Add docs from title search to the map (duplicate IDs will be ignored)
+      for (var doc in titleQuerySnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
+
+      final audios = uniqueDocs.values
           .map((doc) => AudioRecordingModel.fromFirestore(doc))
           .toList();
       return Right(audios);

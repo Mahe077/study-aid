@@ -149,19 +149,21 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
 
   Note getNote(AudioRecording audio, String content) {
     return Note(
-        id: UniqueKey().toString(),
-        title: audio.title,
-        content: content,
-        contentJson: '[{"insert":"$content\\n"}]',
-        createdDate: DateTime.now(),
-        color: audio.color,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: audio.tags,
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: audio.parentId,
-        titleLowerCase: audio.titleLowerCase);
+      id: UniqueKey().toString(),
+      title: audio.title,
+      content: content,
+      contentJson: '[{"insert":"$content\\n"}]',
+      createdDate: DateTime.now(),
+      color: audio.color,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: audio.tags,
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: audio.parentId,
+      titleLowerCase: audio.titleLowerCase,
+      userId: audio.userId,
+    );
   }
 
   Future<Either<Failure, AudioRecording>> updateAudio(AudioRecording note,

@@ -9,19 +9,21 @@ class AudioRecordingModelAdapter extends TypeAdapter<AudioRecordingModel> {
   @override
   AudioRecordingModel read(BinaryReader reader) {
     return AudioRecordingModel(
-        id: reader.readString(),
-        title: reader.readString(),
-        color: Color(reader.readInt()), // Read as int and convert to Color
-        tags: reader.readList().cast<String>(),
-        createdDate: reader.read(),
-        updatedDate: reader.read(),
-        url: reader.readString(),
-        localpath: reader.readString(),
-        syncStatus: reader.readString(),
-        localChangeTimestamp: reader.read(),
-        remoteChangeTimestamp: reader.read(),
-        parentId: reader.readString(),
-        titleLowerCase: reader.readString());
+      id: reader.readString(),
+      title: reader.readString(),
+      color: Color(reader.readInt()), // Read as int and convert to Color
+      tags: reader.readList().cast<String>(),
+      createdDate: reader.read(),
+      updatedDate: reader.read(),
+      url: reader.readString(),
+      localpath: reader.readString(),
+      syncStatus: reader.readString(),
+      localChangeTimestamp: reader.read(),
+      remoteChangeTimestamp: reader.read(),
+      parentId: reader.readString(),
+      titleLowerCase: reader.readString(),
+      userId: reader.readString(),
+    );
   }
 
   @override
@@ -39,5 +41,6 @@ class AudioRecordingModelAdapter extends TypeAdapter<AudioRecordingModel> {
     writer.write(obj.remoteChangeTimestamp);
     writer.writeString(obj.parentId);
     writer.writeString(obj.titleLowerCase);
+    writer.writeString(obj.userId);
   }
 }
