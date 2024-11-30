@@ -18,13 +18,15 @@ class FAB extends ConsumerStatefulWidget {
   final String? parentId;
   final String? topicTitle;
   final Color? topicColor;
+  final String dropdownValue;
 
   const FAB(
       {super.key,
       this.parentId,
       required this.userId,
       this.topicTitle,
-      this.topicColor});
+      this.topicColor,
+      required this.dropdownValue});
 
   @override
   ConsumerState<FAB> createState() => _FABState();
@@ -91,7 +93,9 @@ class _FABState extends ConsumerState<FAB> {
     // Get the TopicsNotifier instance using ref
     AsyncValue<TopicsState> currentState;
     if (widget.parentId == null) {
-      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
+      final topicsNotifier = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue))
+              .notifier);
 
       // Call the createTopic method from the TopicsNotifier
       await topicsNotifier.createTopic(
@@ -100,14 +104,18 @@ class _FABState extends ConsumerState<FAB> {
         selectedColor,
         widget.parentId,
         widget.userId,
+        widget.dropdownValue,
       );
 
       if (!mounted) return;
 
       // Check the state after attempting to create the topic
-      currentState = ref.read(topicsProvider(widget.userId));
+      currentState = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue)));
     } else {
-      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
+      final topicsNotifier = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue))
+              .notifier);
 
       // Call the createTopic method from the TopicsNotifier
       await topicsNotifier.createTopic(
@@ -116,11 +124,13 @@ class _FABState extends ConsumerState<FAB> {
         selectedColor,
         widget.parentId,
         widget.userId,
+        widget.dropdownValue,
       );
 
       if (!mounted) return;
 
-      currentState = ref.read(topicsProvider(widget.userId));
+      currentState = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue)));
     }
 
     if (currentState.hasError) {
@@ -201,6 +211,7 @@ class _FABState extends ConsumerState<FAB> {
                               entity: null,
                               noteColor: widget.topicColor,
                               userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
                             ),
                           ))
                     }
@@ -240,6 +251,7 @@ class _FABState extends ConsumerState<FAB> {
                               isNewNote: true,
                               noteColor: widget.topicColor,
                               userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
                             ),
                           ))
                     }

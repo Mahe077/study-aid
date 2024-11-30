@@ -42,7 +42,8 @@ class TopicRepositoryImpl implements TopicRepository {
           syncStatus: ConstantStrings.pending,
           localChangeTimestamp: now,
           remoteChangeTimestamp: now,
-          parentId: parentId ?? '');
+          parentId: parentId ?? '',
+          titleLowerCase: title?.toLowerCase() ?? '');
 
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.createTopic(topicModel);
@@ -83,13 +84,24 @@ class TopicRepositoryImpl implements TopicRepository {
   Future<Either<Failure, void>> updateSubTopicOfParent(
       String parentId, String subTopicId) async {
     try {
+      final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
         return result.fold(
           (failure) => Left(failure),
           (topic) async {
-            topic.subTopics.add(subTopicId);
-            final updateResult = await remoteDataSource.updateTopic(topic);
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            if (newTopic.subTopics.contains(subTopicId)) {
+              newTopic.subTopics.remove(subTopicId);
+            } else {
+              newTopic.subTopics.add(subTopicId);
+            }
+
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
             return updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
@@ -99,9 +111,17 @@ class TopicRepositoryImpl implements TopicRepository {
       } else {
         final localParentTopic = await localDataSource.getCachedTopic(parentId);
         if (localParentTopic != null) {
-          localParentTopic.subTopics.add(subTopicId);
-          await localDataSource.updateTopic(
-              localParentTopic.copyWith(syncStatus: ConstantStrings.pending));
+          TopicModel newTopic = localParentTopic.copyWith(
+            updatedDate: now,
+            localChangeTimestamp: now,
+            syncStatus: ConstantStrings.pending,
+          );
+          if (newTopic.subTopics.contains(subTopicId)) {
+            newTopic.subTopics.remove(subTopicId);
+          } else {
+            newTopic.subTopics.add(subTopicId);
+          }
+          await localDataSource.updateTopic(newTopic);
           return const Right(null);
         } else {
           return Left(Failure("Something Wrong Try again later!"));
@@ -116,13 +136,21 @@ class TopicRepositoryImpl implements TopicRepository {
   Future<Either<Failure, void>> updateNoteOfParent(
       String parentId, String noteId) async {
     try {
+      final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
         result.fold(
           (failure) => Left(failure),
           (topic) async {
-            topic.notes.add(noteId);
-            final updateResult = await remoteDataSource.updateTopic(topic);
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            if (!newTopic.notes.contains(noteId)) {
+              newTopic.notes.add(noteId);
+            }
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
             return updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
@@ -132,8 +160,14 @@ class TopicRepositoryImpl implements TopicRepository {
       } else {
         final localParentTopic = await localDataSource.getCachedTopic(parentId);
         if (localParentTopic != null) {
-          localParentTopic.notes.add(noteId);
-          await localDataSource.updateTopic(localParentTopic);
+          TopicModel newTopic = localParentTopic.copyWith(
+              updatedDate: now,
+              localChangeTimestamp: now,
+              syncStatus: ConstantStrings.pending);
+          if (!newTopic.notes.contains(noteId)) {
+            newTopic.notes.add(noteId);
+          }
+          await localDataSource.updateTopic(newTopic);
         } else {
           return Left(Failure("Something Wrong Try again later!"));
         }
@@ -148,13 +182,19 @@ class TopicRepositoryImpl implements TopicRepository {
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId) async {
     try {
+      final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
         result.fold(
           (failure) => Left(failure),
           (topic) async {
-            topic.audioRecordings.add(audioId);
-            final updateResult = await remoteDataSource.updateTopic(topic);
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            newTopic.audioRecordings.add(audioId);
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
             return updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
@@ -164,8 +204,12 @@ class TopicRepositoryImpl implements TopicRepository {
       } else {
         final localParentTopic = await localDataSource.getCachedTopic(parentId);
         if (localParentTopic != null) {
-          localParentTopic.audioRecordings.add(audioId);
-          await localDataSource.updateTopic(localParentTopic);
+          TopicModel newTopic = localParentTopic.copyWith(
+              updatedDate: now,
+              localChangeTimestamp: now,
+              syncStatus: ConstantStrings.pending);
+          newTopic.audioRecordings.add(audioId);
+          await localDataSource.updateTopic(newTopic);
         } else {
           return Left(Failure("Something Wrong Try again later!"));
         }
@@ -207,12 +251,17 @@ class TopicRepositoryImpl implements TopicRepository {
   }
 
   @override
-  Future<void> deleteTopic(String topicId) async {
+  Future<void> deleteTopic(
+      String topicId, String? parentId, String userId) async {
     await localDataSource.deleteTopic(topicId);
 
     if (await networkInfo.isConnected) {
-      await remoteDataSource
-          .deleteTopic(topicId); //TODO:update parent or user references
+      await remoteDataSource.deleteTopic(topicId);
+    }
+    if (parentId == null || parentId.isEmpty) {
+      await userRepository.updateCreatedTopic(userId, topicId);
+    } else {
+      await updateSubTopicOfParent(parentId, topicId);
     }
   }
 
@@ -228,7 +277,7 @@ class TopicRepositoryImpl implements TopicRepository {
 
   @override
   Future<Either<Failure, PaginatedObj<Topic>>> fetchUserTopics(
-      String userId, int limit, int startAfter) async {
+      String userId, int limit, int startAfter, String sortBy) async {
     try {
       final resultUser = await userRepository.getUser(userId);
 
@@ -260,10 +309,7 @@ class TopicRepositoryImpl implements TopicRepository {
               }
             }
             final topics = await localDataSource.fetchPeginatedTopics(
-              limit,
-              topicRefs,
-              startAfter,
-            );
+                limit, topicRefs, startAfter, sortBy);
 
             return topics.fold(
                 (failure) => Left(failure), (items) => Right(items));
@@ -277,7 +323,7 @@ class TopicRepositoryImpl implements TopicRepository {
 
   @override
   Future<Either<Failure, PaginatedObj<Topic>>> fetchSubTopics(
-      String topicId, int limit, int startAfter) async {
+      String topicId, int limit, int startAfter, String sortBy) async {
     try {
       final parentTopic = await localDataSource.getCachedTopic(topicId);
 
@@ -309,6 +355,7 @@ class TopicRepositoryImpl implements TopicRepository {
           limit,
           topicRefs,
           startAfter,
+          sortBy,
         );
 
         return topics.fold((failure) => Left(failure), (items) => Right(items));
@@ -390,8 +437,9 @@ class TopicRepositoryImpl implements TopicRepository {
   }
 
   Future<List<dynamic>> getAllEntitiesPaginated(
-      String parentId, int limit, int startAfter) async {
-    final topicsResults = await fetchSubTopics(parentId, limit, startAfter);
+      String parentId, int limit, int startAfter, String sortBy) async {
+    final topicsResults =
+        await fetchSubTopics(parentId, limit, startAfter, sortBy);
     // final notes = noteBox.values.toList();
     // final audios = audioBox.values.toList();
     var topics;

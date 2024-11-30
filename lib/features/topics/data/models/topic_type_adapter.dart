@@ -22,6 +22,7 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       localChangeTimestamp: reader.read(),
       remoteChangeTimestamp: reader.read(),
       parentId: reader.readString(),
+      titleLowerCase: reader.readString(),
     );
   }
 
@@ -40,5 +41,6 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
     writer.write(obj.localChangeTimestamp);
     writer.write(obj.remoteChangeTimestamp);
     writer.writeString(obj.parentId);
+    writer.writeString(obj.titleLowerCase);
   }
 }

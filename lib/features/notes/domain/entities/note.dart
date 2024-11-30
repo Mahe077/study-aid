@@ -17,36 +17,37 @@ class Note extends BaseEntity {
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
   final String parentId;
+  final String titleLowerCase;
 
-  Note({
-    required this.id,
-    required this.title,
-    required this.color,
-    required this.tags,
-    required this.createdDate,
-    required this.updatedDate,
-    required this.content,
-    required this.contentJson,
-    required this.syncStatus,
-    required this.localChangeTimestamp,
-    required this.remoteChangeTimestamp,
-    required this.parentId,
-  });
+  Note(
+      {required this.id,
+      required this.title,
+      required this.color,
+      required this.tags,
+      required this.createdDate,
+      required this.updatedDate,
+      required this.content,
+      required this.contentJson,
+      required this.syncStatus,
+      required this.localChangeTimestamp,
+      required this.remoteChangeTimestamp,
+      required this.parentId,
+      required this.titleLowerCase});
 
-  Note copyWith({
-    String? id,
-    String? title,
-    Color? color,
-    List<String>? tags,
-    DateTime? createdDate,
-    DateTime? updatedDate,
-    String? content,
-    String? contentJson,
-    String? syncStatus,
-    DateTime? localChangeTimestamp,
-    DateTime? remoteChangeTimestamp,
-    String? parentId,
-  }) {
+  Note copyWith(
+      {String? id,
+      String? title,
+      Color? color,
+      List<String>? tags,
+      DateTime? createdDate,
+      DateTime? updatedDate,
+      String? content,
+      String? contentJson,
+      String? syncStatus,
+      DateTime? localChangeTimestamp,
+      DateTime? remoteChangeTimestamp,
+      String? parentId,
+      String? titleLowerCase}) {
     return Note(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -60,7 +61,8 @@ class Note extends BaseEntity {
         localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
         remoteChangeTimestamp:
             remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId);
+        parentId: parentId ?? this.parentId,
+        titleLowerCase: titleLowerCase ?? this.titleLowerCase);
   }
 
   Map<String, dynamic> toMap() {
@@ -76,7 +78,8 @@ class Note extends BaseEntity {
       'syncStatus': syncStatus,
       'localChangeTimestamp': localChangeTimestamp.millisecondsSinceEpoch,
       'remoteChangeTimestamp': remoteChangeTimestamp.millisecondsSinceEpoch,
-      'parentId': parentId
+      'parentId': parentId,
+      'titleLowerCase': titleLowerCase
     };
   }
 
@@ -94,6 +97,7 @@ class Note extends BaseEntity {
       localChangeTimestamp.millisecondsSinceEpoch,
       remoteChangeTimestamp.millisecondsSinceEpoch,
       parentId,
+      titleLowerCase
     ];
   }
 }

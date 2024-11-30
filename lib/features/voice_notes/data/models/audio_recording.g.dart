@@ -29,13 +29,14 @@ class AudioRecordingModelAdapter extends TypeAdapter<AudioRecordingModel> {
       localChangeTimestamp: fields[10] as DateTime,
       remoteChangeTimestamp: fields[11] as DateTime,
       parentId: fields[12] as String,
+      titleLowerCase: fields[13] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, AudioRecordingModel obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(13)
       ..writeByte(1)
       ..write(obj.id)
       ..writeByte(2)
@@ -59,7 +60,9 @@ class AudioRecordingModelAdapter extends TypeAdapter<AudioRecordingModel> {
       ..writeByte(11)
       ..write(obj.remoteChangeTimestamp)
       ..writeByte(12)
-      ..write(obj.parentId);
+      ..write(obj.parentId)
+      ..writeByte(13)
+      ..write(obj.titleLowerCase);
   }
 
   @override

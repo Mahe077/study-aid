@@ -35,15 +35,16 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
   final NoteRepository repository;
   final String topicId;
   final Ref _ref;
+  final String sortBy;
 
-  NotesNotifier(this.repository, this.topicId, this._ref)
+  NotesNotifier(this.repository, this.topicId, this._ref, this.sortBy)
       : super(const AsyncValue.loading()) {
     _loadInitialNotes();
   }
 
   Future<void> _loadInitialNotes() async {
     try {
-      final result = await repository.fetchNotes(topicId, 5, 0);
+      final result = await repository.fetchNotes(topicId, 5, 0, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -68,7 +69,8 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
 
     final lastDocument = currentState.value!.lastDocument;
     try {
-      final result = await repository.fetchNotes(topicId, 5, lastDocument);
+      final result =
+          await repository.fetchNotes(topicId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -96,6 +98,7 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
     Note note,
     String topicId,
     String userId,
+    String dropdownValue,
   ) async {
     try {
       final createNote = _ref.read(createNoteProvider);
@@ -108,7 +111,8 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
         },
         (newNote) {
           // Notify TabDataNotifier to update state
-          final tabDataNotifier = _ref.read(tabDataProvider(topicId).notifier);
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
           tabDataNotifier.updateNote(newNote);
 
           final recentItemNotifier =
@@ -124,7 +128,11 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
   }
 
   Future<Either<Failure, Note>> updateNote(
-      Note note, String topicId, String userId) async {
+    Note note,
+    String topicId,
+    String userId,
+    String dropdownValue,
+  ) async {
     try {
       final updateNote = _ref.read(updateNoteProvider);
       final result = await updateNote.call(note, topicId, userId);
@@ -136,7 +144,8 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
         },
         (updatedNote) {
           // Notify TabDataNotifier to update state
-          final tabDataNotifier = _ref.read(tabDataProvider(topicId).notifier);
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
           tabDataNotifier.updateNote(updatedNote);
 
           final recentItemNotifier =
@@ -170,12 +179,18 @@ class NotesNotifier extends StateNotifier<AsyncValue<NotesState>> {
   //   }
   // }
 
-  Future<void> deleteNote(String parentId, String noteId, String userId) async {
+  Future<void> deleteNote(
+    String parentId,
+    String noteId,
+    String userId,
+    String dropdownValue,
+  ) async {
     try {
       final deleteNote = _ref.read(deleteNoteProvider);
       await deleteNote.call(parentId, noteId, userId);
 
-      final tabDataNotifier = _ref.read(tabDataProvider(parentId).notifier);
+      final tabDataNotifier = _ref.read(
+          tabDataProvider(TabDataParams(parentId, dropdownValue)).notifier);
       tabDataNotifier.deleteNote(noteId);
 
       final recentItemNotifier = _ref.read(recentItemProvider(userId).notifier);

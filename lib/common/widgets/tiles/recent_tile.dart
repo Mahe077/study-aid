@@ -19,13 +19,16 @@ class RecentTile extends StatefulWidget {
   final dynamic entity;
   final String userId;
   final String parentTopicId;
+  final String dropdownValue;
 
-  const RecentTile(
-      {super.key,
-      required this.type,
-      required this.entity,
-      required this.userId,
-      required this.parentTopicId});
+  const RecentTile({
+    super.key,
+    required this.type,
+    required this.entity,
+    required this.userId,
+    required this.parentTopicId,
+    required this.dropdownValue,
+  });
 
   @override
   State<RecentTile> createState() => _RecentTileState();
@@ -91,6 +94,7 @@ class _RecentTileState extends State<RecentTile> {
                 entity: widget.entity,
                 isNewNote: false,
                 userId: widget.userId,
+                dropdownValue: widget.dropdownValue,
               ),
             ),
           );
@@ -103,6 +107,7 @@ class _RecentTileState extends State<RecentTile> {
                   entity: widget.entity,
                   userId: widget.userId,
                   parentId: widget.parentTopicId,
+                  dropdownValue: widget.dropdownValue,
                 );
               }));
         }

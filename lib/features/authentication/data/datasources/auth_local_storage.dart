@@ -20,7 +20,7 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _userBox.put(user.id, user);
       final cachedUser = _userBox.get(user.id);
-      Logger().d('Cached user: $cachedUser');
+      Logger().d('Cached users in Hive box: $cachedUser');
     } catch (e) {
       // Handle or log error
       Logger().e('Error caching user: $e');

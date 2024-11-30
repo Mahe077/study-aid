@@ -31,6 +31,8 @@ class NoteModel extends Note {
   final DateTime remoteChangeTimestamp;
   @HiveField(12)
   final String parentId;
+  @HiveField(13)
+  final String titleLowerCase;
 
   NoteModel({
     required this.id,
@@ -45,6 +47,7 @@ class NoteModel extends Note {
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
     required this.parentId,
+    required this.titleLowerCase,
   }) : super(
             id: id,
             title: title,
@@ -57,7 +60,8 @@ class NoteModel extends Note {
             syncStatus: syncStatus,
             localChangeTimestamp: localChangeTimestamp,
             remoteChangeTimestamp: remoteChangeTimestamp,
-            parentId: parentId);
+            parentId: parentId,
+            titleLowerCase: titleLowerCase);
 
   factory NoteModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -75,7 +79,8 @@ class NoteModel extends Note {
             (data['localChangeTimestamp'] as Timestamp).toDate(),
         remoteChangeTimestamp:
             (data['remoteChangeTimestamp'] as Timestamp).toDate(),
-        parentId: data['parentId']);
+        parentId: data['parentId'],
+        titleLowerCase: data['titleLowerCase']);
   }
 
   Map<String, dynamic> toFirestore() {
@@ -91,7 +96,8 @@ class NoteModel extends Note {
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
-      'parentId': parentId
+      'parentId': parentId,
+      'titleLowerCase': titleLowerCase
     };
   }
 
@@ -108,7 +114,8 @@ class NoteModel extends Note {
       final String? syncStatus,
       final DateTime? localChangeTimestamp,
       final DateTime? remoteChangeTimestamp,
-      final String? parentId}) {
+      final String? parentId,
+      final String? titleLowerCase}) {
     return NoteModel(
         id: id ?? this.id,
         title: title ?? this.title,
@@ -122,7 +129,8 @@ class NoteModel extends Note {
         localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
         remoteChangeTimestamp:
             remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId);
+        parentId: parentId ?? this.parentId,
+        titleLowerCase: titleLowerCase ?? this.titleLowerCase);
   }
 
   factory NoteModel.fromDomain(Note note) {
@@ -138,7 +146,8 @@ class NoteModel extends Note {
         syncStatus: note.syncStatus,
         localChangeTimestamp: note.localChangeTimestamp,
         remoteChangeTimestamp: note.remoteChangeTimestamp,
-        parentId: note.parentId);
+        parentId: note.parentId,
+        titleLowerCase: note.titleLowerCase);
   }
 
   Note toDomain() {
@@ -154,6 +163,7 @@ class NoteModel extends Note {
         syncStatus: syncStatus,
         localChangeTimestamp: localChangeTimestamp,
         remoteChangeTimestamp: remoteChangeTimestamp,
-        parentId: parentId);
+        parentId: parentId,
+        titleLowerCase: titleLowerCase);
   }
 }

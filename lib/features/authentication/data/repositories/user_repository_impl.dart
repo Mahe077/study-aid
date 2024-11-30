@@ -72,9 +72,18 @@ class UserRepositoryImpl implements UserRepository {
         (failure) => Left(failure),
         (user) async {
           if (user != null) {
-            final updatedUser = user.copyWith(
-              createdTopics: [...user.createdTopics, topicId],
-            );
+            User updatedUser;
+            if (user.createdTopics.contains(topicId)) {
+              updatedUser = user.copyWith(
+                createdTopics: user.createdTopics
+                    .where((topic) => topic != topicId)
+                    .toList(),
+              );
+            } else {
+              updatedUser = user.copyWith(
+                createdTopics: [...user.createdTopics, topicId],
+              );
+            }
             final updateResult = await updateUser(updatedUser);
             return updateResult.fold(
               (failure) => Left(failure),

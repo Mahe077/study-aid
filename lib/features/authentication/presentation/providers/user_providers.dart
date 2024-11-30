@@ -44,29 +44,20 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 
 final userProvider = FutureProvider<UserModel?>((ref) async {
   try {
-    Logger().d('Fetching userBox...');
-
-    // Fetch the user box
+    // Retrieve the user box from the provider
     final userBox = await ref.watch(userBoxProvider.future);
 
-    Logger().d('UserBox fetched: $userBox');
-
-    // Check if the user exists in the box
+    // Return the first user in the box if it exists
     if (userBox.isNotEmpty) {
-      // Get the first key from the box (assuming there's only one user in the box)
-      final userKey = userBox.keys.first;
-
-      // Retrieve the user using the key
-      final user = userBox.get(userKey);
-
-      Logger().d('User found in box: $user');
+      final user = userBox.get(userBox.keys.first);
       return user;
     }
 
-    Logger().d('No user found in the box');
+    // No user found in the box
     return null;
-  } catch (e) {
-    Logger().e('Error fetching user from Hive: $e');
+  } catch (e, stackTrace) {
+    // Log the error with a stack trace for debugging purposes
+    Logger().e('Error fetching user from Hive: $e', stackTrace: stackTrace);
     return null;
   }
 });

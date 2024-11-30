@@ -26,111 +26,124 @@ class _GetStartedPageState extends State<GetStartedPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: PageView.builder(
-            controller: _pageController,
-            itemCount: images.length,
-            itemBuilder: (_, index) {
-              return Container(
-                width: double.maxFinite,
-                height: double.maxFinite,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 50),
-                child: Column(
+      body: PageView.builder(
+        controller: _pageController,
+        itemCount: images.length,
+        itemBuilder: (_, index) {
+          return Container(
+            width: double.maxFinite,
+            height: double.maxFinite,
+            padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 50),
+            child: Column(
+              children: [
+                const Spacer(),
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: SvgPicture.asset("assets/vectors/${images[index]}"),
+                ),
+                const Spacer(),
+                AppHeadings(
+                  text: headings[index],
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+                AppSubHeadings(
+                  text: subHeadings[index],
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                if (index == images.length - 1)
+                  BasicAppButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) =>
+                                    const SignupPage()));
+                      },
+                      title: 'Get Started'),
+                const Spacer(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Spacer(),
-                    Align(
-                      alignment: Alignment.topCenter,
-                      child:
-                          SvgPicture.asset("assets/vectors/${images[index]}"),
-                    ),
-                    const Spacer(),
-                    AppHeadings(
-                      text: headings[index],
+                    Expanded(
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(3, (indexDots) {
+                              return Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                height: 10,
+                                width: 8,
+                                decoration: BoxDecoration(
+                                  color: index == indexDots
+                                      ? AppColors.primary
+                                      : AppColors.grey,
+                                  shape: BoxShape.circle,
+                                ),
+                              );
+                            }),
+                          ),
+                          // Right-align the Next button
+                          if (index != (images.length - 1))
+                            Positioned(
+                              right: 0,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8), // Add sufficient padding
+                                  backgroundColor: Colors
+                                      .white, // Adjust to your desired color
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                        20), // Rounded corners
+                                  ),
+                                  elevation:
+                                      0, // Optional: Remove shadow for a flat look
+                                ),
+                                onPressed: () {
+                                  _pageController.nextPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.ease,
+                                  );
+                                },
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Next',
+                                      style: TextStyle(
+                                          color: AppColors.primary,
+                                          fontSize: 15),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      color: AppColors.primary,
+                                      size: 17,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                     const SizedBox(
                       height: 20,
                     ),
-                    AppSubHeadings(
-                      text: subHeadings[index],
-                    ),
-                    const SizedBox(
-                      height: 30,
-                    ),
-                    if (index == images.length - 1)
-                      BasicAppButton(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        const SignupPage()));
-                          },
-                          title: 'Get Started'),
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: List.generate(3, (indexDots) {
-                                  return Container(
-                                    margin: const EdgeInsets.symmetric(
-                                        horizontal: 4),
-                                    height: 8,
-                                    width: 8,
-                                    decoration: BoxDecoration(
-                                      color: index == indexDots
-                                          ? AppColors.primary
-                                          : AppColors.grey,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  );
-                                }),
-                              ),
-                              // Right-align the Next button
-                              if (index != (images.length - 1))
-                                Positioned(
-                                  right: 0,
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _pageController.nextPage(
-                                        duration:
-                                            const Duration(milliseconds: 300),
-                                        curve: Curves.ease,
-                                      );
-                                    },
-                                    child: const Row(
-                                      children: [
-                                        Text(
-                                          'Next',
-                                          style: TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 16),
-                                        ),
-                                        Icon(
-                                          Icons.arrow_forward,
-                                          color: AppColors.primary,
-                                          size: 17,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                      ],
-                    )
                   ],
-                ),
-              );
-            }));
+                )
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

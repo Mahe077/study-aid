@@ -42,6 +42,12 @@ class _TopicPageState extends ConsumerState<TopicPage>
   late TabController _tabController;
   late AudioPlayer _audioPlayer;
   bool _recordExists = false;
+  final Map<String, String> sortOptions = {
+    'createdDate': 'Date Created',
+    'title': 'Title',
+    'updatedDate': 'Last Updated',
+  };
+  String dropdownValue = 'updatedDate';
 
   StreamSubscription? _playerStateSubscription;
 
@@ -221,7 +227,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
 
   @override
   Widget build(BuildContext context) {
-    final tabDataState = ref.watch(tabDataProvider(widget.entity.id));
+    final tabDataState = ref
+        .watch(tabDataProvider(TabDataParams(widget.entity.id, dropdownValue)));
     final searchState = ref.watch(searchNotifireProvider);
 
     return DefaultTabController(
@@ -234,6 +241,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
           userId: widget.userId,
           topicTitle: widget.entity.title,
           topicColor: widget.entity.color,
+          dropdownValue: dropdownValue,
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -244,14 +252,58 @@ class _TopicPageState extends ConsumerState<TopicPage>
                 child: searchState.isSearchActive
                     ? searchState.isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : _buildSearchResults(searchState.searchResults)
+                        : _buildSearchResults(
+                            searchState.searchResults, dropdownValue)
                     : Column(
                         children: [
-                          _buildRecentItemsSection(tabDataState),
+                          _buildRecentItemsSection(tabDataState, dropdownValue),
                           const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Spacer(),
+                              Text(
+                                "Sort by :",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              SizedBox(width: 5),
+                              DropdownButton<String>(
+                                dropdownColor: AppColors.white,
+                                isDense: true,
+                                borderRadius: BorderRadius.circular(8),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                ),
+                                value: dropdownValue,
+                                onChanged: (newValue) {
+                                  if (newValue != null &&
+                                      newValue != dropdownValue) {
+                                    setState(() {
+                                      dropdownValue =
+                                          newValue; // Update the value and rebuild the widget
+                                    });
+                                    ref.invalidate(tabDataProvider);
+                                    Logger().d("Sort value: $dropdownValue");
+                                  }
+                                },
+                                items: sortOptions.entries.map((entry) {
+                                  return DropdownMenuItem<String>(
+                                    value: entry.key,
+                                    child: Text(entry.value),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 8),
                           _buildTabBar(),
                           const SizedBox(height: 8),
-                          _buildTabView(tabDataState),
+                          _buildTabView(tabDataState, dropdownValue),
                         ],
                       ),
               ),
@@ -277,7 +329,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildRecentItemsSection(AsyncValue<TabDataState> tabDataState) {
+  Widget _buildRecentItemsSection(
+      AsyncValue<TabDataState> tabDataState, String dropdownvalue) {
     return tabDataState.when(
       data: (state) {
         final List<dynamic> items = [
@@ -312,14 +365,16 @@ class _TopicPageState extends ConsumerState<TopicPage>
                     return Row(
                       children: [
                         RecentTile(
-                            entity: item,
-                            type: item is Topic
-                                ? TopicType.topic
-                                : item is Note
-                                    ? TopicType.note
-                                    : TopicType.audio,
-                            userId: widget.userId,
-                            parentTopicId: widget.entity.id),
+                          entity: item,
+                          type: item is Topic
+                              ? TopicType.topic
+                              : item is Note
+                                  ? TopicType.note
+                                  : TopicType.audio,
+                          userId: widget.userId,
+                          parentTopicId: widget.entity.id,
+                          dropdownValue: dropdownvalue,
+                        ),
                         const SizedBox(width: 15),
                       ],
                     );
@@ -364,7 +419,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildTabView(AsyncValue<TabDataState> tabDataState) {
+  Widget _buildTabView(
+      AsyncValue<TabDataState> tabDataState, String dropdownvalue) {
     return Expanded(
       child: tabDataState.when(
         data: (state) {
@@ -374,14 +430,18 @@ class _TopicPageState extends ConsumerState<TopicPage>
             controller: _tabController,
             children: [
               _contentList(
-                [...state.topics, ...state.notes, ...state.audioRecordings],
-                TopicType.all,
-                state.hasMoreTopics || state.hasMoreNotes || state.hasMoreAudio,
-              ),
-              _contentList(state.topics, TopicType.topic, state.hasMoreTopics),
-              _contentList(state.notes, TopicType.note, state.hasMoreNotes),
-              _contentList(
-                  state.audioRecordings, TopicType.audio, state.hasMoreAudio),
+                  [...state.topics, ...state.notes, ...state.audioRecordings],
+                  TopicType.all,
+                  state.hasMoreTopics ||
+                      state.hasMoreNotes ||
+                      state.hasMoreAudio,
+                  dropdownvalue),
+              _contentList(state.topics, TopicType.topic, state.hasMoreTopics,
+                  dropdownvalue),
+              _contentList(state.notes, TopicType.note, state.hasMoreNotes,
+                  dropdownvalue),
+              _contentList(state.audioRecordings, TopicType.audio,
+                  state.hasMoreAudio, dropdownvalue),
             ],
           );
         },
@@ -391,7 +451,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _contentList(List<dynamic> items, TopicType type, bool hasMore) {
+  Widget _contentList(
+      List<dynamic> items, TopicType type, bool hasMore, String dropdownvalue) {
     final filteredItems = items.where((item) {
       if (type == TopicType.all) return true; // Show all items
       if (type == TopicType.topic && item is Topic) return true;
@@ -405,7 +466,16 @@ class _TopicPageState extends ConsumerState<TopicPage>
     }
 
     if (type == TopicType.all) {
-      filteredItems.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      if (dropdownvalue == 'updatedDate') {
+        filteredItems.sort(
+            (a, b) => b.updatedDate.compareTo(a.updatedDate)); // Descending
+      } else if (dropdownvalue == 'createdDate') {
+        filteredItems.sort(
+            (a, b) => b.createdDate.compareTo(a.createdDate)); // Descending
+      } else if (dropdownvalue == 'title') {
+        filteredItems.sort((a, b) => a.titleLowerCase
+            .compareTo(b.titleLowerCase)); // Ascending alphabetical order
+      }
     }
 
     return Column(
@@ -424,11 +494,12 @@ class _TopicPageState extends ConsumerState<TopicPage>
                         entity: item,
                         type: type,
                         parentTopicId: widget.entity.id,
+                        dropdownValue: dropdownvalue,
                       ),
                       const SizedBox(height: 10),
                     ],
                   )),
-              if (hasMore) _loadMoreButton(type),
+              if (hasMore) _loadMoreButton(type, dropdownvalue),
             ],
           ),
         ),
@@ -479,10 +550,12 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _loadMoreButton(TopicType type) {
+  Widget _loadMoreButton(TopicType type, String dropdownvalue) {
     return ElevatedButton(
       onPressed: () {
-        final notifier = ref.read(tabDataProvider(widget.entity.id).notifier);
+        final notifier = ref.read(
+            tabDataProvider(TabDataParams(widget.entity.id, dropdownvalue))
+                .notifier);
         switch (type) {
           case TopicType.all:
             Logger().i("Load more ${TopicType.all}");
@@ -539,7 +612,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildSearchResults(List<dynamic> results) {
+  Widget _buildSearchResults(List<dynamic> results, dropdownValue) {
     if (results.isEmpty) {
       return Center(
         child: Text(
@@ -561,6 +634,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             type: TopicType.note,
             userId: widget.userId,
             parentTopicId: widget.entity.id,
+            dropdownValue: dropdownValue,
           );
         } else if (item is AudioRecording) {
           return ContentTile(
@@ -568,6 +642,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             type: TopicType.audio,
             userId: widget.userId,
             parentTopicId: widget.entity.id,
+            dropdownValue: dropdownValue,
           );
         }
 
