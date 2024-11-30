@@ -6,6 +6,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
@@ -29,6 +30,7 @@ class NotePage extends ConsumerStatefulWidget {
   Color? noteColor;
   String userId;
   String dropdownValue;
+  bool? isImage;
 
   NotePage({
     super.key,
@@ -39,6 +41,7 @@ class NotePage extends ConsumerStatefulWidget {
     required this.topicId,
     required this.userId,
     required this.dropdownValue,
+    this.isImage = false,
   });
 
   @override
@@ -74,6 +77,9 @@ class _NotePageState extends ConsumerState<NotePage> {
           );
     quillController.readOnly = !widget.isNewNote;
     isSaved = !widget.isNewNote;
+    if (widget.isNewNote && widget.isImage == true) {
+      _pickImage(quillController);
+    }
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (widget.isNewNote) {
         focusNode.requestFocus();
@@ -150,19 +156,21 @@ class _NotePageState extends ConsumerState<NotePage> {
 
   Note getNote() {
     return Note(
-        id: UniqueKey().toString(),
-        title: '',
-        content: '',
-        contentJson: '',
-        createdDate: DateTime.now(),
-        color: widget.noteColor ?? AppColors.grey,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: [],
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: widget.topicId,
-        titleLowerCase: '');
+      id: UniqueKey().toString(),
+      title: '',
+      content: '',
+      contentJson: '',
+      createdDate: DateTime.now(),
+      color: widget.noteColor ?? AppColors.grey,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: [],
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: widget.topicId,
+      titleLowerCase: '',
+      userId: widget.userId,
+    );
   }
 
   void addTag(String tag) {
@@ -181,19 +189,21 @@ class _NotePageState extends ConsumerState<NotePage> {
     });
 
     final noteTemp = Note(
-        id: note.id,
-        title: titleController.text.trim(),
-        content: quillController.document.toPlainText().trim(),
-        contentJson: jsonEncode(quillController.document.toDelta().toJson()),
-        createdDate: note.createdDate,
-        color: widget.noteColor ?? note.color,
-        remoteChangeTimestamp: note.remoteChangeTimestamp,
-        tags: note.tags,
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: note.parentId,
-        titleLowerCase: titleController.text.trim().toLowerCase());
+      id: note.id,
+      title: titleController.text.trim(),
+      content: quillController.document.toPlainText().trim(),
+      contentJson: jsonEncode(quillController.document.toDelta().toJson()),
+      createdDate: note.createdDate,
+      color: widget.noteColor ?? note.color,
+      remoteChangeTimestamp: note.remoteChangeTimestamp,
+      tags: note.tags,
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: note.parentId,
+      titleLowerCase: titleController.text.trim().toLowerCase(),
+      userId: note.userId,
+    );
 
     final noteNotifier = ref.read(
         notesProvider(TabDataParams(widget.topicId, widget.dropdownValue))
@@ -439,6 +449,19 @@ class _NotePageState extends ConsumerState<NotePage> {
         ),
       ),
     );
+  }
+
+  // This method will be called immediately if isImage is true
+  Future<void> _pickImage(QuillController quillController) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      // Add image to the Quill editor
+      quillController.insertImageBlock(
+        imageSource: pickedFile.path,
+      );
+    }
   }
 
   ElevatedButton _saveButton(BuildContext context) {
