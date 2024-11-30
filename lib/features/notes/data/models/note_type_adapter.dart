@@ -22,6 +22,7 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
       remoteChangeTimestamp: reader.read(),
       parentId: reader.readString(),
       titleLowerCase: reader.readString(),
+      userId: reader.readString(),
     );
   }
 
@@ -40,5 +41,6 @@ class NoteModelAdapter extends TypeAdapter<NoteModel> {
     writer.write(obj.remoteChangeTimestamp);
     writer.writeString(obj.parentId);
     writer.writeString(obj.titleLowerCase);
+    writer.writeString(obj.userId);
   }
 }

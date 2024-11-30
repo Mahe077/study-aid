@@ -19,6 +19,7 @@ class AudioRecording extends BaseEntity {
   final DateTime remoteChangeTimestamp;
   final String parentId;
   final String titleLowerCase;
+  final String userId;
 
   AudioRecording({
     required this.id,
@@ -34,6 +35,7 @@ class AudioRecording extends BaseEntity {
     required this.remoteChangeTimestamp,
     required this.parentId,
     required this.titleLowerCase,
+    required this.userId,
   });
 
   AudioRecording copyWith({
@@ -50,21 +52,24 @@ class AudioRecording extends BaseEntity {
     DateTime? remoteChangeTimestamp,
     String? parentId,
     String? titleLowerCase,
+    String? userId,
   }) {
     return AudioRecording(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        color: color ?? this.color,
-        tags: tags ?? this.tags,
-        createdDate: createdDate ?? this.createdDate,
-        updatedDate: updatedDate ?? this.updatedDate,
-        url: url ?? this.url,
-        localpath: localpath ?? this.localpath,
-        syncStatus: syncStatus ?? this.syncStatus,
-        localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
-        remoteChangeTimestamp:
-            remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId,
-        titleLowerCase: titleLowerCase ?? this.titleLowerCase);
+      id: id ?? this.id,
+      title: title ?? this.title,
+      color: color ?? this.color,
+      tags: tags ?? this.tags,
+      createdDate: createdDate ?? this.createdDate,
+      updatedDate: updatedDate ?? this.updatedDate,
+      url: url ?? this.url,
+      localpath: localpath ?? this.localpath,
+      syncStatus: syncStatus ?? this.syncStatus,
+      localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
+      remoteChangeTimestamp:
+          remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+      parentId: parentId ?? this.parentId,
+      titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
+    );
   }
 }

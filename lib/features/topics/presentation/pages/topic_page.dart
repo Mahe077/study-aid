@@ -593,7 +593,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
                 if (query.isNotEmpty) {
                   ref
                       .read(searchNotifireProvider.notifier)
-                      .performSearch(query);
+                      .performSearch(query, widget.userId);
                 }
               },
             ),

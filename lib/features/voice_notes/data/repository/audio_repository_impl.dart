@@ -349,12 +349,12 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
   }
 
   @override
-  Future<Either<Failure, List<AudioRecordingModel>>> searchFromTags(
-      String query) async {
+  Future<Either<Failure, List<AudioRecordingModel>>> search(
+      String query, String userId) async {
     try {
       if (await networkInfo.isConnected) {
         final remoteAudioResult =
-            await remoteDataSource.searchFromRemote(query);
+            await remoteDataSource.searchFromRemote(query, userId);
         return remoteAudioResult.fold((failure) => Left(failure),
             (remoteAudio) async {
           return Right(remoteAudio);

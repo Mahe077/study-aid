@@ -18,6 +18,7 @@ class Topic extends BaseEntity {
   final DateTime remoteChangeTimestamp;
   final String parentId;
   final String titleLowerCase;
+  final String userId;
 
   Topic({
     required this.id,
@@ -34,5 +35,6 @@ class Topic extends BaseEntity {
     required this.remoteChangeTimestamp,
     required this.parentId,
     required this.titleLowerCase,
+    required this.userId,
   });
 }

@@ -30,20 +30,22 @@ class TopicRepositoryImpl implements TopicRepository {
     try {
       final now = DateTime.now();
       var topicModel = TopicModel(
-          id: UniqueKey().toString(), // Temporary unique ID
-          title: title ?? '',
-          description: description ?? '',
-          color: color,
-          createdDate: now,
-          updatedDate: now,
-          subTopics: [],
-          notes: [],
-          audioRecordings: [],
-          syncStatus: ConstantStrings.pending,
-          localChangeTimestamp: now,
-          remoteChangeTimestamp: now,
-          parentId: parentId ?? '',
-          titleLowerCase: title?.toLowerCase() ?? '');
+        id: UniqueKey().toString(), // Temporary unique ID
+        title: title ?? '',
+        description: description ?? '',
+        color: color,
+        createdDate: now,
+        updatedDate: now,
+        subTopics: [],
+        notes: [],
+        audioRecordings: [],
+        syncStatus: ConstantStrings.pending,
+        localChangeTimestamp: now,
+        remoteChangeTimestamp: now,
+        parentId: parentId ?? '',
+        titleLowerCase: title?.toLowerCase() ?? '',
+        userId: userId,
+      );
 
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.createTopic(topicModel);

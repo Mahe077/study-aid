@@ -325,7 +325,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 if (query.isNotEmpty) {
                   ref
                       .read(searchNotifireProvider.notifier)
-                      .performSearch(query);
+                      .performSearch(query, widget.user.id);
                 }
               },
             ),

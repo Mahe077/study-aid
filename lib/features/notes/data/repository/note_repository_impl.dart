@@ -247,20 +247,36 @@ class NoteRepositoryImpl extends NoteRepository {
   }
 
   @override
-  Future<Either<Failure, List<NoteModel>>> searchFromTags(String query) async {
+  Future<Either<Failure, List<NoteModel>>> search(
+      String query, String userId) async {
     try {
+      List<NoteModel> combinedResults = [];
+
+      // Always fetch local results
+      final localNoteResult = await localDataSource.searchFromLocal(query);
+      combinedResults.addAll(localNoteResult);
+
       if (await networkInfo.isConnected) {
-        final remoteNoteResult = await remoteDataSource.searchFromRemote(query);
-        return remoteNoteResult.fold((failure) => Left(failure),
-            (remoteNote) async {
-          return Right(remoteNote);
-        });
+        // Fetch remote results only if connected to the network
+        final remoteNoteResult =
+            await remoteDataSource.searchFromRemote(query, userId);
+
+        return remoteNoteResult.fold(
+          (failure) => Left(Failure(failure.message)), // Handle failure case
+          (remoteNotes) {
+            // Combine remote results, excluding any notes already in the local results
+            combinedResults.addAll(remoteNotes.where((remoteNote) =>
+                !combinedResults
+                    .any((localNote) => localNote.id == remoteNote.id)));
+            return Right(combinedResults);
+          },
+        );
       } else {
-        final localNoteResult = await localDataSource.searchFromLocal(query);
-        return Right(localNoteResult);
+        // No network, return only local results
+        return Right(combinedResults);
       }
     } on Exception catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString())); // Handle unexpected exceptions
     }
   }
 }

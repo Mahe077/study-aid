@@ -146,6 +146,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
       localpath: '',
       parentId: widget.topicId,
       titleLowerCase: '',
+      userId: widget.userId,
     );
   }
 
@@ -176,6 +177,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
       localpath: recordPath ?? '',
       parentId: audio.parentId,
       titleLowerCase: titleController.text.trim().toLowerCase(),
+      userId: widget.userId,
     );
 
     Logger().i(audioTemp.toString());

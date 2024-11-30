@@ -34,22 +34,25 @@ class AudioRecordingModel extends AudioRecording {
   final String parentId;
   @HiveField(13)
   final String titleLowerCase;
+  @HiveField(14)
+  final String userId;
 
-  AudioRecordingModel(
-      {required this.id,
-      required this.title,
-      required this.color,
-      required this.tags,
-      required this.createdDate,
-      required this.updatedDate,
-      required this.url,
-      required this.localpath,
-      required this.syncStatus,
-      required this.localChangeTimestamp,
-      required this.remoteChangeTimestamp,
-      required this.parentId,
-      required this.titleLowerCase})
-      : super(
+  AudioRecordingModel({
+    required this.id,
+    required this.title,
+    required this.color,
+    required this.tags,
+    required this.createdDate,
+    required this.updatedDate,
+    required this.url,
+    required this.localpath,
+    required this.syncStatus,
+    required this.localChangeTimestamp,
+    required this.remoteChangeTimestamp,
+    required this.parentId,
+    required this.titleLowerCase,
+    required this.userId,
+  }) : super(
             id: id,
             title: title,
             color: color,
@@ -62,7 +65,8 @@ class AudioRecordingModel extends AudioRecording {
             localChangeTimestamp: localChangeTimestamp,
             remoteChangeTimestamp: remoteChangeTimestamp,
             parentId: parentId,
-            titleLowerCase: titleLowerCase);
+            titleLowerCase: titleLowerCase,
+            userId: userId);
 
   factory AudioRecordingModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -82,6 +86,7 @@ class AudioRecordingModel extends AudioRecording {
           (data['remoteChangeTimestamp'] as Timestamp).toDate(),
       parentId: data['parentId'],
       titleLowerCase: data['titleLowerCase'],
+      userId: data['userId'],
     );
   }
 
@@ -100,71 +105,80 @@ class AudioRecordingModel extends AudioRecording {
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
       'parentId': parentId,
       'titleLowerCase': titleLowerCase,
+      'userId': userId,
     };
   }
 
   @override
-  AudioRecordingModel copyWith(
-      {String? id,
-      String? title,
-      Color? color,
-      List<String>? tags,
-      DateTime? createdDate,
-      DateTime? updatedDate,
-      String? url,
-      String? localpath,
-      String? syncStatus,
-      DateTime? localChangeTimestamp,
-      DateTime? remoteChangeTimestamp,
-      String? parentId,
-      String? titleLowerCase}) {
+  AudioRecordingModel copyWith({
+    String? id,
+    String? title,
+    Color? color,
+    List<String>? tags,
+    DateTime? createdDate,
+    DateTime? updatedDate,
+    String? url,
+    String? localpath,
+    String? syncStatus,
+    DateTime? localChangeTimestamp,
+    DateTime? remoteChangeTimestamp,
+    String? parentId,
+    String? titleLowerCase,
+    String? userId,
+  }) {
     return AudioRecordingModel(
-        id: id ?? this.id,
-        title: title ?? this.title,
-        color: color ?? this.color,
-        tags: tags ?? this.tags,
-        createdDate: createdDate ?? this.createdDate,
-        updatedDate: updatedDate ?? this.updatedDate,
-        url: url ?? this.url,
-        localpath: localpath ?? this.localpath,
-        syncStatus: syncStatus ?? this.syncStatus,
-        localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
-        remoteChangeTimestamp:
-            remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId,
-        titleLowerCase: titleLowerCase ?? this.titleLowerCase);
+      id: id ?? this.id,
+      title: title ?? this.title,
+      color: color ?? this.color,
+      tags: tags ?? this.tags,
+      createdDate: createdDate ?? this.createdDate,
+      updatedDate: updatedDate ?? this.updatedDate,
+      url: url ?? this.url,
+      localpath: localpath ?? this.localpath,
+      syncStatus: syncStatus ?? this.syncStatus,
+      localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
+      remoteChangeTimestamp:
+          remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+      parentId: parentId ?? this.parentId,
+      titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
+    );
   }
 
   factory AudioRecordingModel.fromDomain(AudioRecording audio) {
     return AudioRecordingModel(
-        id: audio.id,
-        title: audio.title,
-        color: audio.color,
-        tags: audio.tags,
-        createdDate: audio.createdDate,
-        updatedDate: audio.updatedDate,
-        url: audio.url,
-        localpath: audio.localpath,
-        syncStatus: audio.syncStatus,
-        localChangeTimestamp: audio.localChangeTimestamp,
-        remoteChangeTimestamp: audio.remoteChangeTimestamp,
-        parentId: audio.parentId,
-        titleLowerCase: audio.titleLowerCase);
+      id: audio.id,
+      title: audio.title,
+      color: audio.color,
+      tags: audio.tags,
+      createdDate: audio.createdDate,
+      updatedDate: audio.updatedDate,
+      url: audio.url,
+      localpath: audio.localpath,
+      syncStatus: audio.syncStatus,
+      localChangeTimestamp: audio.localChangeTimestamp,
+      remoteChangeTimestamp: audio.remoteChangeTimestamp,
+      parentId: audio.parentId,
+      titleLowerCase: audio.titleLowerCase,
+      userId: audio.userId,
+    );
   }
   AudioRecording toDomain() {
     return AudioRecording(
-        id: id,
-        title: title,
-        color: color,
-        tags: tags,
-        createdDate: createdDate,
-        updatedDate: updatedDate,
-        url: url,
-        localpath: localpath,
-        syncStatus: syncStatus,
-        localChangeTimestamp: localChangeTimestamp,
-        remoteChangeTimestamp: remoteChangeTimestamp,
-        parentId: parentId,
-        titleLowerCase: titleLowerCase);
+      id: id,
+      title: title,
+      color: color,
+      tags: tags,
+      createdDate: createdDate,
+      updatedDate: updatedDate,
+      url: url,
+      localpath: localpath,
+      syncStatus: syncStatus,
+      localChangeTimestamp: localChangeTimestamp,
+      remoteChangeTimestamp: remoteChangeTimestamp,
+      parentId: parentId,
+      titleLowerCase: titleLowerCase,
+      userId: userId,
+    );
   }
 }

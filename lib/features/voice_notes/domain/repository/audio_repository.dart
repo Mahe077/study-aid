@@ -21,5 +21,6 @@ abstract class AudioRecordingRepository {
   Future<Either<Failure, AudioRecording?>> getAudio(String audioId);
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId);
-  Future<Either<Failure, List<AudioRecording>>> searchFromTags(String query);
+  Future<Either<Failure, List<AudioRecording>>> search(
+      String query, String userId);
 }
