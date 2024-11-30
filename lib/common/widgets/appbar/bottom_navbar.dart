@@ -35,6 +35,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
           ),
           content: SingleChildScrollView(
             child: BlockPicker(
+              availableColors: AppColors.colors,
               pickerColor: widget.itemColor,
               onColorChanged: (Color color) {
                 setState(() {

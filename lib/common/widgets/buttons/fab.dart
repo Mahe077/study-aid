@@ -31,6 +31,7 @@ class FAB extends ConsumerStatefulWidget {
 }
 
 class _FABState extends ConsumerState<FAB> {
+  final _formKey = GlobalKey<FormState>();
   final GlobalKey<ExpandableFabState> _fabKey = GlobalKey<ExpandableFabState>();
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -57,6 +58,7 @@ class _FABState extends ConsumerState<FAB> {
           ),
           content: SingleChildScrollView(
             child: BlockPicker(
+              availableColors: AppColors.colors,
               pickerColor: selectedColor,
               onColorChanged: (Color color) {
                 setState(() {
@@ -124,7 +126,7 @@ class _FABState extends ConsumerState<FAB> {
     if (currentState.hasError) {
       toast.showFailure(
           description: 'An error occurred while creating the topic.');
-      Logger().d(currentState.error.toString());
+      // Logger().d(currentState.error.toString());
     } else if (currentState.isLoading) {
       const Center(child: CircularProgressIndicator());
     } else {
@@ -273,42 +275,56 @@ class _FABState extends ConsumerState<FAB> {
               context,
               DialogMode.add,
               'Topic',
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _topicController,
-                    decoration: const InputDecoration(
-                      hintText: "Enter title here",
-                    ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      hintText: "Enter description here",
-                    ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    children: [
-                      const Text(
-                        "Pick a color:",
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.black),
-                      ),
-                      const SizedBox(height: 5),
-                      IconButton(
-                        onPressed: _showColorPickerDialog,
-                        icon: const Icon(Icons.color_lens),
-                      ),
-                    ],
-                  ),
-                ],
+              Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: _topicController,
+                      decoration: const InputDecoration(
+                        hintText: "Enter title here",
+                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Title cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: const InputDecoration(
+                        hintText: "Enter description here",
+                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      children: [
+                        const Text(
+                          "Pick a color:",
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.black),
+                        ),
+                        const SizedBox(height: 5),
+                        IconButton(
+                          onPressed: _showColorPickerDialog,
+                          icon: const Icon(Icons.color_lens),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              () => _handleCreateTopic(ref),
+              () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  _handleCreateTopic(ref);
+                }
+              },
+              formKey: _formKey,
             );
           },
           backgroundColor: AppColors.grey,

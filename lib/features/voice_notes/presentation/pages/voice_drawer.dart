@@ -89,7 +89,8 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(8), topRight: Radius.circular(8)),
         color: widget.entity.color,
       ),
       height: 500,
@@ -113,8 +114,9 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
                   Text(formatDuration(bottomSheetPlayerController.maxDuration)),
                   const SizedBox(height: 20),
                   _buildPlayerControls(),
-                  const SizedBox(height: 20),
+                  Spacer(),
                   _buildActionButtons(context),
+                  const SizedBox(height: 20)
                 ],
               ),
       ),
@@ -219,10 +221,13 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
             decoration: BoxDecoration(
                 shape: BoxShape.circle, color: widget.entity.color),
             child: Center(
-              child: Icon(
-                Icons.fast_forward_outlined,
-                size: 19,
-                color: AppColors.seek.withOpacity(0.72),
+              child: Transform.rotate(
+                angle: forward ? 0 : 3.14159, // 3.14159 radians is 180 degrees
+                child: Icon(
+                  Icons.fast_forward_outlined,
+                  size: 19,
+                  color: AppColors.seek.withOpacity(0.72),
+                ),
               ),
             ),
           ),

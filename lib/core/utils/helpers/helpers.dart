@@ -17,15 +17,17 @@ void showCustomDialog(
   DialogMode mode,
   String component,
   Widget content,
-  VoidCallback onConfirm,
-) {
+  VoidCallback onConfirm, {
+  GlobalKey<FormState>? formKey, // Make formKey optional
+}) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return CustomDialog(
         title: _getDialogTitle(mode, component),
         content: content,
-        actions: _getDialogActions(context, mode, component, onConfirm),
+        actions:
+            _getDialogActions(context, mode, component, onConfirm, formKey),
       );
     },
   );
@@ -49,6 +51,7 @@ List<Widget> _getDialogActions(
   DialogMode mode,
   String component,
   VoidCallback onConfirm,
+  GlobalKey<FormState>? formKey,
 ) {
   switch (mode) {
     case DialogMode.view:
@@ -82,10 +85,13 @@ List<Widget> _getDialogActions(
                   iconColor: AppColors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8))),
-              onPressed: () => {
-                    onConfirm(), // Perform the confirm logic first
-                    Navigator.of(context).pop() // Close the dialog after
-                  },
+              onPressed: () {
+                if (formKey == null ||
+                    formKey.currentState?.validate() == true) {
+                  onConfirm();
+                  Navigator.of(context).pop(); // Close dialog
+                }
+              },
               child: Text(
                 "Add $component",
                 style: const TextStyle(
@@ -105,7 +111,10 @@ List<Widget> _getDialogActions(
                 iconColor: AppColors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10))),
-            onPressed: () => {onConfirm(), Navigator.of(context).pop(true)},
+            onPressed: () {
+              onConfirm();
+              Navigator.of(context).pop(true); // Close dialog
+            },
             child: const Text(
               'Yes',
               style: TextStyle(

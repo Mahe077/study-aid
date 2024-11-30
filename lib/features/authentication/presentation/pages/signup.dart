@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -16,6 +17,7 @@ import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
@@ -58,12 +60,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset(
-                  AppVectors.logo,
-                  height: 100,
-                  alignment: Alignment(-1, -1),
-                ),
-                // SvgPicture.asset(AppVectors.logo),
+                // Image.asset(
+                //   AppVectors.logo,
+                //   height: 100,
+                //   alignment: Alignment(-1, -1),
+                // ),
+                SvgPicture.asset(AppVectors.signup),
                 const SizedBox(height: 10),
                 _buildWelcomeText(),
                 const SizedBox(height: 25),
@@ -156,6 +158,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       (user) {
         _log.d(user);
         if (user != null) {
+          ref.invalidate(userProvider);
+
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (context) => HomePage(user: user)),

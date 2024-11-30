@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart' as dartz;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -12,6 +13,7 @@ import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
 import 'package:study_aid/features/authentication/presentation/pages/revcovery_email.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signup.dart';
@@ -56,12 +58,12 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Image.asset(
-                AppVectors.logo,
-                height: 100,
-                alignment: Alignment(-1, -1),
-              ),
-              // SvgPicture.asset(AppVectors.logo),
+              // Image.asset(
+              //   AppVectors.logo,
+              //   height: 100,
+              //   alignment: Alignment(-1, -1),
+              // ),
+              SvgPicture.asset(AppVectors.signin),
               const SizedBox(height: 10),
               _buildWelcomeText(),
               const SizedBox(height: 30),
@@ -78,8 +80,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
               ),
               const SizedBox(height: 20),
               BasicAppButton(
-                onPressed: () =>
-                    _signInClicked(context, AuthMethod.emailAndPassword),
+                onPressed: () {
+                  if (!_isLoading && _signInKey.currentState!.validate()) {
+                    _signInClicked(context, AuthMethod.emailAndPassword);
+                  }
+                },
                 title: "Log In",
               ),
               const SizedBox(height: 20),
@@ -134,6 +139,8 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       (user) {
         Logger().d(user.toString());
         if (user != null) {
+          ref.invalidate(userProvider);
+
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -205,9 +212,6 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       validator: (value) {
         return emailError = isValidEmail(value);
       },
-      onChanged: (_) {
-        _signInKey.currentState?.validate();
-      },
       decoration: InputDecoration(
         suffixIcon: const Icon(Icons.mail),
         hintText: 'Email',
@@ -221,10 +225,9 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       controller: _passwordController,
       obscureText: !_passwordVisible,
       validator: (value) {
-        return passwordError = validatePassword(value);
-      },
-      onChanged: (_) {
-        _signInKey.currentState?.validate();
+        if (value == null || value.isEmpty) {
+          return passwordError = 'Password is required';
+        }
       },
       decoration: InputDecoration(
         suffixIcon: IconButton(

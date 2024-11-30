@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -113,9 +114,6 @@ class _NotePageState extends ConsumerState<NotePage> {
       quillController.readOnly = false; // Set to false to allow editing
       isSaved = false;
     });
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text('Edit mode activated')),
-    // );
   }
 
   void _confirmDelete() {
@@ -169,8 +167,11 @@ class _NotePageState extends ConsumerState<NotePage> {
     }
   }
 
-  void _saveNote(BuildContext context, WidgetRef ref) {
+  Future<void> _saveNote(BuildContext context, WidgetRef ref) async {
     final toast = CustomToast(context: context);
+    setState(() {
+      isSaving = true;
+    });
 
     final noteTemp = Note(
         id: note.id,
@@ -188,72 +189,65 @@ class _NotePageState extends ConsumerState<NotePage> {
 
     final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
 
-    setState(() {
-      isSaving = true;
-    });
-
     try {
       if (widget.isNewNote) {
-        var result = noteNotifier.createNote(
+        var result = await noteNotifier.createNote(
           noteTemp,
           widget.topicId,
           widget.userId,
         );
-        result.then((either) {
-          either.fold(
-            (failure) {
-              toast.showFailure(
-                  description: 'An error occurred while creating the note.');
-              Logger().d(failure.message);
-            },
-            (newNote) {
-              if (!mounted) return;
-              setState(() {
-                note = newNote;
-                widget.entity = newNote;
-                isSaved = true;
-                widget.isNewNote = false;
-                quillController.readOnly = true;
-              });
-              toast.showSuccess(description: 'Note saved successfully.');
-            },
-          );
-        });
+        result.fold(
+          (failure) {
+            toast.showFailure(
+                description: 'An error occurred while creating the note.');
+            Logger().d(failure.message);
+          },
+          (newNote) {
+            if (!mounted) return;
+            setState(() {
+              note = newNote;
+              widget.entity = newNote;
+              isSaved = true;
+              widget.isNewNote = false;
+              quillController.readOnly = true;
+            });
+            toast.showSuccess(description: 'Note saved successfully.');
+          },
+        );
       } else {
-        var updateNoteRes = noteNotifier.updateNote(
+        var updateNoteRes = await noteNotifier.updateNote(
           noteTemp,
           widget.topicId,
           widget.userId,
         );
 
-        updateNoteRes.then((either) {
-          either.fold(
-            (failure) {
-              toast.showFailure(
-                  description: 'An error occurred while saving the note.');
-              Logger().d(failure.message);
-            },
-            (newNote) {
-              if (!mounted) return;
-              setState(() {
-                note = newNote;
-                widget.entity = newNote;
-                isSaved = true;
-                widget.isNewNote = false;
-                quillController.readOnly = true;
-              });
-              toast.showSuccess(description: 'Note updated successfully.');
-            },
-          );
-        });
+        updateNoteRes.fold(
+          (failure) {
+            toast.showFailure(
+                description: 'An error occurred while saving the note.');
+            Logger().d(failure.message);
+          },
+          (newNote) {
+            if (!mounted) return;
+            setState(() {
+              note = newNote;
+              widget.entity = newNote;
+              isSaved = true;
+              widget.isNewNote = false;
+              quillController.readOnly = true;
+            });
+            toast.showSuccess(description: 'Note updated successfully.');
+          },
+        );
       }
-      setState(() {
-        isSaving = false;
-      });
     } on Exception catch (e) {
       Logger().e('Save Note Error :$e');
       toast.showFailure(
           description: 'Unexpected error occurred while saving the note.');
+    } finally {
+      setState(() {
+        isSaving = false; // End saving state
+      });
     }
   }
 
@@ -274,172 +268,161 @@ class _NotePageState extends ConsumerState<NotePage> {
         showMenu: true,
       ),
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    children: [
-                      AppHeadings(
-                        text: widget.topicTitle ?? '',
-                        alignment: TextAlign.left,
-                      ),
-                    ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  AppHeadings(
+                    text: widget.topicTitle ?? '',
+                    alignment: TextAlign.left,
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 5, 5, 10),
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8)),
+                  color: widget.noteColor ??
+                      widget.entity?.color ??
+                      AppColors.darkGrey,
                 ),
-                const SizedBox(height: 10),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.fromLTRB(20, 5, 5, 10),
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          topRight: Radius.circular(8)),
-                      color: widget.noteColor ??
-                          widget.entity?.color ??
-                          AppColors.darkGrey,
-                    ),
-                    child: Column(
-                      children: [
-                        Row(children: [
-                          Expanded(
-                            child: TextField(
-                              controller: titleController,
-                              decoration: const InputDecoration(
-                                  isDense: true,
-                                  icon: FaIcon(FontAwesomeIcons.solidNoteSticky,
-                                      size: 20),
-                                  hintText: 'Enter note title',
-                                  hintStyle: TextStyle(
-                                    color: AppColors.primary,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.transparent,
-                                  focusedBorder: InputBorder.none),
-                              canRequestFocus: !quillController.readOnly,
-                              maxLength: 25,
-                            ),
-                          ),
-                          if (!isSaved) _saveButton(context),
-                          const SizedBox(width: 2),
-                          IconButton(
-                              visualDensity: VisualDensity.compact,
-                              alignment: Alignment.centerRight,
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                if (!isSaving) _discardNote();
-                              },
-                              icon: const Icon(
-                                Icons.close,
-                                size: 24,
-                              )),
-                        ]),
-                        Row(
-                          children: [
-                            if (note.tags.isNotEmpty)
-                              ...note.tags.map((tag) => Row(
-                                    children: [
-                                      Tag(
-                                          text: tag,
-                                          onTap: () {
-                                            if (!isSaving) {
-                                              _confirmRemoveTag(tag);
-                                            }
-                                          }),
-                                      const SizedBox(width: 5),
-                                    ],
-                                  )),
-                            if (!quillController.readOnly)
-                              GestureDetector(
-                                onTap: () {
-                                  if (!isSaving) _addTagDialog(context);
-                                },
-                                child: Container(
-                                  height: 18,
-                                  decoration: BoxDecoration(
-                                      color: AppColors.white,
-                                      borderRadius: BorderRadius.circular(5)),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 5),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.add,
-                                            size: 10, color: AppColors.primary),
-                                        if (widget.entity?.tags == null) ...[
-                                          const SizedBox(width: 5),
-                                          const Text(
-                                            'Add a tag',
-                                            style: TextStyle(
-                                                fontSize: 9,
-                                                fontWeight: FontWeight.w500),
-                                          )
-                                        ]
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              )
-                          ],
-                        ),
-                        if (!widget.isNewNote) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Text(
-                                "Created: ${formatDateTime(widget.entity!.createdDate)}",
-                                style: const TextStyle(
-                                    fontSize: 10, fontWeight: FontWeight.w500),
-                              )
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 10),
-                            child: QuillEditor.basic(
-                              configurations: QuillEditorConfigurations(
-                                embedBuilders:
-                                    FlutterQuillEmbeds.editorBuilders(
-                                  imageEmbedConfigurations:
-                                      QuillEditorImageEmbedConfigurations(),
-                                ),
-                                controller: quillController,
-                                expands: true,
+                child: Column(
+                  children: [
+                    Row(children: [
+                      Expanded(
+                        child: TextField(
+                          controller: titleController,
+                          decoration: const InputDecoration(
+                              isDense: true,
+                              icon: FaIcon(FontAwesomeIcons.solidNoteSticky,
+                                  size: 20),
+                              hintText: 'Enter note title',
+                              hintStyle: TextStyle(
+                                color: AppColors.primary,
                               ),
-                              focusNode: focusNode,
-                            ),
-                          ),
+                              filled: true,
+                              fillColor: Colors.transparent,
+                              focusedBorder: InputBorder.none),
+                          canRequestFocus: !quillController.readOnly,
+                          // maxLength: 25,
                         ),
-                        quillController.readOnly
-                            ? BottomNavbar(
-                                onItemTapped: _handleToolbarAction,
-                                itemColor: widget.noteColor ??
-                                    widget.entity?.color ??
-                                    AppColors.grey,
-                                onColorChanged: (color) {
-                                  setState(() {
-                                    widget.noteColor =
-                                        color; // Update note color
-                                    isSaved = false;
-                                  });
-                                },
-                              )
-                            : CustomQuillToolbar(
-                                quillController: quillController),
+                      ),
+                      if (!isSaved) _saveButton(context),
+                      const SizedBox(width: 2),
+                      IconButton(
+                          visualDensity: VisualDensity.compact,
+                          alignment: Alignment.centerRight,
+                          padding: EdgeInsets.zero,
+                          onPressed: () {
+                            if (!isSaving) _discardNote();
+                          },
+                          icon: const Icon(
+                            Icons.close,
+                            size: 24,
+                          )),
+                    ]),
+                    Row(
+                      children: [
+                        if (note.tags.isNotEmpty)
+                          ...note.tags.map((tag) => Row(
+                                children: [
+                                  Tag(
+                                      text: tag,
+                                      onTap: () {
+                                        if (!isSaving) {
+                                          _confirmRemoveTag(tag);
+                                        }
+                                      }),
+                                  const SizedBox(width: 5),
+                                ],
+                              )),
+                        if (!quillController.readOnly)
+                          GestureDetector(
+                            onTap: () {
+                              if (!isSaving) _addTagDialog(context);
+                            },
+                            child: Container(
+                              height: 18,
+                              decoration: BoxDecoration(
+                                  color: AppColors.white,
+                                  borderRadius: BorderRadius.circular(5)),
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.add,
+                                        size: 10, color: AppColors.primary),
+                                    if (widget.entity?.tags == null) ...[
+                                      const SizedBox(width: 5),
+                                      const Text(
+                                        'Add a tag',
+                                        style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w500),
+                                      )
+                                    ]
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
                       ],
                     ),
-                  ),
-                )
-              ],
-            ),
-            if (isSaving)
-              const Center(
-                child: CircularProgressIndicator(color: AppColors.black),
-              )
+                    if (!widget.isNewNote) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text(
+                            "Created: ${formatDateTime(widget.entity!.createdDate)}",
+                            style: const TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w500),
+                          )
+                        ],
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: 10),
+                        child: QuillEditor.basic(
+                          configurations: QuillEditorConfigurations(
+                            embedBuilders: FlutterQuillEmbeds.editorBuilders(
+                              imageEmbedConfigurations:
+                                  QuillEditorImageEmbedConfigurations(),
+                            ),
+                            controller: quillController,
+                            expands: true,
+                          ),
+                          focusNode: focusNode,
+                        ),
+                      ),
+                    ),
+                    quillController.readOnly
+                        ? BottomNavbar(
+                            onItemTapped: _handleToolbarAction,
+                            itemColor: widget.noteColor ??
+                                widget.entity?.color ??
+                                AppColors.grey,
+                            onColorChanged: (color) {
+                              setState(() {
+                                widget.noteColor = color; // Update note color
+                                isSaved = false;
+                              });
+                            },
+                          )
+                        : CustomQuillToolbar(quillController: quillController),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
@@ -456,23 +439,31 @@ class _NotePageState extends ConsumerState<NotePage> {
           iconColor: AppColors.white,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-      onPressed: () => isSaving ? () : _saveNote(context, ref),
-      child: const Row(
-        children: [
-          Icon(
-            Icons.save,
-            size: 17,
-          ),
-          SizedBox(width: 5),
-          Text(
-            'Save',
-            style: TextStyle(
-                fontSize: 12,
-                color: AppColors.white,
-                fontWeight: FontWeight.w500),
-          )
-        ],
-      ),
+      onPressed: () => isSaving ? null : _saveNote(context, ref),
+      child: isSaving
+          ? Container(
+              height: 9,
+              width: 9,
+              margin: EdgeInsets.all(2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.0,
+                valueColor: AlwaysStoppedAnimation(Colors.white),
+              ),
+            )
+          : Row(
+              children: [
+                Icon(
+                  Icons.save,
+                  size: 17,
+                ),
+                SizedBox(width: 5),
+                Text('Save',
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.white,
+                        fontWeight: FontWeight.w500))
+              ],
+            ),
     );
   }
 

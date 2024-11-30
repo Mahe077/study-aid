@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
+import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart'
+    as UserProvider;
 import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
+import 'package:study_aid/features/settings/presentation/pages/account_page.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -45,7 +49,15 @@ class SettingsPage extends ConsumerWidget {
                   child: Column(
                     children: [
                       ElevatedButton(
-                        onPressed: () => {Logger().i("Account settings")},
+                        onPressed: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  const AccountPage(),
+                            ),
+                          )
+                        },
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5.0),
@@ -125,49 +137,27 @@ class SettingsPage extends ConsumerWidget {
                   ),
                 ),
                 Spacer(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
-                            visualDensity: VisualDensity.compact,
-                            backgroundColor: AppColors.primary,
-                            iconColor: AppColors.white,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10))),
-                        onPressed: () async {
-                          final userNotifier = ref.read(userProvider.notifier);
-                          await userNotifier.signOut();
+                Padding(
+                  padding: const EdgeInsets.all(25.0),
+                  child: BasicAppButton(
+                      onPressed: () async {
+                        final userNotifier = ref.read(userProvider.notifier);
+                        await userNotifier.signOut();
 
-                          Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (BuildContext context) =>
-                                      const SigninPage()),
-                              (route) => false);
-                        },
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.logout,
-                              size: 20,
-                            ),
-                            SizedBox(width: 15),
-                            const Text(
-                              'Sign Out',
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  color: AppColors.white,
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        )),
-                  ],
+                        ref.invalidate(UserProvider.userProvider);
+
+                        Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (BuildContext context) =>
+                                    const SigninPage()),
+                            (route) => false);
+                      },
+                      icon: Icons.logout,
+                      title: 'Sign Out'),
                 ),
-                SizedBox(height: 10)
               ],
-            ),
+            )
           ],
         ),
       ),
