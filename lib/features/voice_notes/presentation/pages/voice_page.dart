@@ -17,6 +17,7 @@ import 'package:study_aid/common/widgets/tiles/note_tag.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
@@ -26,6 +27,7 @@ class VoicePage extends ConsumerStatefulWidget {
   final AudioRecording? entity;
   final Color? noteColor;
   final String userId;
+  final String dropdownValue;
 
   const VoicePage(
       {super.key,
@@ -33,7 +35,8 @@ class VoicePage extends ConsumerStatefulWidget {
       this.entity,
       this.noteColor,
       required this.topicId,
-      required this.userId});
+      required this.userId,
+      required this.dropdownValue});
 
   @override
   ConsumerState<VoicePage> createState() => _VoicePageState();
@@ -130,18 +133,20 @@ class _VoicePageState extends ConsumerState<VoicePage> {
 
   AudioRecording getAudioRecording() {
     return AudioRecording(
-        id: UniqueKey().toString(),
-        title: '',
-        createdDate: DateTime.now(),
-        color: widget.noteColor ?? AppColors.grey,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: [],
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        url: '',
-        localpath: '',
-        parentId: widget.topicId);
+      id: UniqueKey().toString(),
+      title: '',
+      createdDate: DateTime.now(),
+      color: widget.noteColor ?? AppColors.grey,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: [],
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      url: '',
+      localpath: '',
+      parentId: widget.topicId,
+      titleLowerCase: '',
+    );
   }
 
   void addTag(String tag) {
@@ -158,18 +163,20 @@ class _VoicePageState extends ConsumerState<VoicePage> {
     final toast = CustomToast(context: context);
 
     final audioTemp = AudioRecording(
-        id: audio.id,
-        title: titleController.text.trim(),
-        createdDate: audio.createdDate,
-        color: audio.color,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: audio.tags,
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        url: '',
-        localpath: recordPath ?? '',
-        parentId: audio.parentId);
+      id: audio.id,
+      title: titleController.text.trim(),
+      createdDate: audio.createdDate,
+      color: audio.color,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: audio.tags,
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      url: '',
+      localpath: recordPath ?? '',
+      parentId: audio.parentId,
+      titleLowerCase: titleController.text.trim().toLowerCase(),
+    );
 
     Logger().i(audioTemp.toString());
 
@@ -177,9 +184,11 @@ class _VoicePageState extends ConsumerState<VoicePage> {
       isSaving = true;
     });
 
-    final audioNotifier = ref.read(audioProvider(widget.topicId).notifier);
-    var updateAudioRes = await audioNotifier.createAudio(
-        audioTemp, widget.topicId, widget.userId, _doTranscribe);
+    final audioNotifier = ref.read(
+        audioProvider(TabDataParams(widget.topicId, widget.dropdownValue))
+            .notifier);
+    var updateAudioRes = await audioNotifier.createAudio(audioTemp,
+        widget.topicId, widget.userId, _doTranscribe, widget.dropdownValue);
 
     if (!mounted) return;
 
@@ -806,9 +815,8 @@ class _VoicePageState extends ConsumerState<VoicePage> {
                 setState(() {
                   audio.tags.remove(tag);
                 });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Tag "$tag" removed')),
-                );
+                CustomToast(context: context)
+                    .showSuccess(description: 'Tag "$tag" removed');
               },
               child: const Text('Remove'),
             ),

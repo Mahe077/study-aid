@@ -56,7 +56,7 @@ class NoteRepositoryImpl extends NoteRepository {
 
   @override
   Future<Either<Failure, PaginatedObj<Note>>> fetchNotes(
-      String topicId, int limit, int startAfter) async {
+      String topicId, int limit, int startAfter, String sortBy) async {
     try {
       final localTopic = await topicRepository.getTopic(topicId);
 
@@ -90,6 +90,7 @@ class NoteRepositoryImpl extends NoteRepository {
             limit,
             noteRefs,
             startAfter,
+            sortBy,
           );
 
           return notes.fold(
@@ -117,13 +118,14 @@ class NoteRepositoryImpl extends NoteRepository {
 
         return result.fold((failure) => Left(failure), (N) async {
           await localDataSource.updateNote(noteModel);
-
+          await topicRepository.updateNoteOfParent(topicId, N.id);
           await userRepository.updateRecentItems(
               userId, noteModel.id, ConstantStrings.note);
           return Right(N);
         });
       } else {
         await localDataSource.updateNote(noteModel);
+        await topicRepository.updateNoteOfParent(topicId, noteModel.id);
       }
       await userRepository.updateRecentItems(
           userId, noteModel.id, ConstantStrings.note);

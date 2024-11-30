@@ -93,7 +93,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
 
   @override
   Future<Either<Failure, PaginatedObj<AudioRecording>>> fetchAudioRecordings(
-      String topicId, int limit, int startAfter) async {
+      String topicId, int limit, int startAfter, String sortBy) async {
     try {
       final localTopic = await topicRepository.getTopic(topicId);
 
@@ -137,6 +137,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
             limit,
             audioRefs,
             startAfter,
+            sortBy,
           );
 
           return audioRecordings.fold(

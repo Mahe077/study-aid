@@ -14,6 +14,7 @@ import 'package:study_aid/features/notes/data/models/note.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
+import 'package:toastification/toastification.dart';
 // import 'package:study_aid/widgets/note_taking_canvas.dart';
 // import 'package:study_aid/widgets/v3.dart';
 // import 'package:study_aid/widgets/v4.dart';
@@ -67,11 +68,14 @@ class MyApp extends ConsumerWidget {
       }
     });
 
-    return MaterialApp(
+    return ToastificationWrapper(
+      child: MaterialApp(
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
         debugShowCheckedModeBanner: false,
-        home: const SplashScreen());
+        home: const SplashScreen(),
+      ),
+    );
   }
 }

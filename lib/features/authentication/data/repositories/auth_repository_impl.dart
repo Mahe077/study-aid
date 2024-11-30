@@ -51,8 +51,8 @@ class AuthRepositoryImpl implements AuthRepository {
       UserModel? user = await remoteDataSource.signInWithGoogle();
 
       if (user != null) {
-        if (await localDataSource.getCachedUser(user.id) != null) {
-          // Cache the user data in local storage
+        if (await localDataSource.getCachedUser(user.id) == null) {
+          // Cache the user data in local storage if not already cached
           await localDataSource.cacheUser(user);
         }
         return Right(user);
@@ -60,7 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Right(null);
       }
     } on ServerException {
-      return Left(ServerFailure('Failed to google sign-in'));
+      return Left(ServerFailure('Failed the google sign-in'));
     } catch (e) {
       return Left(Failure(e.toString()));
     }
@@ -72,7 +72,7 @@ class AuthRepositoryImpl implements AuthRepository {
       UserModel? user = await remoteDataSource.signInWithFacebook();
 
       if (user != null) {
-        if (await localDataSource.getCachedUser(user.id) != null) {
+        if (await localDataSource.getCachedUser(user.id) == null) {
           // Cache the user data in local storage
           await localDataSource.cacheUser(user);
         }

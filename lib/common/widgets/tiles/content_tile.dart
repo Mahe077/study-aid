@@ -3,9 +3,12 @@ import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
@@ -14,27 +17,31 @@ import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/pages/topic_page.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
 
-class ContentTile extends StatefulWidget {
+class ContentTile extends ConsumerStatefulWidget {
   final Enum type;
   final dynamic entity;
   final String userId;
   final String parentTopicId;
+  final String dropdownValue;
 
-  const ContentTile(
-      {super.key,
-      required this.type,
-      required this.entity,
-      required this.userId,
-      required this.parentTopicId});
+  const ContentTile({
+    super.key,
+    required this.type,
+    required this.entity,
+    required this.userId,
+    required this.parentTopicId,
+    required this.dropdownValue,
+  });
 
   @override
-  State<ContentTile> createState() => _ContentTileState();
+  ConsumerState<ContentTile> createState() => _ContentTileState();
 }
 
-class _ContentTileState extends State<ContentTile> {
+class _ContentTileState extends ConsumerState<ContentTile> {
   File? file;
   PlayerController? playerController;
   StreamSubscription<PlayerState>? playerStateSubscription;
@@ -107,6 +114,7 @@ class _ContentTileState extends State<ContentTile> {
                 entity: widget.entity,
                 isNewNote: false,
                 userId: widget.userId,
+                dropdownValue: widget.dropdownValue,
               ),
             ),
           );
@@ -119,6 +127,7 @@ class _ContentTileState extends State<ContentTile> {
                   entity: widget.entity,
                   userId: widget.userId,
                   parentId: widget.parentTopicId,
+                  dropdownValue: widget.dropdownValue,
                 );
               }));
         }
@@ -303,7 +312,57 @@ class _ContentTileState extends State<ContentTile> {
           text: widget.entity.title,
           size: 16,
         ),
+        if (widget.type == TopicType.topic || widget.entity is Topic) ...[
+          Spacer(),
+          SpeedDial(
+            mini: false,
+            icon: Icons.more_vert,
+            iconTheme: IconThemeData(size: 30),
+            buttonSize: const Size(25, 25),
+            childrenButtonSize: const Size(0, 0),
+            backgroundColor: widget.entity.color,
+            // backgroundColor: Colors.white,
+            elevation: 0,
+            overlayColor: Colors.black,
+            overlayOpacity: 0.4,
+            spacing: 0,
+            childMargin: EdgeInsets.zero,
+            childPadding: EdgeInsets.zero,
+            children: [
+              SpeedDialChild(
+                label: 'Delete',
+                onTap: _deleteTopic,
+                backgroundColor: AppColors.grey,
+              ),
+            ],
+          ),
+        ]
       ],
+    );
+  }
+
+  void _deleteTopic() async {
+    final toast = CustomToast(context: context);
+    showCustomDialog(
+      context,
+      DialogMode.delete,
+      "Confirm Delete",
+      const Text('Are you sure you want to delete this topic?'),
+      () async {
+        try {
+          await ref
+              .read(topicsProvider(
+                      TopicParams(widget.userId, widget.dropdownValue))
+                  .notifier)
+              .deleteTopic(widget.entity.id, widget.parentTopicId,
+                  widget.userId, widget.dropdownValue);
+          toast.showSuccess(description: "Topic deleted successfully.");
+        } catch (e) {
+          // Log the error and notify the user
+          Logger().e("Error deleting topic: $e");
+          toast.showFailure(description: 'Failed to delete the topic');
+        }
+      },
     );
   }
 }

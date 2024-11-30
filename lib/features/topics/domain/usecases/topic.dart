@@ -39,8 +39,8 @@ class DeleteTopic {
 
   DeleteTopic(this.repository);
 
-  Future<void> call(String topicId) async {
-    return repository.deleteTopic(topicId);
+  Future<void> call(String topicId, String? parentId, String userId) async {
+    return repository.deleteTopic(topicId, parentId, userId);
   }
 }
 

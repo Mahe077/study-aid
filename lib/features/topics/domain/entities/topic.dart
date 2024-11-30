@@ -17,6 +17,7 @@ class Topic extends BaseEntity {
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
   final String parentId;
+  final String titleLowerCase;
 
   Topic({
     required this.id,
@@ -31,6 +32,7 @@ class Topic extends BaseEntity {
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
-    required this.parentId
+    required this.parentId,
+    required this.titleLowerCase,
   });
 }

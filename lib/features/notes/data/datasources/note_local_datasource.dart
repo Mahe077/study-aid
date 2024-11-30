@@ -11,7 +11,7 @@ abstract class LocalDataSource {
   Future<void> updateNote(NoteModel note);
   Future<void> deleteNote(String noteId);
   Future<Either<Failure, PaginatedObj<NoteModel>>> fetchPeginatedNotes(
-      int limit, List<dynamic> noteRefs, int startAfter);
+      int limit, List<dynamic> noteRefs, int startAfter, String sortBy);
   Future<NoteModel?> getCachedNote(String noteId);
   Future<List<NoteModel>> fetchAllNotes();
   bool noteExists(String noteId);
@@ -25,7 +25,7 @@ class LocalDataSourceImpl extends LocalDataSource {
 
   @override
   Future<Either<Failure, PaginatedObj<NoteModel>>> fetchPeginatedNotes(
-      int limit, List<dynamic> noteRefs, int startAfter) async {
+      int limit, List<dynamic> noteRefs, int startAfter, String sortBy) async {
     try {
       int startIndex = startAfter;
       int endIndex = startIndex + limit;
@@ -41,7 +41,16 @@ class LocalDataSourceImpl extends LocalDataSource {
       List<NoteModel> nonNullNotes =
           notes.where((note) => note != null).cast<NoteModel>().toList();
 
-      nonNullNotes.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      if (sortBy == 'updatedDate') {
+        nonNullNotes.sort(
+            (a, b) => b.updatedDate.compareTo(a.updatedDate)); // Descending
+      } else if (sortBy == 'createdDate') {
+        nonNullNotes.sort(
+            (a, b) => b.createdDate.compareTo(a.createdDate)); // Descending
+      } else if (sortBy == 'title') {
+        nonNullNotes.sort((a, b) => a.titleLowerCase
+            .compareTo(b.titleLowerCase)); // Ascending alphabetical order
+      }
 
       final hasmore = notes.length > endIndex ? true : false;
 
@@ -116,7 +125,7 @@ class LocalDataSourceImpl extends LocalDataSource {
         .where((note) =>
             note.tags
                 .any((tag) => tag.toLowerCase().contains(lowerCaseQuery)) ||
-            (note.title.toLowerCase().contains(lowerCaseQuery)))
+            (note.titleLowerCase.contains(lowerCaseQuery)))
         .toList();
 
     return notes;

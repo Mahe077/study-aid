@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/transcribe/domain/usecases/start_transcription_usecase.dart';
 import 'package:study_aid/features/transcribe/presentation/provider/transcription_provider.dart';
 import 'package:study_aid/features/voice_notes/data/datasources/audio_local_datasource.dart';
@@ -53,9 +54,10 @@ final transcribeAudioUseCaseProvider =
 //     Provider((ref) => FetchAllTopics(ref.read(audioRepositoryProvider)));
 
 final audioProvider = StateNotifierProvider.autoDispose
-    .family<AudioNotifier, AsyncValue<AudioState>, String>((ref, topicId) {
+    .family<AudioNotifier, AsyncValue<AudioState>, TabDataParams>(
+        (ref, params) {
   final repository = ref.read(audioRepositoryProvider);
-  return AudioNotifier(repository, topicId, ref);
+  return AudioNotifier(repository, params.parentTopicId, ref, params.sortBy);
 });
 
 final syncAudioRecodingsUseCaseProvider = Provider(
