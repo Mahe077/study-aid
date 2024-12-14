@@ -412,10 +412,68 @@ class EmptyHome extends StatelessWidget {
               children: [
                 SvgPicture.asset(AppVectors.home),
                 const SizedBox(height: 20),
-                const Text(
-                  'Looks like you haven’t created anything yet. Click on the + button in the bottom left corner to get started.',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                RichText(
                   textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ),
+                    children: [
+                      const TextSpan(
+                        text: 'Looks like you haven’t created anything yet.',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 15),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ),
+                    children: [
+                      const TextSpan(
+                        text: 'If you’re new to the app, you need to create a ',
+                      ),
+                      const TextSpan(
+                        text: 'Topic',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const TextSpan(
+                        text:
+                            ' first and then create sub topics, text and voice notes under the main topics.',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 15),
+                RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                        ),
+                    children: [
+                      TextSpan(
+                        text:
+                            'Click on the + button in the bottom left corner to create your first ',
+                      ),
+                      const TextSpan(
+                        text: 'Topic',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      TextSpan(
+                        text: '.',
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -186,6 +186,47 @@ class _FABState extends ConsumerState<FAB> {
             label: const Row(
               children: [
                 Text(
+                  'Add a Image',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.solidImage,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => NotePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              isNewNote: true,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
+                              isImage: true,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
+          ),
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
                   'Record an Audio',
                   style: TextStyle(
                       fontSize: 14,
