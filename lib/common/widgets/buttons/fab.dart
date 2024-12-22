@@ -9,6 +9,7 @@ import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
+import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_page.dart';
@@ -19,6 +20,7 @@ class FAB extends ConsumerStatefulWidget {
   final String? topicTitle;
   final Color? topicColor;
   final String dropdownValue;
+  final Color? tileColor;
 
   const FAB(
       {super.key,
@@ -26,7 +28,8 @@ class FAB extends ConsumerStatefulWidget {
       required this.userId,
       this.topicTitle,
       this.topicColor,
-      required this.dropdownValue});
+      required this.dropdownValue,
+      required this.tileColor});
 
   @override
   ConsumerState<FAB> createState() => _FABState();
@@ -37,7 +40,14 @@ class _FABState extends ConsumerState<FAB> {
   final GlobalKey<ExpandableFabState> _fabKey = GlobalKey<ExpandableFabState>();
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  Color selectedColor = AppColors.grey;
+  Color? selectedColor;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    selectedColor = widget.tileColor ?? AppColors.defaultColor;
+  }
 
   @override
   void dispose() {
@@ -46,7 +56,7 @@ class _FABState extends ConsumerState<FAB> {
     super.dispose();
   }
 
-  Future<void> _showColorPickerDialog() async {
+  Future<Color?> _showColorPickerDialog() async {
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -73,7 +83,7 @@ class _FABState extends ConsumerState<FAB> {
             TextButton(
               child: const Text('Done'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(selectedColor);
               },
             ),
           ],
@@ -101,7 +111,7 @@ class _FABState extends ConsumerState<FAB> {
       await topicsNotifier.createTopic(
         title,
         description,
-        selectedColor,
+        selectedColor!,
         widget.parentId,
         widget.userId,
         widget.dropdownValue,
@@ -121,7 +131,7 @@ class _FABState extends ConsumerState<FAB> {
       await topicsNotifier.createTopic(
         title,
         description,
-        selectedColor,
+        selectedColor!,
         widget.parentId,
         widget.userId,
         widget.dropdownValue,
@@ -143,7 +153,7 @@ class _FABState extends ConsumerState<FAB> {
       setState(() {
         _topicController.clear();
         _descriptionController.clear();
-        selectedColor = AppColors.grey;
+        selectedColor =  widget.tileColor ?? AppColors.defaultColor;
       });
 
       toast.showSuccess(
@@ -304,10 +314,10 @@ class _FABState extends ConsumerState<FAB> {
           ),
         ],
         FloatingActionButton.extended(
-          label: const Row(
+          label: Row(
             children: [
               Text(
-                'Add a Topic',
+                'Add a ${widget.parentId != null ? 'SubTopic' : 'Topic'}',
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -345,13 +355,13 @@ class _FABState extends ConsumerState<FAB> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        hintText: "Enter description here",
-                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                    ),
+                    // const SizedBox(height: 10),
+                    // TextFormField(
+                    //   controller: _descriptionController,
+                    //   decoration: const InputDecoration(
+                    //     hintText: "Enter description here",
+                    //   ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                    // ),
                     const SizedBox(height: 15),
                     Row(
                       children: [
@@ -364,8 +374,18 @@ class _FABState extends ConsumerState<FAB> {
                         ),
                         const SizedBox(height: 5),
                         IconButton(
-                          onPressed: _showColorPickerDialog,
-                          icon: const Icon(Icons.color_lens),
+                          onPressed: () async {
+                            final color = await _showColorPickerDialog();
+                            if (color != null) {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            }
+                          },
+                          icon: Icon(
+                            Icons.color_lens,
+                            color: selectedColor,
+                          ),
                         ),
                       ],
                     ),
@@ -378,6 +398,7 @@ class _FABState extends ConsumerState<FAB> {
                 }
               },
               formKey: _formKey,
+              initialColor: selectedColor,
             );
           },
           backgroundColor: AppColors.grey,

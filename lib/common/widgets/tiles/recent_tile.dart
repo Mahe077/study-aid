@@ -20,6 +20,7 @@ class RecentTile extends StatefulWidget {
   final String userId;
   final String parentTopicId;
   final String dropdownValue;
+  final Color tileColor;
 
   const RecentTile({
     super.key,
@@ -28,6 +29,7 @@ class RecentTile extends StatefulWidget {
     required this.userId,
     required this.parentTopicId,
     required this.dropdownValue,
+    required this.tileColor,
   });
 
   @override
@@ -56,9 +58,25 @@ class _RecentTileState extends State<RecentTile> {
   @override
   void initState() {
     super.initState();
+    _initializeAudioLogic();
+  }
+
+  @override
+  void didUpdateWidget(RecentTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Check if the entity has changed and trigger audio logic if necessary
+    if (widget.entity != oldWidget.entity) {
+      _initializeAudioLogic();
+    }
+  }
+
+  void _initializeAudioLogic() {
     if (widget.entity is AudioRecording) {
       recentTilePlayerController = PlayerController();
-      _preparePlayer(recentTilePlayerController!, widget.entity.localpath);
+     _preparePlayer(recentTilePlayerController!, widget.entity.localpath);
+    } else {
+      recentTilePlayerController = null;
     }
   }
 
@@ -80,6 +98,7 @@ class _RecentTileState extends State<RecentTile> {
                 userId: widget.userId,
                 topicTitle: widget.entity.title,
                 entity: widget.entity,
+                tileColor: widget.tileColor,
               ),
             ),
           );

@@ -18,6 +18,7 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/pages/topic_page.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
 
@@ -27,6 +28,7 @@ class ContentTile extends ConsumerStatefulWidget {
   final String userId;
   final String parentTopicId;
   final String dropdownValue;
+  final Color tileColor;
 
   const ContentTile({
     super.key,
@@ -35,6 +37,7 @@ class ContentTile extends ConsumerStatefulWidget {
     required this.userId,
     required this.parentTopicId,
     required this.dropdownValue,
+    required this.tileColor,
   });
 
   @override
@@ -55,20 +58,40 @@ class _ContentTileState extends ConsumerState<ContentTile> {
   @override
   void initState() {
     super.initState();
+    _initializeAudioLogic();
+  }
+
+  @override
+  void didUpdateWidget(ContentTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Check if the entity has changed and trigger audio logic if necessary
+    if (widget.entity != oldWidget.entity) {
+      _initializeAudioLogic();
+    }
+  }
+
+  void _initializeAudioLogic() {
     if (widget.entity is AudioRecording) {
       playerController = PlayerController();
       _preparePlayer(playerController!, widget.entity.localpath);
+
+      // Subscribe to player state changes
       playerStateSubscription =
           playerController?.onPlayerStateChanged.listen((_) {
         setState(() {});
       });
+    } else {
+      // If the entity is not AudioRecording, cancel the player state subscription
+      playerStateSubscription?.cancel();
+      playerController = null;
     }
   }
 
   void _preparePlayer(PlayerController controller, String? localPath) async {
     try {
       if (localPath != null) {
-        // Logger().i("Audio file path: $localPath");
+        Logger().i("Content Tile :: Audio file path: $localPath");
         File file = File(localPath);
         if (await file.exists()) {
           await controller.extractWaveformData(path: file.path);
@@ -100,6 +123,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
                 userId: widget.userId,
                 topicTitle: widget.entity.title,
                 entity: widget.entity,
+                tileColor: widget.tileColor,
               ),
             ),
           );
@@ -235,21 +259,21 @@ class _ContentTileState extends ConsumerState<ContentTile> {
               overflow: TextOverflow.ellipsis,
             ),
           )
-        ] else if (widget.entity is Topic &&
-            widget.entity.description != '') ...[
-          const SizedBox(height: 8),
-          Expanded(
-            child: Text(
-              widget.entity.description,
-              maxLines: 3,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w400,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          )
-        ] else if (widget.entity is AudioRecording &&
+        // ] else if (widget.entity is Topic &&
+        //     widget.entity.description != '') ...[
+        //   const SizedBox(height: 8),
+        //   Expanded(
+        //     child: Text(
+        //       widget.entity.description,
+        //       maxLines: 3,
+        //       style: const TextStyle(
+        //         fontSize: 10,
+        //         fontWeight: FontWeight.w400,
+        //       ),
+        //       overflow: TextOverflow.ellipsis,
+        //     ),
+        //   )
+        ] else if ((widget.entity is AudioRecording || widget.entity is AudioRecordingModel) &&
             playerController != null) ...[
           const SizedBox(height: 8),
           Row(

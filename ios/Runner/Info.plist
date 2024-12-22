@@ -47,7 +47,20 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>We need access to the microphone to record audio</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
 	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to upload or manage photos</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs access to save photos to your photo library</string>
+	<key>GIDClientID</key>
+	<string>544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+	<dict>
+		<key>CFBundleURLSchemes</key>
+		<array>
+		<string>com.googleusercontent.apps.544057525889-2vp0hjeu926sj6vjruib03toob3a9v64</string>
+		</array>
+	</dict>
+	</array>
 </dict>
 </plist>

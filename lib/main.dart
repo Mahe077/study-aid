@@ -15,10 +15,6 @@ import 'package:study_aid/features/topics/data/models/topic.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
 import 'package:toastification/toastification.dart';
-// import 'package:study_aid/widgets/note_taking_canvas.dart';
-// import 'package:study_aid/widgets/v3.dart';
-// import 'package:study_aid/widgets/v4.dart';
-// import 'package:study_aid/widgets/v5.dart';
 import 'firebase_options.dart';
 
 void main() async {

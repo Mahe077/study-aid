@@ -1,4 +1,5 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
@@ -174,6 +175,21 @@ class UserRepositoryImpl implements UserRepository {
     try {
       if (await networkInfo.isConnected) {
         final res = await remoteDataSource.updatePassword(password);
+        return res;
+      } else {
+        return Left(NoInternetFailure());
+      }
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateColor(User user) async {
+    try {
+      var userModel = UserModel.fromEntity(user);
+      if (await networkInfo.isConnected) {
+        final res = await remoteDataSource.updateColor(userModel);
         return res;
       } else {
         return Left(NoInternetFailure());

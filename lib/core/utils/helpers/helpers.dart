@@ -19,6 +19,7 @@ void showCustomDialog(
   Widget content,
   VoidCallback onConfirm, {
   GlobalKey<FormState>? formKey, // Make formKey optional
+  Color? initialColor, // Optional initial color
 }) {
   showDialog(
     context: context,

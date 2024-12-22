@@ -11,4 +11,5 @@ abstract class UserRepository {
   Future<void> updateRecentItems(String userId, String itemId, String itemType,
       {bool isDelete = false});
   Future<Either<Failure, void>> updatePassword(String password);
+  Future<Either<Failure, void>> updateColor(User user);
 }

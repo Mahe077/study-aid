@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
@@ -10,6 +11,8 @@ import 'package:study_aid/features/authentication/presentation/providers/user_pr
 import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/settings/presentation/pages/account_page.dart';
+import 'package:study_aid/features/settings/presentation/pages/appearance_page.dart';
+import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -83,7 +86,15 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       ElevatedButton(
-                        onPressed: () => {Logger().i("Apperance")},
+                        onPressed: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  const AppearancePage(),
+                            ),
+                          )
+                        },
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5.0),
@@ -98,7 +109,7 @@ class SettingsPage extends ConsumerWidget {
                             ),
                             SizedBox(width: 5),
                             Text(
-                              'Apperance',
+                              'Appearance',
                               style: TextStyle(
                                   fontSize: 20,
                                   color: AppColors.black,
@@ -145,6 +156,9 @@ class SettingsPage extends ConsumerWidget {
                         await userNotifier.signOut();
 
                         ref.invalidate(UserProvider.userProvider);
+
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear();
 
                         Navigator.pushAndRemoveUntil(
                             context,

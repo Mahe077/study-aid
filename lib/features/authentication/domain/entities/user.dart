@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 class User {
   final String id;
   final String username;
@@ -7,6 +9,7 @@ class User {
   final List<String> createdTopics;
   final String syncStatus;
   final List<Map<String, dynamic>> recentItems;
+  final Color color;
 
   User({
     required this.id,
@@ -17,6 +20,7 @@ class User {
     required this.createdTopics,
     required this.syncStatus,
     required this.recentItems,
+    required this.color,
   });
 
   User copyWith({
@@ -29,6 +33,7 @@ class User {
     List<String>? subTopics,
     String? syncStatus,
     List<Map<String, dynamic>>? recentItems,
+    Color? color,
   }) {
     return User(
         id: id ?? this.id,
@@ -38,7 +43,8 @@ class User {
         updatedDate: updatedDate ?? this.updatedDate,
         createdTopics: createdTopics ?? this.createdTopics,
         syncStatus: syncStatus ?? this.syncStatus,
-        recentItems: recentItems ?? this.recentItems);
+        recentItems: recentItems ?? this.recentItems,
+        color: color ?? this.color);
   }
 }
 

@@ -15,6 +15,7 @@ import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
+import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
@@ -24,12 +25,14 @@ class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
   final Topic entity;
   final String userId;
+  final Color tileColor;
 
   const TopicPage({
     super.key,
     required this.topicTitle,
     required this.entity,
     required this.userId,
+    required this.tileColor,
   });
 
   @override
@@ -236,12 +239,13 @@ class _TopicPageState extends ConsumerState<TopicPage>
       child: Scaffold(
         appBar: const BasicAppbar(showMenu: true),
         floatingActionButtonLocation: ExpandableFab.location,
-        floatingActionButton: FAB(
-          parentId: widget.entity.id,
+        floatingActionButton:FAB(
+              parentId: widget.entity.id,
           userId: widget.userId,
           topicTitle: widget.entity.title,
           topicColor: widget.entity.color,
           dropdownValue: dropdownValue,
+          tileColor: widget.tileColor, // Use the reactive tileColor
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -374,6 +378,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
                           userId: widget.userId,
                           parentTopicId: widget.entity.id,
                           dropdownValue: dropdownvalue,
+                          tileColor: widget.tileColor,
                         ),
                         const SizedBox(width: 15),
                       ],
@@ -495,6 +500,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
                         type: type,
                         parentTopicId: widget.entity.id,
                         dropdownValue: dropdownvalue,
+                        tileColor: widget.tileColor,
                       ),
                       const SizedBox(height: 10),
                     ],
@@ -635,6 +641,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             userId: widget.userId,
             parentTopicId: widget.entity.id,
             dropdownValue: dropdownValue,
+            tileColor: widget.tileColor,
           );
         } else if (item is AudioRecording) {
           return ContentTile(
@@ -643,6 +650,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             userId: widget.userId,
             parentTopicId: widget.entity.id,
             dropdownValue: dropdownValue,
+            tileColor: widget.tileColor,
           );
         }
 

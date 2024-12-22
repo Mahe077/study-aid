@@ -3,6 +3,7 @@ import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
@@ -39,6 +40,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     'title': 'Title',
   };
   String dropdownValue = 'updatedDate';
+  bool showGuide = true; // Flag to control guide visibility
+  bool focusFAB = false; // Flag to control FAB focus effect
 
   void _loadMoreTopics() {
     Logger().d("_loadMoreTopics clicked");
@@ -52,6 +55,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
 
+    _loadShowGuidePreference();
+
     Future.microtask(() {
       ref
           .read(topicsProvider(TopicParams(widget.user.id, dropdownValue))
@@ -61,6 +66,183 @@ class _HomePageState extends ConsumerState<HomePage> {
           .read(recentItemProvider(widget.user.id).notifier)
           .loadRecentItems(widget.user.id);
     });
+
+    // Show the popup guide when the home screen is empty and user hasn't opted out
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (showGuide) {
+        _showGuidePopup();
+      }
+    });
+  }
+
+  // Load the user's preference from SharedPreferences
+  void _loadShowGuidePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      showGuide = prefs.getBool('showGuide') ?? true;
+    });
+  }
+
+  // Show the guide popup
+  void _showGuidePopup() {
+    setState(() {
+      focusFAB = true; // Set focus to FAB when showing the guide
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.white,
+          insetPadding: EdgeInsets.all(5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          title: Text(
+            'Let’s get started...',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+              fontSize: 20,
+            ),
+          ),
+          content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RichText(
+                  textAlign: TextAlign.left,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.none,
+                        ),
+                    children: [
+                      const TextSpan(
+                        text: 'In the ',
+                      ),
+                      const TextSpan(
+                        text: 'Home',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const TextSpan(
+                        text: ' page, you can create ',
+                      ),
+                      const TextSpan(
+                        text: 'Topics.',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                RichText(
+                  textAlign: TextAlign.left,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.none,
+                        ),
+                    children: [
+                      const TextSpan(
+                        text:
+                            'Under any topic you create here, you can create sub topics, text and image notes, and voice notes.',
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                RichText(
+                  textAlign: TextAlign.left,
+                  text: TextSpan(
+                    style: DefaultTextStyle.of(context).style.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                          decoration: TextDecoration.none,
+                        ),
+                    children: [
+                      const TextSpan(
+                        text: 'Click on the ',
+                      ),
+                      const TextSpan(
+                        text: '+',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const TextSpan(
+                        text:
+                            ' button in the bottom left corner to create your first  ',
+                      ),
+                      const TextSpan(
+                        text: 'Topics.',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ],
+                  ),
+                ),
+              ]),
+          actions: [
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    // minimumSize: Size.fromWidth(100),
+                    padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                    // visualDensity: VisualDensity.compact,
+                    backgroundColor: AppColors.primary,
+                    iconColor: AppColors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    focusFAB = false; // Remove focus after guide is dismissed
+                  });
+                },
+                child: Text(
+                  "Got it!",
+                  style: const TextStyle(
+                      fontSize: 15,
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w500),
+                )),
+            ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    // minimumSize: Size.fromWidth(100),
+                    padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                    // visualDensity: VisualDensity.compact,
+                    backgroundColor: AppColors.grey,
+                    iconColor: AppColors.black,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  prefs.setBool('showGuide', false);
+                  setState(() {
+                    showGuide = false;
+                    focusFAB = false; // Remove focus after dismissing
+                  });
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'Don\'t Show Again',
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.black,
+                      fontWeight: FontWeight.w500),
+                )),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -82,11 +264,15 @@ class _HomePageState extends ConsumerState<HomePage> {
       floatingActionButton: FAB(
         userId: widget.user.id,
         dropdownValue: dropdownValue,
+        tileColor: widget.user.color,
       ),
       body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: userState.when(
             data: (user) {
+              setState(() {
+                widget.user = user!.toDomain();
+              });
               return Column(
                 children: [
                   Column(
@@ -185,6 +371,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                               item.parentId,
                                                           dropdownValue:
                                                               dropdownValue,
+                                                          tileColor:
+                                                              widget.user.color,
                                                         ),
                                                         const SizedBox(
                                                             width: 15),
@@ -272,6 +460,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                 type: TopicType.topic,
                                                 parentTopicId: '',
                                                 dropdownValue: dropdownValue,
+                                                tileColor: widget.user.color,
                                               ),
                                               if (i < state.topics.length - 1)
                                                 const SizedBox(height: 10),
@@ -379,6 +568,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             userId: widget.user.id,
             parentTopicId: item.parentId,
             dropdownValue: dropdownValue,
+            tileColor: widget.user.color,
           );
         } else if (item is AudioRecording) {
           return ContentTile(
@@ -387,6 +577,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             userId: widget.user.id,
             parentTopicId: item.parentId,
             dropdownValue: dropdownValue,
+            tileColor: widget.user.color,
           );
         }
 

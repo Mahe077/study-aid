@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
+import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
@@ -20,6 +23,7 @@ abstract class RemoteDataSource {
   Future<Unit> resetPassword(String newPassword);
   Future<Unit> sendPasswordResetEmail(String email);
   Future<Either<Failure, void>> updatePassword(String password);
+  Future<Either<Failure, void>> updateColor(UserModel user);
 }
 
 class RemoteDataSourceImpl implements RemoteDataSource {
@@ -86,14 +90,16 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           .createUserWithEmailAndPassword(email: email, password: password);
 
       UserModel user = UserModel(
-          id: userCredential.user!.uid,
-          username: username,
-          email: email,
-          createdDate: DateTime.now(),
-          updatedDate: DateTime.now(),
-          createdTopics: [],
-          syncStatus: ConstantStrings.synced,
-          recentItems: []);
+        id: userCredential.user!.uid,
+        username: username,
+        email: email,
+        createdDate: DateTime.now(),
+        updatedDate: DateTime.now(),
+        createdTopics: [],
+        syncStatus: ConstantStrings.synced,
+        recentItems: [],
+        color: AppColors.defaultColor,
+      );
 
       await updateUser(user);
       return user;
@@ -271,6 +277,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           createdTopics: [],
           syncStatus: ConstantStrings.synced,
           recentItems: [],
+          color: AppColors.defaultColor,
         );
         await updateUser(user); // Save the new user to Firestore
         Logger().i("New user created with Google Sign-In: ${user.email}");
@@ -336,6 +343,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           createdTopics: [],
           syncStatus: ConstantStrings.synced,
           recentItems: [],
+          color: AppColors.defaultColor,
         );
         await updateUser(user); // Save the new user to Firestore
         Logger().i("New user created with Facebook Sign-In: ${user.email}");
@@ -429,4 +437,25 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       return Left(Failure('No user is currently signed in.'));
     }
   }
+
+  @override
+Future<Either<Failure, void>> updateColor(UserModel user) async {
+  final userCredential = _auth.currentUser;
+
+  // Ensure the user is signed in
+  if (userCredential != null) {
+    try {
+      // Update user's color if already exists
+      await updateUser(user.copyWith(updatedDate: DateTime.now()));
+
+      return const Right(null);
+    } catch (e) {
+      Logger().e('Error updating user color', error: e);
+      return Left(Failure('Failed to update user color.'));
+    }
+  }
+
+  return Left(Failure('No user is currently signed in.'));
+}
+
 }
