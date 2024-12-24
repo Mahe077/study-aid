@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
@@ -150,10 +151,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         _log.e(failure.message);
         CustomToast(context: context).showFailure(description: failure.message);
       },
-      (user) {
+      (user) async {
         _log.d(user);
         if (user != null) {
           ref.invalidate(userProvider);
+
+          await initUserPref();
 
           Navigator.pushAndRemoveUntil(
             context,
@@ -163,6 +166,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         }
       },
     );
+  }
+
+
+  Future<void> initUserPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showGuide', true);
   }
 
   Widget _buildAlternativeText() {

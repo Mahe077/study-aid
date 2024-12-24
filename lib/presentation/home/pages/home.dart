@@ -40,7 +40,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     'title': 'Title',
   };
   String dropdownValue = 'updatedDate';
-  bool showGuide = true; // Flag to control guide visibility
+  late bool showGuide;
+  //= true; // Flag to control guide visibility
   bool focusFAB = false; // Flag to control FAB focus effect
 
   void _loadMoreTopics() {
@@ -66,21 +67,25 @@ class _HomePageState extends ConsumerState<HomePage> {
           .read(recentItemProvider(widget.user.id).notifier)
           .loadRecentItems(widget.user.id);
     });
-
-    // Show the popup guide when the home screen is empty and user hasn't opted out
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (showGuide) {
-        _showGuidePopup();
-      }
-    });
   }
 
   // Load the user's preference from SharedPreferences
-  void _loadShowGuidePreference() async {
+  Future<void> _loadShowGuidePreference() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedValue = prefs.getBool('showGuide') ?? true;
+
     setState(() {
-      showGuide = prefs.getBool('showGuide') ?? true;
+      showGuide = savedValue; // Update the local state
     });
+
+    // Trigger the popup after ensuring 'showGuide' is loaded
+    if (showGuide) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (widget.user.createdTopics.isEmpty && showGuide) {
+          _showGuidePopup();
+        }
+      });
+    }
   }
 
   // Show the guide popup
@@ -108,132 +113,154 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RichText(
-                  textAlign: TextAlign.left,
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(context).style.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                          decoration: TextDecoration.none,
-                        ),
-                    children: [
-                      const TextSpan(
-                        text: 'In the ',
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RichText(
+                textAlign: TextAlign.left,
+                text: TextSpan(
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.none,
                       ),
-                      const TextSpan(
-                        text: 'Home',
-                        style: TextStyle(fontWeight: FontWeight.w900),
+                  children: [
+                    const TextSpan(
+                      text: 'In the ',
+                    ),
+                    const TextSpan(
+                      text: 'Home',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const TextSpan(
+                      text: ' page, you can create ',
+                    ),
+                    const TextSpan(
+                      text: 'Topics.',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
+              RichText(
+                textAlign: TextAlign.left,
+                text: TextSpan(
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.none,
                       ),
-                      const TextSpan(
-                        text: ' page, you can create ',
+                  children: [
+                    const TextSpan(
+                      text:
+                          'Under any topic you create here, you can create sub topics, text and image notes, and voice notes.',
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
+              RichText(
+                textAlign: TextAlign.left,
+                text: TextSpan(
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primary,
+                        decoration: TextDecoration.none,
                       ),
-                      const TextSpan(
-                        text: 'Topics.',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                    ],
+                  children: [
+                    const TextSpan(
+                      text: 'Click on the ',
+                    ),
+                    const TextSpan(
+                      text: '+',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const TextSpan(
+                      text:
+                          ' button in the bottom right corner to create your first  ',
+                    ),
+                    const TextSpan(
+                      text: 'Topic.',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: Checkbox(
+                      value: !showGuide,
+                      onChanged: (bool? newValue) async {
+                        if (newValue != null) {
+                          final prefs = await SharedPreferences.getInstance();
+                          prefs.setBool('showGuide', !newValue);
+                          setState(() {
+                            showGuide = !newValue;
+                            focusFAB = false;
+                          });
+                        }
+                      },
+                      activeColor: AppColors.primary,
+                    ),
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                RichText(
-                  textAlign: TextAlign.left,
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(context).style.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                          decoration: TextDecoration.none,
-                        ),
-                    children: [
-                      const TextSpan(
-                        text:
-                            'Under any topic you create here, you can create sub topics, text and image notes, and voice notes.',
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      "Don't show me again",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-                SizedBox(
-                  height: 10,
-                ),
-                RichText(
-                  textAlign: TextAlign.left,
-                  text: TextSpan(
-                    style: DefaultTextStyle.of(context).style.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.primary,
-                          decoration: TextDecoration.none,
-                        ),
-                    children: [
-                      const TextSpan(
-                        text: 'Click on the ',
-                      ),
-                      const TextSpan(
-                        text: '+',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      const TextSpan(
-                        text:
-                            ' button in the bottom left corner to create your first  ',
-                      ),
-                      const TextSpan(
-                        text: 'Topics.',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                    ],
-                  ),
-                ),
-              ]),
+                ],
+              ),
+            ],
+          ),
           actions: [
             ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    // minimumSize: Size.fromWidth(100),
-                    padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
-                    // visualDensity: VisualDensity.compact,
-                    backgroundColor: AppColors.primary,
-                    iconColor: AppColors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8))),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    focusFAB = false; // Remove focus after guide is dismissed
-                  });
-                },
-                child: Text(
-                  "Got it!",
-                  style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w500),
-                )),
+              style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                  backgroundColor: AppColors.primary,
+                  iconColor: AppColors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8))),
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  focusFAB = false; // Remove focus after guide is dismissed
+                });
+              },
+              child: Text(
+                "Got it!",
+                style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w500),
+              ),
+            ),
             ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                    // minimumSize: Size.fromWidth(100),
                     padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
-                    // visualDensity: VisualDensity.compact,
                     backgroundColor: AppColors.grey,
                     iconColor: AppColors.black,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8))),
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  prefs.setBool('showGuide', false);
-                  setState(() {
-                    showGuide = false;
-                    focusFAB = false; // Remove focus after dismissing
-                  });
+                onPressed: () {
                   Navigator.of(context).pop();
                 },
                 child: const Text(
-                  'Don\'t Show Again',
+                  'Dismiss',
                   style: TextStyle(
                       fontSize: 12,
                       color: AppColors.black,
@@ -270,9 +297,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: userState.when(
             data: (user) {
-              setState(() {
-                widget.user = user!.toDomain();
-              });
+              // setState(() {
+              //   widget.user = user!.toDomain();
+              // });
               return Column(
                 children: [
                   Column(

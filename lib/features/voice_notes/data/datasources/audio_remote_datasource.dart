@@ -192,6 +192,14 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
         if (response.statusCode == 200) {
           final file = File(filePath);
+          
+          // Ensure the directory exists
+          final directory = file.parent;
+          if (!await directory.exists()) {
+            await directory.create(recursive: true);
+            Logger().d("Created directory: ${directory.path}");
+          }
+
           await file.writeAsBytes(response.bodyBytes);
           Logger().d("File downloaded successfully: $filePath");
           return file;
