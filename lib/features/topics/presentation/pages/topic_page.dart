@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -15,7 +18,6 @@ import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
-import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
@@ -39,12 +41,39 @@ class TopicPage extends ConsumerStatefulWidget {
   ConsumerState<TopicPage> createState() => _TopicPageState();
 }
 
+enum TtsState { playing, stopped, paused, continued }
+
 class _TopicPageState extends ConsumerState<TopicPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController _search = TextEditingController();
   late TabController _tabController;
   late AudioPlayer _audioPlayer;
   bool _recordExists = false;
+  bool _noteExists = false;
+
+  late FlutterTts flutterTts;
+  String? language;
+  String? engine;
+  double volume = 0.5;
+  double pitch = 1.0;
+  double rate = 0.5;
+  bool isCurrentLanguageInstalled = false;
+
+  String? _newVoiceText;
+  int? _inputLength;
+
+  TtsState ttsState = TtsState.stopped;
+
+  bool get isPlaying => ttsState == TtsState.playing;
+  bool get isStopped => ttsState == TtsState.stopped;
+  bool get isPaused => ttsState == TtsState.paused;
+  bool get isContinued => ttsState == TtsState.continued;
+
+  bool get isIOS => !kIsWeb && Platform.isIOS;
+  bool get isAndroid => !kIsWeb && Platform.isAndroid;
+  bool get isWindows => !kIsWeb && Platform.isWindows;
+  bool get isWeb => kIsWeb;
+
   final Map<String, String> sortOptions = {
     'createdDate': 'Date Created',
     'title': 'Title',
@@ -62,6 +91,104 @@ class _TopicPageState extends ConsumerState<TopicPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _audioPlayer = AudioPlayer();
+    initTts();
+  }
+
+  dynamic initTts() async {
+    flutterTts = FlutterTts();
+
+    _setAwaitOptions();
+
+    if (isAndroid) {
+      _getDefaultEngine();
+      _getDefaultVoice();
+    }
+
+    flutterTts.setStartHandler(() {
+      setState(() {
+        print("Playing");
+        ttsState = TtsState.playing;
+      });
+    });
+
+    flutterTts.setCompletionHandler(() {
+      setState(() {
+        print("Complete");
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setCancelHandler(() {
+      setState(() {
+        print("Cancel");
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setPauseHandler(() {
+      setState(() {
+        print("Paused");
+        ttsState = TtsState.paused;
+      });
+    });
+
+    flutterTts.setContinueHandler(() {
+      setState(() {
+        print("Continued");
+        ttsState = TtsState.continued;
+      });
+    });
+
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+        print("error: $msg");
+        ttsState = TtsState.stopped;
+      });
+    });
+  }
+
+  Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
+
+  Future<dynamic> _getEngines() async => await flutterTts.getEngines;
+
+  Future<void> _getDefaultEngine() async {
+    var engine = await flutterTts.getDefaultEngine;
+    if (engine != null) {
+      print(engine);
+    }
+  }
+
+  Future<void> _getDefaultVoice() async {
+    var voice = await flutterTts.getDefaultVoice;
+    if (voice != null) {
+      print(voice);
+    }
+  }
+
+  Future<void> _speak() async {
+    await flutterTts.setVolume(volume);
+    await flutterTts.setSpeechRate(rate);
+    await flutterTts.setPitch(pitch);
+
+    if (_newVoiceText != null) {
+      if (_newVoiceText!.isNotEmpty) {
+        await flutterTts.speak(_newVoiceText!);
+      }
+    }
+  }
+
+  Future<void> _setAwaitOptions() async {
+    await flutterTts.awaitSpeakCompletion(true);
+  }
+
+  Future<void> _stop() async {
+    var result = await flutterTts.stop();
+    if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _pause() async {
+    var result = await flutterTts.pause();
+    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   @override
@@ -70,6 +197,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     _search.dispose();
     _audioPlayer.dispose();
     _playerStateSubscription?.cancel();
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -220,6 +348,74 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
+// Bottom sheet showing playback info and control buttons
+  void _showTtsBottomSheet() {
+    showModalBottomSheet(
+      isDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.bottomRight,
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  onPressed: () {
+                    _stop;
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.close, size: 24),
+                ),
+              ),
+              SizedBox(height: 15),
+              Text(
+                'Text to Speech',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              // Control buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: Icon((TtsState.playing == ttsState ||
+                            TtsState.continued == ttsState)
+                        ? Icons.pause
+                        : Icons.play_arrow),
+                    onPressed: () {
+                      if (TtsState.playing == ttsState ||
+                          TtsState.continued == ttsState) {
+                        _pause();
+                      } else {
+                        _speak();
+                      }
+                      setState(() {});
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.stop),
+                    color: (TtsState.playing == ttsState ||
+                            TtsState.continued == ttsState)
+                        ? AppColors.black.withOpacity(0.8)
+                        : AppColors.black.withOpacity(0.6),
+                    onPressed: (TtsState.playing == ttsState ||
+                            TtsState.continued == ttsState)
+                        ? _stop
+                        : null,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 // Utility function to format duration for display
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
@@ -239,8 +435,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
       child: Scaffold(
         appBar: const BasicAppbar(showMenu: true),
         floatingActionButtonLocation: ExpandableFab.location,
-        floatingActionButton:FAB(
-              parentId: widget.entity.id,
+        floatingActionButton: FAB(
+          parentId: widget.entity.id,
           userId: widget.userId,
           topicTitle: widget.entity.title,
           topicColor: widget.entity.color,
@@ -430,6 +626,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
       child: tabDataState.when(
         data: (state) {
           _recordExists = state.audioRecordings.length > 1;
+          _noteExists = state.notes.isNotEmpty;
 
           return TabBarView(
             controller: _tabController,
@@ -489,6 +686,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
           _playAllButton(filteredItems),
           const SizedBox(height: 5),
         ],
+        if (_noteExists && type == TopicType.note) ...[
+          _playTTSButton(filteredItems),
+          const SizedBox(height: 5),
+        ],
         Expanded(
           child: ListView(
             children: [
@@ -543,6 +744,58 @@ class _TopicPageState extends ConsumerState<TopicPage>
               SizedBox(width: 5),
               Text(
                 'Play All',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconButton _buildButtonColumn(Color color, Color splashColor, IconData icon,
+      String label, Function func) {
+    return IconButton(
+        icon: Icon(icon),
+        color: color,
+        splashColor: splashColor,
+        onPressed: () => func());
+  }
+
+  Widget _playTTSButton(List<dynamic> notes) {
+    final toast = CustomToast(context: context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            fixedSize: const Size(115, 15),
+            padding: const EdgeInsets.all(2),
+            backgroundColor: AppColors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          onPressed: () {
+            if (notes.isNotEmpty) {
+              _playtts(notes); // Start playing all audio
+            } else {
+              toast.showInfo(
+                  title: 'No audio files available.',
+                  description:
+                      'Please record or upload new audio to get started.');
+            }
+          },
+          child: Row(
+            children: [
+              Icon((TtsState.playing == ttsState) ? Icons.stop : Icons.play_arrow, size: 15, color: AppColors.icon),
+              const SizedBox(width: 5),
+              const Text(
+                'Text to speech',
                 style: TextStyle(
                   fontSize: 12,
                   color: AppColors.white,
@@ -658,6 +911,31 @@ class _TopicPageState extends ConsumerState<TopicPage>
             .shrink(); // Handle unexpected item types gracefully
       },
     );
+  }
+
+  void _playtts(List<dynamic> notes) async {
+    if (TtsState.playing == ttsState) {
+      _stop();
+    } else {
+      String newVoiceText = '';
+
+      // Loop through each note and concatenate the content
+      for (var note in notes) {
+        if (note is Note) {
+          newVoiceText +=
+              note.content ?? ''; // Add note content to the newVoiceText string
+        }
+      }
+
+      // Update the state once after the loop completes
+      setState(() {
+        _newVoiceText = newVoiceText;
+      });
+
+      // Now, speak the concatenated text
+      _speak();
+      // _showTtsBottomSheet();
+    }
   }
 }
 
