@@ -384,7 +384,7 @@ class _FABState extends ConsumerState<FAB> {
                           },
                           icon: Icon(
                             Icons.color_lens,
-                            color: selectedColor,
+                            color: AppColors.black,
                           ),
                         ),
                       ],

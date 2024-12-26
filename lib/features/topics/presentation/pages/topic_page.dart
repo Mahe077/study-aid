@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,62 +106,74 @@ class _TopicPageState extends ConsumerState<TopicPage>
 
     flutterTts.setStartHandler(() {
       setState(() {
-        print("Playing");
+        if (kDebugMode) {
+          print("Playing");
+        }
         ttsState = TtsState.playing;
       });
     });
 
     flutterTts.setCompletionHandler(() {
       setState(() {
-        print("Complete");
+        if (kDebugMode) {
+          print("Complete");
+        }
         ttsState = TtsState.stopped;
       });
     });
 
     flutterTts.setCancelHandler(() {
       setState(() {
-        print("Cancel");
+        if (kDebugMode) {
+          print("Cancel");
+        }
         ttsState = TtsState.stopped;
       });
     });
 
     flutterTts.setPauseHandler(() {
       setState(() {
-        print("Paused");
+        if (kDebugMode) {
+          print("Paused");
+        }
         ttsState = TtsState.paused;
       });
     });
 
     flutterTts.setContinueHandler(() {
       setState(() {
-        print("Continued");
+        if (kDebugMode) {
+          print("Continued");
+        }
         ttsState = TtsState.continued;
       });
     });
 
     flutterTts.setErrorHandler((msg) {
       setState(() {
-        print("error: $msg");
+        if (kDebugMode) {
+          print("error: $msg");
+        }
         ttsState = TtsState.stopped;
       });
     });
   }
 
-  Future<dynamic> _getLanguages() async => await flutterTts.getLanguages;
-
-  Future<dynamic> _getEngines() async => await flutterTts.getEngines;
-
   Future<void> _getDefaultEngine() async {
     var engine = await flutterTts.getDefaultEngine;
     if (engine != null) {
-      print(engine);
+      if (kDebugMode) {
+        print(engine);
+      }
     }
   }
 
   Future<void> _getDefaultVoice() async {
     var voice = await flutterTts.getDefaultVoice;
     if (voice != null) {
-      print(voice);
+      if (kDebugMode) {
+        print(voice);
+      }
     }
   }
 
@@ -184,11 +196,6 @@ class _TopicPageState extends ConsumerState<TopicPage>
   Future<void> _stop() async {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
-  }
-
-  Future<void> _pause() async {
-    var result = await flutterTts.pause();
-    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   @override
@@ -230,7 +237,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
         _audioQueue[_currentAudioIndex]; // Get the current audio by index
 
     try {
-      await _audioPlayer.setUrl(currentAudio.localpath); // Load the audio URL
+      await _audioPlayer.setFilePath(currentAudio.localpath); // Load the audio URL
       _audioPlayer.play(); // Start playing
     } catch (e) {
       // Handle audio loading error
@@ -343,74 +350,6 @@ class _TopicPageState extends ConsumerState<TopicPage>
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-// Bottom sheet showing playback info and control buttons
-  void _showTtsBottomSheet() {
-    showModalBottomSheet(
-      isDismissible: false,
-      context: context,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Align(
-                alignment: Alignment.bottomRight,
-                child: IconButton(
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    _stop;
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.close, size: 24),
-                ),
-              ),
-              SizedBox(height: 15),
-              Text(
-                'Text to Speech',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              // Control buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  IconButton(
-                    icon: Icon((TtsState.playing == ttsState ||
-                            TtsState.continued == ttsState)
-                        ? Icons.pause
-                        : Icons.play_arrow),
-                    onPressed: () {
-                      if (TtsState.playing == ttsState ||
-                          TtsState.continued == ttsState) {
-                        _pause();
-                      } else {
-                        _speak();
-                      }
-                      setState(() {});
-                    },
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.stop),
-                    color: (TtsState.playing == ttsState ||
-                            TtsState.continued == ttsState)
-                        ? AppColors.black.withOpacity(0.8)
-                        : AppColors.black.withOpacity(0.6),
-                    onPressed: (TtsState.playing == ttsState ||
-                            TtsState.continued == ttsState)
-                        ? _stop
-                        : null,
-                  ),
-                ],
-              ),
-            ],
-          ),
         );
       },
     );
@@ -756,16 +695,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
       ],
     );
   }
-
-  IconButton _buildButtonColumn(Color color, Color splashColor, IconData icon,
-      String label, Function func) {
-    return IconButton(
-        icon: Icon(icon),
-        color: color,
-        splashColor: splashColor,
-        onPressed: () => func());
-  }
-
+  
   Widget _playTTSButton(List<dynamic> notes) {
     final toast = CustomToast(context: context);
     return Row(
@@ -923,7 +853,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
       for (var note in notes) {
         if (note is Note) {
           newVoiceText +=
-              note.content ?? ''; // Add note content to the newVoiceText string
+              note.content; // Add note content to the newVoiceText string
         }
       }
 

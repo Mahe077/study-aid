@@ -122,7 +122,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
                       audio.url, audio.localpath);
                   // Save the fetched topic to the local data source
                   if (file != null) {
-                    await localDataSource.createAudioRecording(audio);
+                    await localDataSource.createAudioRecording(audio.copyWith(localpath: file.path));
                   } else {
                     // If the file download fails, raise an error
                     return Left(Failure("Failed to download audio file."));
@@ -266,21 +266,21 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
     }
   }
 
-  @override
-  Future<File?> downloadFile(String url, String filePath) async {
-    try {
-      final response = await http.get(Uri.parse(url));
+  // @override
+  // Future<File?> downloadFile(String url, String filePath) async {
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
 
-      if (response.statusCode == 200) {
-        final file = File(filePath);
-        await file.writeAsBytes(response.bodyBytes);
-        return file;
-      }
-    } catch (e) {
-      Logger().d("Error downloading file: $e");
-    }
-    return null;
-  }
+  //     if (response.statusCode == 200) {
+  //       final file = File(filePath);
+  //       await file.writeAsBytes(response.bodyBytes);
+  //       return file;
+  //     }
+  //   } catch (e) {
+  //     Logger().d("Error downloading file: $e");
+  //   }
+  //   return null;
+  // }
 
   @override
   Future<Either<Failure, AudioRecording?>> getAudio(String audioId) async {
@@ -305,8 +305,8 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
                 remoteAudioRecording.url, remoteAudioRecording.localpath);
 
             if (file != null) {
-              await localDataSource.createAudioRecording(remoteAudioRecording);
-              return Right(remoteAudioRecording);
+              await localDataSource.createAudioRecording(remoteAudioRecording.copyWith(localpath: file.path));
+              return Right(remoteAudioRecording.copyWith(localpath: file.path));
             } else {
               return Left(Failure("Failed to download audio file."));
             }

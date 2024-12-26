@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
@@ -180,28 +181,36 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
   @override
   Future<File?> downloadFile(String url, String filePath,
-      {int retries = 3}) async {
+      {int retries = 3,
+      Duration retryDelay = const Duration(seconds: 5)}) async {
     int attempts = 0;
     while (attempts < retries) {
       attempts++;
       try {
-        final uri = Uri.parse(url);
+        // Validate URL
+        final uri = Uri.tryParse(url);
+        if (uri == null || !uri.isAbsolute) {
+          Logger().e("Invalid URL: $url");
+          return null;
+        }
+
         final response = await http
             .get(uri)
             .timeout(const Duration(seconds: 60)); // Adjusted timeout
 
         if (response.statusCode == 200) {
-          final file = File(filePath);
-          
-          // Ensure the directory exists
-          final directory = file.parent;
+          String filename = filePath.split('/').last;
+          final directory = await getApplicationDocumentsDirectory();
+          final fullFilePath = '${directory.path}/$filename';
+          final file = File(fullFilePath);
+
           if (!await directory.exists()) {
             await directory.create(recursive: true);
             Logger().d("Created directory: ${directory.path}");
           }
 
           await file.writeAsBytes(response.bodyBytes);
-          Logger().d("File downloaded successfully: $filePath");
+          Logger().d("File downloaded successfully: $fullFilePath");
           return file;
         } else {
           Logger().e(
@@ -218,14 +227,13 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       }
 
       // If we exhausted the retries
-      if (attempts >= retries) {
+      if (attempts < retries) {
+        Logger().d("Retrying in ${retryDelay.inSeconds} seconds...");
+        await Future.delayed(retryDelay);
+      } else {
         Logger().e("Failed to download file after $attempts attempts.");
-        break;
       }
-      // Delay between retries
-      await Future.delayed(const Duration(seconds: 5));
     }
-
     return null;
   }
 

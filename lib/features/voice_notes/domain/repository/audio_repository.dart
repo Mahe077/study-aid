@@ -17,7 +17,7 @@ abstract class AudioRecordingRepository {
   Future<Either<Failure, void>> syncAudioRecordings();
   Future<Either<Failure, void>> updateAudioRecordingOfParent(
       String parentId, String audioId);
-  Future<File?> downloadFile(String url, String filePath);
+  // Future<File?> downloadFile(String url, String filePath);
   Future<Either<Failure, AudioRecording?>> getAudio(String audioId);
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId);

@@ -42,7 +42,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   String dropdownValue = 'updatedDate';
   late bool showGuide;
   //= true; // Flag to control guide visibility
-  bool focusFAB = false; // Flag to control FAB focus effect
 
   void _loadMoreTopics() {
     Logger().d("_loadMoreTopics clicked");
@@ -90,10 +89,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   // Show the guide popup
   void _showGuidePopup() {
-    setState(() {
-      focusFAB = true; // Set focus to FAB when showing the guide
-    });
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -191,40 +186,40 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
-              SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: Checkbox(
-                      value: !showGuide,
-                      onChanged: (bool? newValue) async {
-                        if (newValue != null) {
-                          final prefs = await SharedPreferences.getInstance();
-                          prefs.setBool('showGuide', !newValue);
-                          setState(() {
-                            showGuide = !newValue;
-                            focusFAB = false;
-                          });
-                        }
-                      },
-                      activeColor: AppColors.primary,
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      "Don't show me again",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // SizedBox(height: 12),
+              // Row(
+              //   crossAxisAlignment: CrossAxisAlignment.center,
+              //   children: [
+              //     SizedBox(
+              //       height: 20,
+              //       width: 20,
+              //       child: Checkbox(
+              //         value: !showGuide,
+              //         onChanged: (bool? newValue) async {
+              //           if (newValue != null) {
+              //             final prefs = await SharedPreferences.getInstance();
+              //             prefs.setBool('showGuide', !newValue);
+              //             setState(() {
+              //               showGuide = !newValue;
+              //               focusFAB = false;
+              //             });
+              //           }
+              //         },
+              //         activeColor: AppColors.primary,
+              //       ),
+              //     ),
+              //     // SizedBox(width: 10),
+              //     // Expanded(
+              //     //   child: Text(
+              //     //     "Don't show me again",
+              //     //     style: const TextStyle(
+              //     //       fontSize: 14,
+              //     //       fontWeight: FontWeight.w400,
+              //     //     ),
+              //     //   ),
+              //     // ),
+              //   ],
+              // ),
             ],
           ),
           actions: [
@@ -237,9 +232,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       borderRadius: BorderRadius.circular(8))),
               onPressed: () {
                 Navigator.of(context).pop();
-                setState(() {
-                  focusFAB = false; // Remove focus after guide is dismissed
-                });
               },
               child: Text(
                 "Got it!",
@@ -256,7 +248,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                     iconColor: AppColors.black,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8))),
-                onPressed: () {
+                onPressed: () async {
+                  final prefs = await SharedPreferences.getInstance();
+                  prefs.setBool('showGuide', false);
+                  setState(() {
+                    showGuide = false;
+                  });
                   Navigator.of(context).pop();
                 },
                 child: const Text(
