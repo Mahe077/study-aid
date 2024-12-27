@@ -78,13 +78,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     // Trigger the popup after ensuring 'showGuide' is loaded
-    if (showGuide) {
+    // if (showGuide) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (widget.user.createdTopics.isEmpty && showGuide) {
+        // if (widget.user.createdTopics.isEmpty && showGuide) {
           _showGuidePopup();
-        }
+        // }
       });
-    }
+    // }
   }
 
   // Show the guide popup
@@ -120,6 +120,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                         decoration: TextDecoration.none,
+                        fontFamily: 'Ubuntu',
                       ),
                   children: [
                     const TextSpan(
@@ -148,6 +149,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                         decoration: TextDecoration.none,
+                        fontFamily: 'Ubuntu',
                       ),
                   children: [
                     const TextSpan(
@@ -166,6 +168,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                         decoration: TextDecoration.none,
+                        fontFamily: 'Ubuntu',
                       ),
                   children: [
                     const TextSpan(

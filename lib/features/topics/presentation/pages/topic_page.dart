@@ -237,7 +237,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
         _audioQueue[_currentAudioIndex]; // Get the current audio by index
 
     try {
-      await _audioPlayer.setFilePath(currentAudio.localpath); // Load the audio URL
+      await _audioPlayer
+          .setFilePath(currentAudio.localpath); // Load the audio URL
       _audioPlayer.play(); // Start playing
     } catch (e) {
       // Handle audio loading error
@@ -602,8 +603,108 @@ class _TopicPageState extends ConsumerState<TopicPage>
       return false;
     }).toList();
 
+    final List<Map<String, String>> emptyTopicPageItems = [
+      {
+        "title": "Create a New Note",
+        "content":
+            "Allows you to add a new note with textual or graphical data.",
+      },
+      {
+        "title": "Record an Audio",
+        "content":
+            "With this you can create an audio recording with an option to transcribe what you speak.",
+      },
+      {
+        "title": "Add an Image",
+        "content":
+            "You can directly create a new note with an image with just a couple of clicks.",
+      },
+      {
+        "title": "Add a Sub Topic",
+        "content":
+            "If you prefer to have things more organized, here you can create a sub topic under the current topic. Inside that, you will have all these options again.",
+      },
+    ];
+
     if (filteredItems.isEmpty) {
-      return const Center(child: Text("No items to show"));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(25.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Looks like you haven’t created anything here.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Click on the + button in the bottom left corner to get started.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "It will provide you the following options.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: emptyTopicPageItems.length,
+                  shrinkWrap: true, // Ensures it doesn’t take infinite height
+                  physics:
+                      const NeverScrollableScrollPhysics(), // Prevents scrolling inside the centered column
+                  itemBuilder: (context, index) {
+                    final item = emptyTopicPageItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${index + 1}. ",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['title'] ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item['content'] ?? '',
+                                  style: const TextStyle(fontSize: 14,fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     if (type == TopicType.all) {
@@ -695,7 +796,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
       ],
     );
   }
-  
+
   Widget _playTTSButton(List<dynamic> notes) {
     final toast = CustomToast(context: context);
     return Row(
@@ -722,7 +823,12 @@ class _TopicPageState extends ConsumerState<TopicPage>
           },
           child: Row(
             children: [
-              Icon((TtsState.playing == ttsState) ? Icons.stop : Icons.play_arrow, size: 15, color: AppColors.icon),
+              Icon(
+                  (TtsState.playing == ttsState)
+                      ? Icons.stop
+                      : Icons.play_arrow,
+                  size: 15,
+                  color: AppColors.icon),
               const SizedBox(width: 5),
               const Text(
                 'Text to speech',

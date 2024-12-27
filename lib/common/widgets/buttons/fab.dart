@@ -45,7 +45,7 @@ class _FABState extends ConsumerState<FAB> {
   @override
   void initState() {
     super.initState();
-    
+
     selectedColor = widget.tileColor ?? AppColors.defaultColor;
   }
 
@@ -153,7 +153,7 @@ class _FABState extends ConsumerState<FAB> {
       setState(() {
         _topicController.clear();
         _descriptionController.clear();
-        selectedColor =  widget.tileColor ?? AppColors.defaultColor;
+        selectedColor = widget.tileColor ?? AppColors.defaultColor;
       });
 
       toast.showSuccess(
@@ -191,12 +191,102 @@ class _FABState extends ConsumerState<FAB> {
         backgroundColor: AppColors.primary,
       ),
       children: [
+        FloatingActionButton.extended(
+          label: Row(
+            children: [
+              Text(
+                'Add a ${widget.parentId != null ? 'SubTopic' : 'Topic'}',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary),
+              ),
+              SizedBox(width: 8),
+              FaIcon(
+                FontAwesomeIcons.bookOpen,
+                size: 20,
+                color: AppColors.primary,
+              )
+            ],
+          ),
+          heroTag: null,
+          onPressed: () {
+            _fabKey.currentState?.toggle();
+            showCustomDialog(
+              context,
+              DialogMode.add,
+              'Topic',
+              Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: _topicController,
+                      decoration: const InputDecoration(
+                        hintText: "Enter title here",
+                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Title cannot be empty';
+                        }
+                        return null;
+                      },
+                    ),
+                    // const SizedBox(height: 10),
+                    // TextFormField(
+                    //   controller: _descriptionController,
+                    //   decoration: const InputDecoration(
+                    //     hintText: "Enter description here",
+                    //   ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                    // ),
+                    const SizedBox(height: 15),
+                    Row(
+                      children: [
+                        const Text(
+                          "Pick a color:",
+                          style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.black),
+                        ),
+                        const SizedBox(height: 5),
+                        IconButton(
+                          onPressed: () async {
+                            final color = await _showColorPickerDialog();
+                            if (color != null) {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            }
+                          },
+                          icon: Icon(
+                            Icons.color_lens,
+                            color: AppColors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  _handleCreateTopic(ref);
+                }
+              },
+              formKey: _formKey,
+              initialColor: selectedColor,
+            );
+          },
+          backgroundColor: AppColors.grey,
+        ),
         if (widget.parentId != null) ...[
           FloatingActionButton.extended(
             label: const Row(
               children: [
                 Text(
-                  'Add a Image',
+                  'Add an Image',
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -313,96 +403,6 @@ class _FABState extends ConsumerState<FAB> {
                 : AppColors.black.withOpacity(0.30),
           ),
         ],
-        FloatingActionButton.extended(
-          label: Row(
-            children: [
-              Text(
-                'Add a ${widget.parentId != null ? 'SubTopic' : 'Topic'}',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary),
-              ),
-              SizedBox(width: 8),
-              FaIcon(
-                FontAwesomeIcons.bookOpen,
-                size: 20,
-                color: AppColors.primary,
-              )
-            ],
-          ),
-          heroTag: null,
-          onPressed: () {
-            _fabKey.currentState?.toggle();
-            showCustomDialog(
-              context,
-              DialogMode.add,
-              'Topic',
-              Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: _topicController,
-                      decoration: const InputDecoration(
-                        hintText: "Enter title here",
-                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Title cannot be empty';
-                        }
-                        return null;
-                      },
-                    ),
-                    // const SizedBox(height: 10),
-                    // TextFormField(
-                    //   controller: _descriptionController,
-                    //   decoration: const InputDecoration(
-                    //     hintText: "Enter description here",
-                    //   ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                    // ),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        const Text(
-                          "Pick a color:",
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.black),
-                        ),
-                        const SizedBox(height: 5),
-                        IconButton(
-                          onPressed: () async {
-                            final color = await _showColorPickerDialog();
-                            if (color != null) {
-                              setState(() {
-                                selectedColor = color;
-                              });
-                            }
-                          },
-                          icon: Icon(
-                            Icons.color_lens,
-                            color: AppColors.black,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  _handleCreateTopic(ref);
-                }
-              },
-              formKey: _formKey,
-              initialColor: selectedColor,
-            );
-          },
-          backgroundColor: AppColors.grey,
-        ),
       ],
     );
   }
