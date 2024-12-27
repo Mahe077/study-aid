@@ -195,7 +195,7 @@ class _FABState extends ConsumerState<FAB> {
           label: Row(
             children: [
               Text(
-                'Add a ${widget.parentId != null ? 'SubTopic' : 'Topic'}',
+                'Add a ${widget.parentId != null ? 'Sub Topic' : 'Topic'}',
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

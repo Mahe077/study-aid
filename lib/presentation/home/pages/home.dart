@@ -80,9 +80,9 @@ class _HomePageState extends ConsumerState<HomePage> {
     // Trigger the popup after ensuring 'showGuide' is loaded
     // if (showGuide) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // if (widget.user.createdTopics.isEmpty && showGuide) {
+        if (widget.user.createdTopics.isEmpty && showGuide) {
           _showGuidePopup();
-        // }
+        }
       });
     // }
   }
@@ -189,40 +189,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
-              // SizedBox(height: 12),
-              // Row(
-              //   crossAxisAlignment: CrossAxisAlignment.center,
-              //   children: [
-              //     SizedBox(
-              //       height: 20,
-              //       width: 20,
-              //       child: Checkbox(
-              //         value: !showGuide,
-              //         onChanged: (bool? newValue) async {
-              //           if (newValue != null) {
-              //             final prefs = await SharedPreferences.getInstance();
-              //             prefs.setBool('showGuide', !newValue);
-              //             setState(() {
-              //               showGuide = !newValue;
-              //               focusFAB = false;
-              //             });
-              //           }
-              //         },
-              //         activeColor: AppColors.primary,
-              //       ),
-              //     ),
-              //     // SizedBox(width: 10),
-              //     // Expanded(
-              //     //   child: Text(
-              //     //     "Don't show me again",
-              //     //     style: const TextStyle(
-              //     //       fontSize: 14,
-              //     //       fontWeight: FontWeight.w400,
-              //     //     ),
-              //     //   ),
-              //     // ),
-              //   ],
-              // ),
             ],
           ),
           actions: [
