@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/dialogs/dialogs.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
@@ -149,4 +150,10 @@ String formatDateTime(DateTime date) {
 
   // Format the date
   return formatter.format(date);
+}
+
+Future<String> getAudioFilePath(String filePath) async {
+  final filename = filePath.split('/').last;
+  final directory = await getApplicationDocumentsDirectory();
+  return '${directory.path}/$filename';
 }

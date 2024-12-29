@@ -5,10 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/features/transcribe/domain/usecases/start_transcription_usecase.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:http/http.dart' as http;
@@ -54,7 +54,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
       String localFilePath = audio.localpath;
       File audioFile = File(localFilePath);
-      if (!audioFile.existsSync()) {
+      if (!await audioFile.exists()) {
         return Left(Failure('Local file does not exist: $localFilePath'));
       }
 
@@ -65,9 +65,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
         (downloadUrl) async {
           // Create the audio recording with the download URL
           final audioWithId = audio.copyWith(
-              id: docRef.id,
-              syncStatus: ConstantStrings.synced,
-              url: downloadUrl);
+            id: docRef.id,
+            syncStatus: ConstantStrings.synced,
+            url: downloadUrl,
+          );
 
           await docRef.set(audioWithId.toFirestore());
 
@@ -199,15 +200,8 @@ class RemoteDataSourceImpl extends RemoteDataSource {
             .timeout(const Duration(seconds: 60)); // Adjusted timeout
 
         if (response.statusCode == 200) {
-          String filename = filePath.split('/').last;
-          final directory = await getApplicationDocumentsDirectory();
-          final fullFilePath = '${directory.path}/$filename';
+          final fullFilePath = await getAudioFilePath(filePath);
           final file = File(fullFilePath);
-
-          if (!await directory.exists()) {
-            await directory.create(recursive: true);
-            Logger().d("Created directory: ${directory.path}");
-          }
 
           await file.writeAsBytes(response.bodyBytes);
           Logger().d("File downloaded successfully: $fullFilePath");

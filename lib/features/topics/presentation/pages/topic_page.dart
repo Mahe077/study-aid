@@ -55,8 +55,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
   String? language;
   String? engine;
   double volume = 0.5;
-  double pitch = 1.0;
-  double rate = 0.5;
+  double pitch = 0.6;
+  double rate = 0.3;
   bool isCurrentLanguageInstalled = false;
 
   String? _newVoiceText;
@@ -196,6 +196,11 @@ class _TopicPageState extends ConsumerState<TopicPage>
   Future<void> _stop() async {
     var result = await flutterTts.stop();
     if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _pause() async {
+    var result = await flutterTts.pause();
+    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   @override
@@ -605,7 +610,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
 
     final List<Map<String, String>> emptyTopicPageItems = [
       {
-        "title": "Create a New Note",
+        "title": "Create a Note",
         "content":
             "Allows you to add a new note with textual or graphical data.",
       },
@@ -626,7 +631,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
       },
     ];
 
-    if (filteredItems.isEmpty) {
+    if (type == TopicType.all && filteredItems.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(25.0),
@@ -690,7 +695,9 @@ class _TopicPageState extends ConsumerState<TopicPage>
                                 const SizedBox(height: 4),
                                 Text(
                                   item['content'] ?? '',
-                                  style: const TextStyle(fontSize: 14,fontWeight: FontWeight.w500),
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
                                 ),
                               ],
                             ),
@@ -705,6 +712,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
           ),
         ),
       );
+    } else if (type != TopicType.all && filteredItems.isEmpty) {
+      return const Center(child: Text("No items to show"));
     }
 
     if (type == TopicType.all) {
@@ -727,7 +736,37 @@ class _TopicPageState extends ConsumerState<TopicPage>
           const SizedBox(height: 5),
         ],
         if (_noteExists && type == TopicType.note) ...[
-          _playTTSButton(filteredItems),
+          if (TtsState.stopped != ttsState)
+            // Show control row if TTS is playing
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (TtsState.paused == ttsState)
+                  IconButton(
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: () {
+                        _speak();
+                      }),
+                if (TtsState.playing == ttsState || TtsState.continued == ttsState)
+                IconButton(
+                  icon: const Icon(Icons.pause),
+                  onPressed: () {
+                    // Pause playback
+                    _pause();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.stop),
+                  onPressed: () {
+                    // Stop playback completely
+                    _stop();
+                  },
+                ),
+              ],
+            )
+          else
+            // Show play button if TTS is not playing or completed
+            _playTTSButton(filteredItems),
           const SizedBox(height: 5),
         ],
         Expanded(
@@ -957,9 +996,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
 
       // Loop through each note and concatenate the content
       for (var note in notes) {
-        if (note is Note) {
+        if (note is Note && note.content.length > 1) {
+          newVoiceText += 'Title, , ${note.title}, , , , , ';
           newVoiceText +=
-              note.content; // Add note content to the newVoiceText string
+              'Content, , ${note.content}, '; // Add note content to the newVoiceText string
         }
       }
 

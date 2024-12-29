@@ -64,7 +64,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
   @override
   void didUpdateWidget(ContentTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // Check if the entity has changed and trigger audio logic if necessary
     if (widget.entity != oldWidget.entity) {
       _initializeAudioLogic();
@@ -96,11 +96,11 @@ class _ContentTileState extends ConsumerState<ContentTile> {
         if (await file.exists()) {
           await controller.extractWaveformData(path: file.path);
         } else {
-          // Logger().e("File does not exist at the provided path: $file");
+          Logger().e("File does not exist at the provided path: $file");
         }
       }
     } catch (e) {
-      // Logger().e("Error preparing player: $e");
+      Logger().e("Error preparing player: $e");
     }
   }
 
@@ -226,7 +226,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
 
   Row _tileCreatedDate() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
           'Created: ${formatDateTime(widget.entity.createdDate)}',
@@ -234,10 +234,6 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             fontSize: 10,
             fontWeight: FontWeight.w400,
           ),
-        ),
-        const Icon(
-          Icons.star,
-          size: 12,
         ),
       ],
     );
@@ -259,21 +255,22 @@ class _ContentTileState extends ConsumerState<ContentTile> {
               overflow: TextOverflow.ellipsis,
             ),
           )
-        // ] else if (widget.entity is Topic &&
-        //     widget.entity.description != '') ...[
-        //   const SizedBox(height: 8),
-        //   Expanded(
-        //     child: Text(
-        //       widget.entity.description,
-        //       maxLines: 3,
-        //       style: const TextStyle(
-        //         fontSize: 10,
-        //         fontWeight: FontWeight.w400,
-        //       ),
-        //       overflow: TextOverflow.ellipsis,
-        //     ),
-        //   )
-        ] else if ((widget.entity is AudioRecording || widget.entity is AudioRecordingModel) &&
+          // ] else if (widget.entity is Topic &&
+          //     widget.entity.description != '') ...[
+          //   const SizedBox(height: 8),
+          //   Expanded(
+          //     child: Text(
+          //       widget.entity.description,
+          //       maxLines: 3,
+          //       style: const TextStyle(
+          //         fontSize: 10,
+          //         fontWeight: FontWeight.w400,
+          //       ),
+          //       overflow: TextOverflow.ellipsis,
+          //     ),
+          //   )
+        ] else if ((widget.entity is AudioRecording ||
+                widget.entity is AudioRecordingModel) &&
             playerController != null) ...[
           const SizedBox(height: 8),
           Row(
@@ -354,7 +351,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             childPadding: EdgeInsets.zero,
             children: [
               SpeedDialChild(
-                label: 'Delete',
+                label: 'Delete Topic',
                 onTap: _deleteTopic,
                 backgroundColor: AppColors.grey,
               ),
@@ -371,7 +368,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
       context,
       DialogMode.delete,
       "Confirm Delete",
-      const Text('Are you sure you want to delete this topic?'),
+      const Text('Are you sure you want to delete this topic & its contents?'),
       () async {
         try {
           await ref

@@ -40,7 +40,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     'title': 'Title',
   };
   String dropdownValue = 'updatedDate';
-  late bool showGuide;
+  bool showGuide = false;
   //= true; // Flag to control guide visibility
 
   void _loadMoreTopics() {
@@ -77,166 +77,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       showGuide = savedValue; // Update the local state
     });
 
-    // Trigger the popup after ensuring 'showGuide' is loaded
-    // if (showGuide) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (widget.user.createdTopics.isEmpty && showGuide) {
-          _showGuidePopup();
-        }
-      });
-    // }
   }
 
-  // Show the guide popup
-  void _showGuidePopup() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.white,
-          insetPadding: EdgeInsets.all(5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          title: Text(
-            'Let’s get started...',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-              fontSize: 20,
-            ),
-          ),
-          content: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              RichText(
-                textAlign: TextAlign.left,
-                text: TextSpan(
-                  style: DefaultTextStyle.of(context).style.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
-                        decoration: TextDecoration.none,
-                        fontFamily: 'Ubuntu',
-                      ),
-                  children: [
-                    const TextSpan(
-                      text: 'In the ',
-                    ),
-                    const TextSpan(
-                      text: 'Home',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    const TextSpan(
-                      text: ' page, you can create ',
-                    ),
-                    const TextSpan(
-                      text: 'Topics.',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-              RichText(
-                textAlign: TextAlign.left,
-                text: TextSpan(
-                  style: DefaultTextStyle.of(context).style.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
-                        decoration: TextDecoration.none,
-                        fontFamily: 'Ubuntu',
-                      ),
-                  children: [
-                    const TextSpan(
-                      text:
-                          'Under any topic you create here, you can create sub topics, text and image notes, and voice notes.',
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 12),
-              RichText(
-                textAlign: TextAlign.left,
-                text: TextSpan(
-                  style: DefaultTextStyle.of(context).style.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primary,
-                        decoration: TextDecoration.none,
-                        fontFamily: 'Ubuntu',
-                      ),
-                  children: [
-                    const TextSpan(
-                      text: 'Click on the ',
-                    ),
-                    const TextSpan(
-                      text: '+',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                    const TextSpan(
-                      text:
-                          ' button in the bottom right corner to create your first  ',
-                    ),
-                    const TextSpan(
-                      text: 'Topic.',
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
-                  backgroundColor: AppColors.primary,
-                  iconColor: AppColors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8))),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "Got it!",
-                style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w500),
-              ),
-            ),
-            ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
-                    backgroundColor: AppColors.grey,
-                    iconColor: AppColors.black,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8))),
-                onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  prefs.setBool('showGuide', false);
-                  setState(() {
-                    showGuide = false;
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text(
-                  'Dismiss',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.black,
-                      fontWeight: FontWeight.w500),
-                )),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(
@@ -249,6 +91,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final searchState = ref.watch(searchNotifireProvider);
 
     return Scaffold(
+      resizeToAvoidBottomInset : false,
       appBar: const BasicAppbar(
         hideBack: true,
         showMenu: true,
@@ -259,8 +102,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         dropdownValue: dropdownValue,
         tileColor: widget.user.color,
       ),
-      body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      body: Stack(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
           child: userState.when(
             data: (user) {
               // setState(() {
@@ -489,7 +333,170 @@ class _HomePageState extends ConsumerState<HomePage> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(child: Text('Error: $error')),
-          )),
+          ),
+        ),
+        if (widget.user.createdTopics.isEmpty && showGuide) ...[
+          Stack(
+            children: [
+              // Mask layer: Dim the background
+              Container(
+                color: Colors.black.withOpacity(0.35), // Semi-transparent mask
+              ),
+
+              // Centered AlertDialog
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 200, 20, 20),
+                  child: AlertDialog(
+                    backgroundColor: AppColors.white,
+                    insetPadding: EdgeInsets.all(5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    title: Text(
+                      'Let’s get started...',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        fontSize: 20,
+                      ),
+                    ),
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RichText(
+                          textAlign: TextAlign.left,
+                          text: TextSpan(
+                            style: DefaultTextStyle.of(context).style.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.none,
+                                  fontFamily: 'Ubuntu',
+                                ),
+                            children: [
+                              const TextSpan(text: 'In the '),
+                              const TextSpan(
+                                text: 'Home',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                              const TextSpan(text: ' page, you can create '),
+                              const TextSpan(
+                                text: 'Topics.',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        RichText(
+                          textAlign: TextAlign.left,
+                          text: TextSpan(
+                            style: DefaultTextStyle.of(context).style.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.none,
+                                  fontFamily: 'Ubuntu',
+                                ),
+                            children: [
+                              const TextSpan(
+                                text:
+                                    'Under any topic you create here, you can create sub topics, text and image notes, and voice notes.',
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        RichText(
+                          textAlign: TextAlign.left,
+                          text: TextSpan(
+                            style: DefaultTextStyle.of(context).style.copyWith(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  decoration: TextDecoration.none,
+                                  fontFamily: 'Ubuntu',
+                                ),
+                            children: [
+                              const TextSpan(text: 'Click on the '),
+                              const TextSpan(
+                                text: '+',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                              const TextSpan(
+                                text:
+                                    ' button in the bottom right corner to create your first  ',
+                              ),
+                              const TextSpan(
+                                text: 'Topic.',
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                          backgroundColor: AppColors.primary,
+                          iconColor: AppColors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          prefs.setBool('showGuide', false);
+                          setState(() {
+                            showGuide = false;
+                          });
+                        },
+                        child: Text(
+                          "Got it!",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: AppColors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.fromLTRB(30, 0, 30, 0),
+                          backgroundColor: AppColors.grey,
+                          iconColor: AppColors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () async {
+                          setState(() {
+                            showGuide = false;
+                          });
+                          // Navigator.of(context).pop();
+                        },
+                        child: const Text(
+                          'Dismiss',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.black,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ]
+      ]),
     );
   }
 

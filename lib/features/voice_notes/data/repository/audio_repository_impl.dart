@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:dartz/dartz.dart';
 import 'package:logger/logger.dart';
-import 'package:http/http.dart' as http;
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
 import 'package:study_aid/features/authentication/domain/repositories/user_repository.dart';
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
@@ -36,29 +36,43 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
     String userId,
     bool isTranscribe,
   ) async {
-    // Convert domain entity to model
-    AudioRecordingModel audioRecording = AudioRecordingModel.fromDomain(audio);
+    // 1. Convert domain entity to model (if necessary)
+    final audioRecording = AudioRecordingModel.fromDomain(audio);
 
     try {
-      if (await networkInfo.isConnected) {
-        // Online: Upload audio to remote and sync local storage
-        final uploadResult = await remoteDataSource.createAudioRecording(
-            audioRecording, isTranscribe);
+      // 2. Extract filename and handle potential errors
+      final localFilePath = audio.localpath;
+      final audioFile = File(localFilePath);
 
+      if (!await audioFile.exists()) {
+        return Left(Failure('Local file does not exist: $localFilePath'));
+      }
+
+      final fullFilePath = await getAudioFilePath(audio.localpath);
+
+      // 5. Copy file with error handling
+      await audioFile.copy(fullFilePath);
+      Logger().d("File saved successfully: $fullFilePath");
+
+      // 6. Update audio recording with local path and sync status
+      final updatedAudioRecording = audioRecording.copyWith(
+        localpath: fullFilePath,
+        syncStatus: ConstantStrings.synced,
+      );
+
+      // 7. Network check and conditional logic with early return
+      if (await networkInfo.isConnected) {
+        // Online: Upload and update local storage
+        final uploadResult = await remoteDataSource.createAudioRecording(
+            updatedAudioRecording, isTranscribe);
         return uploadResult.fold(
           (failure) => Left(failure),
-          (result) async {
-            final syncedAudio = result.value1;
-            await _updateLocalAndReferences(
-                syncedAudio, topicId, userId, ConstantStrings.audio);
-
-            return Right(Tuple2(syncedAudio.toDomain(), result.value2));
-          },
+          (result) => Right(Tuple2(result.value1.toDomain(), result.value2)),
         );
       } else {
         // Offline: Save only to local storage
-        await _saveAudioOffline(audioRecording, topicId, userId);
-        return Right(Tuple2(audioRecording.toDomain(), ''));
+        await _saveAudioOffline(updatedAudioRecording, topicId, userId);
+        return Right(Tuple2(updatedAudioRecording.toDomain(), ''));
       }
     } catch (e) {
       Logger().e('Error creating audio recording: $e');
@@ -122,7 +136,8 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
                       audio.url, audio.localpath);
                   // Save the fetched topic to the local data source
                   if (file != null) {
-                    await localDataSource.createAudioRecording(audio.copyWith(localpath: file.path));
+                    await localDataSource.createAudioRecording(
+                        audio.copyWith(localpath: file.path));
                   } else {
                     // If the file download fails, raise an error
                     return Left(Failure("Failed to download audio file."));
@@ -289,7 +304,8 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       final localAudioRecording =
           await localDataSource.getCachedAudioRecording(audioId);
       if (localAudioRecording != null) {
-        return Right(localAudioRecording);
+        final fullFilePath = await getAudioFilePath(localAudioRecording.localpath);
+        return Right(localAudioRecording.copyWith(localpath: fullFilePath));
       }
 
       // Proceed to check remotely if the device is connected
@@ -305,7 +321,8 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
                 remoteAudioRecording.url, remoteAudioRecording.localpath);
 
             if (file != null) {
-              await localDataSource.createAudioRecording(remoteAudioRecording.copyWith(localpath: file.path));
+              await localDataSource.createAudioRecording(
+                  remoteAudioRecording.copyWith(localpath: file.path));
               return Right(remoteAudioRecording.copyWith(localpath: file.path));
             } else {
               return Left(Failure("Failed to download audio file."));

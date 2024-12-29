@@ -126,7 +126,7 @@ class LocalDataSourceImpl extends LocalDataSource {
             note.tags
                 .any((tag) => tag.toLowerCase().contains(lowerCaseQuery)) ||
             (note.titleLowerCase.contains(lowerCaseQuery)) ||
-            (note.content.contains(lowerCaseQuery)))
+            (note.content.toLowerCase().contains(lowerCaseQuery)))
         .toList();
 
     return notes;

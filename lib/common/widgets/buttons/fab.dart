@@ -366,7 +366,7 @@ class _FABState extends ConsumerState<FAB> {
             label: const Row(
               children: [
                 Text(
-                  'Create a New Note',
+                  'Create a Note',
                   style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,

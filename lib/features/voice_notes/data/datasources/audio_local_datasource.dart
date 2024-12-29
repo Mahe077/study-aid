@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
@@ -45,6 +46,13 @@ class LocalDataSourceImpl extends LocalDataSource {
           .where((audio) => audio != null)
           .cast<AudioRecordingModel>()
           .toList();
+
+      final directory = await getApplicationDocumentsDirectory();
+      // Update localPath for each audio
+      nonNullAudios = nonNullAudios.map((audio) {
+        final filename = audio.localpath.split('/').last;
+        return audio.copyWith(localpath: '${directory.path}/$filename');
+      }).toList();
 
       if (sortBy == 'updatedDate') {
         nonNullAudios.sort(
