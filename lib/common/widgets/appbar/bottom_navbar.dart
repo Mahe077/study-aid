@@ -81,24 +81,15 @@ class _BottomNavbarState extends State<BottomNavbar> {
           _buildToolbarItem(Icons.favorite_border, "Favorites", 1),
           _buildToolbarItem(Icons.edit, "Edit", 2),
           _buildToolbarItem(Icons.delete, "Delete", 3),
-          SpeedDial(
-            mini: true,
-            icon: Icons.more_vert,
-            buttonSize: const Size(24, 24),
-            childrenButtonSize: const Size(24, 24),
-            backgroundColor: AppColors.toolbar,
-            elevation: 0,
-            overlayColor: Colors.black,
-            overlayOpacity: 0.4,
-            spacing: 8,
-            children: [
-              SpeedDialChild(
-                label: 'Change color',
-                onTap: _showColorPickerDialog,
-                backgroundColor: AppColors.grey,
-              ),
-            ],
-          ),
+          GestureDetector(
+            onTap: () => _showColorPickerDialog(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.color_lens, color: Colors.black),
+              ],
+            ),
+          )
         ],
       ),
     );

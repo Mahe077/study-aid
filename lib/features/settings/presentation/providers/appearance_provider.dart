@@ -13,8 +13,20 @@ final updateUserColorUseCaseProvider =
   return UpdateUserColorUseCase(repository);
 });
 
+class AppearanceState {
+  final Color userColor;
+
+  AppearanceState({Color? userColor}) : userColor = userColor ?? AppColors.defaultColor;
+
+  AppearanceState copyWith({Color? userColor}) {
+    return AppearanceState(
+      userColor: userColor ?? this.userColor,
+    );
+  }
+}
+
 final appearanceNotifierProvider =
-    StateNotifierProvider<AppearanceNotifier, AsyncValue<void>>((ref) {
+    StateNotifierProvider<AppearanceNotifier, AsyncValue<AppearanceState>>((ref) {
   final updateUserColor= ref.watch(updateUserColorUseCaseProvider);
 
   return AppearanceNotifier(

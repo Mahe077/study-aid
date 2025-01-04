@@ -13,7 +13,7 @@ class AppColors {
   static const black = Colors.black;
   static const hintText = Color.fromARGB(190, 65, 63, 63);
   static const seek = Color(0xff1B1F26);
-  static const defaultColor = Color(0xffE6d1f2);
+  static const defaultColor = Color(0xfff9ebdf);
   static const List<Color> colors = [
     // Color(0xffCBE4F9),
     // Color(0xffCDF5F6),

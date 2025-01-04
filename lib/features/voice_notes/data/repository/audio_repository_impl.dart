@@ -50,9 +50,17 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
 
       final fullFilePath = await getAudioFilePath(audio.localpath);
 
-      // 5. Copy file with error handling
-      await audioFile.copy(fullFilePath);
-      Logger().d("File saved successfully: $fullFilePath");
+      // 5. Check if the local file path and full file path are different
+      if (localFilePath != fullFilePath) {
+        try {
+          await audioFile.copy(fullFilePath);
+          Logger().i('File copied successfully to: $fullFilePath');
+        } catch (e) {
+          return Left(Failure('Failed to copy file: ${e.toString()}'));
+        }
+      } else {
+        Logger().i('File paths are identical. No copy needed.');
+      }
 
       // 6. Update audio recording with local path and sync status
       final updatedAudioRecording = audioRecording.copyWith(
@@ -67,7 +75,13 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
             updatedAudioRecording, isTranscribe);
         return uploadResult.fold(
           (failure) => Left(failure),
-          (result) => Right(Tuple2(result.value1.toDomain(), result.value2)),
+          (result) async {
+            final syncedAudio = result.value1;
+            await _updateLocalAndReferences(
+                syncedAudio, topicId, userId, ConstantStrings.audio);
+
+            return Right(Tuple2(result.value1.toDomain(), result.value2));
+          },
         );
       } else {
         // Offline: Save only to local storage
@@ -304,7 +318,8 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
       final localAudioRecording =
           await localDataSource.getCachedAudioRecording(audioId);
       if (localAudioRecording != null) {
-        final fullFilePath = await getAudioFilePath(localAudioRecording.localpath);
+        final fullFilePath =
+            await getAudioFilePath(localAudioRecording.localpath);
         return Right(localAudioRecording.copyWith(localpath: fullFilePath));
       }
 

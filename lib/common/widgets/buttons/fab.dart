@@ -8,6 +8,8 @@ import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/authentication/domain/entities/user.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
@@ -41,12 +43,24 @@ class _FABState extends ConsumerState<FAB> {
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   Color? selectedColor;
+  Color? appearanceColor;
 
   @override
   void initState() {
     super.initState();
+  }
 
-    selectedColor = widget.tileColor ?? AppColors.defaultColor;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final userAsyncValue = ref.watch(userProvider);
+
+    // Fetch the color only if it's not already set
+    if (userAsyncValue is AsyncData && appearanceColor == null) {
+      appearanceColor = userAsyncValue.value?.color;
+      selectedColor = appearanceColor;
+    }
   }
 
   @override
@@ -57,6 +71,8 @@ class _FABState extends ConsumerState<FAB> {
   }
 
   Future<Color?> _showColorPickerDialog() async {
+    // Save the currently selected color in a local variable
+    Color? tempSelectedColor = selectedColor;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -74,7 +90,7 @@ class _FABState extends ConsumerState<FAB> {
               pickerColor: selectedColor,
               onColorChanged: (Color color) {
                 setState(() {
-                  selectedColor = color;
+                  tempSelectedColor = color;
                 });
               },
             ),
@@ -83,7 +99,7 @@ class _FABState extends ConsumerState<FAB> {
             TextButton(
               child: const Text('Done'),
               onPressed: () {
-                Navigator.of(context).pop(selectedColor);
+                Navigator.of(context).pop(tempSelectedColor);
               },
             ),
           ],
@@ -153,7 +169,7 @@ class _FABState extends ConsumerState<FAB> {
       setState(() {
         _topicController.clear();
         _descriptionController.clear();
-        selectedColor = widget.tileColor ?? AppColors.defaultColor;
+        selectedColor = appearanceColor ?? AppColors.defaultColor;
       });
 
       toast.showSuccess(
@@ -164,6 +180,19 @@ class _FABState extends ConsumerState<FAB> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for changes to the userProvider
+    ref.listen<AsyncValue<User?>>(userProvider, (previous, next) {
+      if (next is AsyncData) {
+        // If the color has changed, update the selected color
+        if (next.value?.color != appearanceColor) {
+          setState(() {
+            appearanceColor = next.value?.color;
+            selectedColor = appearanceColor;
+          });
+        }
+      }
+    });
+
     return ExpandableFab(
       key: _fabKey,
       type: ExpandableFabType.up,
