@@ -3,23 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com</string>
+	<string>494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.544057525889-2vp0hjeu926sj6vjruib03toob3a9v64</string>
+	<string>com.googleusercontent.apps.494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyCs50h3J9qikwm2_eHneinBKXKkEa8x2wk</string>
+	<string>AIzaSyC4eCxU0tyZr1qQGyPhDauZPitRaY3-IS4</string>
 	<key>GCM_SENDER_ID</key>
-	<string>544057525889</string>
+	<string>494696942035</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.example.studyAid</string>
 	<key>PROJECT_ID</key>
-	<string>study-aid-e2fc5</string>
+	<string>study-aid-e3671</string>
 	<key>STORAGE_BUCKET</key>
-	<string>study-aid-e2fc5.appspot.com</string>
+	<string>study-aid-e3671.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:544057525889:ios:afd46761701a37cfd72f80</string>
+	<string>1:494696942035:ios:620d0f8158fe00d2fbc726</string>
 </dict>
 </plist>

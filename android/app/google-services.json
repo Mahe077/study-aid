@@ -1,51 +1,26 @@
 {
   "project_info": {
-    "project_number": "544057525889",
-    "project_id": "study-aid-e2fc5",
-    "storage_bucket": "study-aid-e2fc5.appspot.com"
+    "project_number": "494696942035",
+    "project_id": "study-aid-e3671",
+    "storage_bucket": "study-aid-e3671.firebasestorage.app" 
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:544057525889:android:8b3abd20b77dd65bd72f80",
+        "mobilesdk_app_id": "1:494696942035:android:abd3307a54ab6891fbc726",
         "android_client_info": {
           "package_name": "com.example.study_aid"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.study_aid",
-            "certificate_hash": "d438c85965164fe49604e4049ad86570890d9d00"
-          }
-        },
-        {
-          "client_id": "544057525889-j43cjllc12n3ic49hqtttr4u9cvvp530.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBoZr8mWwa19sqcMxm8KRoNezvaryH7j1A"
+          "current_key": "AIzaSyCADdqap2j18ObvCrdtSmEBags5Ga3lcyQ"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "544057525889-j43cjllc12n3ic49hqtttr4u9cvvp530.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.studyAid"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

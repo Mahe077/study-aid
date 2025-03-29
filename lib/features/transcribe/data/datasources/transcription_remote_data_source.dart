@@ -16,10 +16,10 @@ class TranscriptionRemoteDataSourceImpl
   @override
   Future<String> startTranscription(String localMp3Path) async {
     final uri = Uri.parse(
-        'https://eastus.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-05-15-preview');
+        'https://ai-dilanappx1279ai299442749445.cognitiveservices.azure.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15');
 
     final headers = {
-      'Ocp-Apim-Subscription-Key': 'eb0ee53d9df54ebf861cfef6ba990e6b',
+      'Ocp-Apim-Subscription-Key': '4PXF7zxMEOYiWIzaoOSkDkjHGu7kcd1FviPcUT4RTGLvvPndVXrvJQQJ99BCACHYHv6XJ3w3AAAAACOGRqQn',
       'Accept': 'application/json',
     };
 
