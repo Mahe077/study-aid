@@ -89,8 +89,23 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, User?>> signInWithApple() async {
-    //TODO: Implement Apple sign-in logic
-    return Left(ServerFailure('Apple sign-in not implemented yet'));
+    try {
+      UserModel? user = await remoteDataSource.signInWithApple();
+
+      if (user != null) {
+        if (await localDataSource.getCachedUser(user.id) == null) {
+          // Cache the user data in local storage
+          await localDataSource.cacheUser(user);
+        }
+        return Right(user);
+      } else {
+        return const Right(null);
+      }
+    } on ServerException {
+      return Left(ServerFailure('Failed the Apple sign-in'));
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
   }
 
   @override

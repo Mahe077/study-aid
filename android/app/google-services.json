@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "494696942035",
     "project_id": "study-aid-e3671",
-    "storage_bucket": "study-aid-e3671.firebasestorage.app" 
+    "storage_bucket": "study-aid-e3671.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,20 @@
           "package_name": "com.example.study_aid"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "494696942035-gl5f2h4ds3v2ujnbt19rl3vs1naffldh.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.study_aid",
+            "certificate_hash": "10f8848f59b02f13a97e89049a371b9d846e7d75"
+          }
+        },
+        {
+          "client_id": "494696942035-5bbjn4mt8gpnmsd2j8ku1alns4b6log8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCADdqap2j18ObvCrdtSmEBags5Ga3lcyQ"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "494696942035-5bbjn4mt8gpnmsd2j8ku1alns4b6log8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.studyAid"
+              }
+            }
+          ]
         }
       }
     }

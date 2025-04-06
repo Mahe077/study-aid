@@ -17,6 +17,7 @@ abstract class RemoteDataSource {
       String email, String password, String username);
   Future<UserModel?> signInWithGoogle();
   Future<UserModel?> signInWithFacebook();
+  Future<UserModel?> signInWithApple();
   Future<void> updateUser(UserModel user);
   Future<UserModel?> getUserById(String id);
   Future<Unit> signOut();
@@ -368,6 +369,59 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     } catch (e) {
       // Handle unexpected errors
       Logger().e("Unexpected error during Facebook Sign-In: $e");
+      throw Exception("An unexpected error occurred. Please try again.");
+    }
+  }
+
+  @override
+  Future<UserModel?> signInWithApple() async {
+     try {
+
+      final appleProvider = AppleAuthProvider();
+
+      // Sign in to Firebase with the Google credential
+      final UserCredential userCredential =
+          await _auth.signInWithProvider(appleProvider);
+
+      // Retrieve the user's data from Firestore
+      UserModel? user = await getUserById(userCredential.user!.uid);
+      if (user == null) {
+        // Create a new user in Firestore if not already present
+        user = UserModel(
+          id: userCredential.user!.uid,
+          username: userCredential.user?.displayName ?? '',
+          email: userCredential.user?.email ?? '',
+          createdDate: DateTime.now(),
+          updatedDate: DateTime.now(),
+          createdTopics: [],
+          syncStatus: ConstantStrings.synced,
+          recentItems: [],
+          color: AppColors.defaultColor,
+        );
+        await updateUser(user); // Save the new user to Firestore
+        Logger().i("New user created with Apple Sign-In: ${user.email}");
+      } else {
+        Logger().e("Existing user signed in with Apple: ${user.email}");
+      }
+
+      return user; // Return the user model
+    } on FirebaseAuthException catch (e) {
+      // Handle Firebase-specific errors
+      Logger().e("Firebase error during Apple Sign-In: ${e.message}");
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          throw Exception(
+              "An account already exists with a different credential.");
+        case 'invalid-credential':
+          throw Exception("The credential provided is invalid.");
+        default:
+          Logger().e(e);
+          throw Exception(
+              "An error occurred during Apple Sign-In. Please try again.");
+      }
+    } catch (e) {
+      // Handle unexpected errors
+      Logger().e("Unexpected error during Aoogle Sign-In: $e");
       throw Exception("An unexpected error occurred. Please try again.");
     }
   }
