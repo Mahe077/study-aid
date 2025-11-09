@@ -236,6 +236,7 @@ class _SigninPageState extends ConsumerState<SigninPage> {
         if (value == null || value.isEmpty) {
           return passwordError = 'Password is required';
         }
+        return null;
       },
       decoration: InputDecoration(
         suffixIcon: IconButton(
