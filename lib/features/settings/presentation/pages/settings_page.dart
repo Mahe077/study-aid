@@ -12,7 +12,6 @@ import 'package:study_aid/features/authentication/presentation/notifiers/auth_no
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/settings/presentation/pages/account_page.dart';
 import 'package:study_aid/features/settings/presentation/pages/appearance_page.dart';
-import 'package:study_aid/features/settings/presentation/providers/appearance_provider.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class SettingsPage extends ConsumerWidget {

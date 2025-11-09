@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 
 class BottomNavbar extends StatefulWidget {
