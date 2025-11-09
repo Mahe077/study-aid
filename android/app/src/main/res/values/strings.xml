@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="facebook_app_id">3629521967285921</string>
+    <string name="facebook_app_id">4042619102675629</string>
     <string name="app_name">study_aid</string>
-    <string name="facebook_client_token">a174ffd8fff12d822698a2c10a83f0f5</string>
-    <string name="fb_login_protocol_scheme">fb3629521967285921</string>
+    <string name="facebook_client_token">15a724d491a00fbf7dc79ae954dc787e</string>
+    <string name="fb_login_protocol_scheme">fb4042619102675629</string>
 </resources>
