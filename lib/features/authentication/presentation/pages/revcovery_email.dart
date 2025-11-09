@@ -95,7 +95,7 @@ class _RevcoveryEmailPageState extends ConsumerState<RevcoveryEmailPage> {
                       },
                     );
                   }
-                }, //TODO:implement correctly adding logic onPrecessd
+                },
                 title: "Send Verification Code",
               )
             ],
