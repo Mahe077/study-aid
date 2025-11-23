@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:hive/hive.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 
@@ -15,7 +17,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
         updatedDate: reader.read(),
         createdTopics: reader.readList().cast<String>(),
         syncStatus: reader.read(),
-        recentItems: reader.readList().cast<Map<String, dynamic>>());
+        recentItems: reader.readList().cast<Map<String, dynamic>>(),
+        color: Color(reader.readInt()) // Read as int and convert to Color
+        );
   }
 
   @override
@@ -28,6 +32,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..write(obj.updatedDate)
       ..writeList(obj.createdTopics)
       ..write(obj.syncStatus)
-      ..writeList(obj.recentItems);
+      ..writeList(obj.recentItems)
+      ..writeInt(obj.color.value);
   }
 }

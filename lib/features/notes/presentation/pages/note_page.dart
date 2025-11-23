@@ -6,6 +6,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
@@ -19,6 +20,7 @@ import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 class NotePage extends ConsumerStatefulWidget {
   final String topicId;
@@ -27,15 +29,20 @@ class NotePage extends ConsumerStatefulWidget {
   bool isNewNote;
   Color? noteColor;
   String userId;
+  String dropdownValue;
+  bool? isImage;
 
-  NotePage(
-      {super.key,
-      this.topicTitle,
-      this.entity,
-      required this.isNewNote,
-      this.noteColor,
-      required this.topicId,
-      required this.userId});
+  NotePage({
+    super.key,
+    this.topicTitle,
+    this.entity,
+    required this.isNewNote,
+    this.noteColor,
+    required this.topicId,
+    required this.userId,
+    required this.dropdownValue,
+    this.isImage = false,
+  });
 
   @override
   ConsumerState<NotePage> createState() => _NotePageState();
@@ -70,6 +77,9 @@ class _NotePageState extends ConsumerState<NotePage> {
           );
     quillController.readOnly = !widget.isNewNote;
     isSaved = !widget.isNewNote;
+    if (widget.isNewNote && widget.isImage == true) {
+      _pickImage(quillController);
+    }
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (widget.isNewNote) {
         focusNode.requestFocus();
@@ -114,9 +124,6 @@ class _NotePageState extends ConsumerState<NotePage> {
       quillController.readOnly = false; // Set to false to allow editing
       isSaved = false;
     });
-    // ScaffoldMessenger.of(context).showSnackBar(
-    //   const SnackBar(content: Text('Edit mode activated')),
-    // );
   }
 
   void _confirmDelete() {
@@ -128,12 +135,14 @@ class _NotePageState extends ConsumerState<NotePage> {
       "Confirm Delete",
       const Text('Are you sure you want to delete this item?'),
       () async {
-        final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
+        final noteNotifier = ref.read(
+            notesProvider(TabDataParams(widget.topicId, widget.dropdownValue))
+                .notifier);
 
         try {
-          await noteNotifier.deleteNote(
-              widget.topicId, widget.entity!.id, widget.userId);
-          toast.showWarning(description: 'Item deleted successfully');
+          await noteNotifier.deleteNote(widget.topicId, widget.entity!.id,
+              widget.userId, widget.dropdownValue);
+          toast.showSuccess(description: 'Item deleted successfully');
         } catch (e) {
           toast.showFailure(
               description: 'An error occurred while deleting the note.');
@@ -147,18 +156,21 @@ class _NotePageState extends ConsumerState<NotePage> {
 
   Note getNote() {
     return Note(
-        id: UniqueKey().toString(),
-        title: '',
-        content: '',
-        contentJson: '',
-        createdDate: DateTime.now(),
-        color: widget.noteColor ?? AppColors.grey,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: [],
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: widget.topicId);
+      id: UniqueKey().toString(),
+      title: '',
+      content: '',
+      contentJson: '',
+      createdDate: DateTime.now(),
+      color: widget.noteColor ?? AppColors.grey,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: [],
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: widget.topicId,
+      titleLowerCase: '',
+      userId: widget.userId,
+    );
   }
 
   void addTag(String tag) {
@@ -177,20 +189,25 @@ class _NotePageState extends ConsumerState<NotePage> {
     });
 
     final noteTemp = Note(
-        id: note.id,
-        title: titleController.text.trim(),
-        content: quillController.document.toPlainText().trim(),
-        contentJson: jsonEncode(quillController.document.toDelta().toJson()),
-        createdDate: note.createdDate,
-        color: widget.noteColor ?? note.color,
-        remoteChangeTimestamp: note.remoteChangeTimestamp,
-        tags: note.tags,
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: note.parentId);
+      id: note.id,
+      title: titleController.text.trim(),
+      content: quillController.document.toPlainText().trim(),
+      contentJson: jsonEncode(quillController.document.toDelta().toJson()),
+      createdDate: note.createdDate,
+      color: widget.noteColor ?? note.color,
+      remoteChangeTimestamp: note.remoteChangeTimestamp,
+      tags: note.tags,
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: note.parentId,
+      titleLowerCase: titleController.text.trim().toLowerCase(),
+      userId: note.userId,
+    );
 
-    final noteNotifier = ref.read(notesProvider(widget.topicId).notifier);
+    final noteNotifier = ref.read(
+        notesProvider(TabDataParams(widget.topicId, widget.dropdownValue))
+            .notifier);
 
     try {
       if (widget.isNewNote) {
@@ -198,6 +215,7 @@ class _NotePageState extends ConsumerState<NotePage> {
           noteTemp,
           widget.topicId,
           widget.userId,
+          widget.dropdownValue,
         );
         result.fold(
           (failure) {
@@ -222,6 +240,7 @@ class _NotePageState extends ConsumerState<NotePage> {
           noteTemp,
           widget.topicId,
           widget.userId,
+          widget.dropdownValue,
         );
 
         updateNoteRes.fold(
@@ -430,6 +449,19 @@ class _NotePageState extends ConsumerState<NotePage> {
         ),
       ),
     );
+  }
+
+  // This method will be called immediately if isImage is true
+  Future<void> _pickImage(QuillController quillController) async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      // Add image to the Quill editor
+      quillController.insertImageBlock(
+        imageSource: pickedFile.path,
+      );
+    }
   }
 
   ElevatedButton _saveButton(BuildContext context) {

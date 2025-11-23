@@ -1,6 +1,11 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
@@ -22,17 +27,21 @@ class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
   final Topic entity;
   final String userId;
+  final Color tileColor;
 
   const TopicPage({
     super.key,
     required this.topicTitle,
     required this.entity,
     required this.userId,
+    required this.tileColor,
   });
 
   @override
   ConsumerState<TopicPage> createState() => _TopicPageState();
 }
+
+enum TtsState { playing, stopped, paused, continued }
 
 class _TopicPageState extends ConsumerState<TopicPage>
     with SingleTickerProviderStateMixin {
@@ -40,6 +49,38 @@ class _TopicPageState extends ConsumerState<TopicPage>
   late TabController _tabController;
   late AudioPlayer _audioPlayer;
   bool _recordExists = false;
+  bool _noteExists = false;
+
+  late FlutterTts flutterTts;
+  String? language;
+  String? engine;
+  double volume = 0.5;
+  double pitch = 0.6;
+  double rate = 0.3;
+  bool isCurrentLanguageInstalled = false;
+
+  String? _newVoiceText;
+
+  TtsState ttsState = TtsState.stopped;
+
+  bool get isPlaying => ttsState == TtsState.playing;
+  bool get isStopped => ttsState == TtsState.stopped;
+  bool get isPaused => ttsState == TtsState.paused;
+  bool get isContinued => ttsState == TtsState.continued;
+
+  bool get isIOS => !kIsWeb && Platform.isIOS;
+  bool get isAndroid => !kIsWeb && Platform.isAndroid;
+  bool get isWindows => !kIsWeb && Platform.isWindows;
+  bool get isWeb => kIsWeb;
+
+  final Map<String, String> sortOptions = {
+    'createdDate': 'Date Created',
+    'title': 'Title',
+    'updatedDate': 'Last Updated',
+  };
+  String dropdownValue = 'updatedDate';
+
+  StreamSubscription? _playerStateSubscription;
 
   List<AudioRecording> _audioQueue =
       []; // To hold the list of audio recordings to be played
@@ -49,6 +90,116 @@ class _TopicPageState extends ConsumerState<TopicPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _audioPlayer = AudioPlayer();
+    initTts();
+  }
+
+  dynamic initTts() async {
+    flutterTts = FlutterTts();
+
+    _setAwaitOptions();
+
+    if (isAndroid) {
+      _getDefaultEngine();
+      _getDefaultVoice();
+    }
+
+    flutterTts.setStartHandler(() {
+      setState(() {
+        if (kDebugMode) {
+          print("Playing");
+        }
+        ttsState = TtsState.playing;
+      });
+    });
+
+    flutterTts.setCompletionHandler(() {
+      setState(() {
+        if (kDebugMode) {
+          print("Complete");
+        }
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setCancelHandler(() {
+      setState(() {
+        if (kDebugMode) {
+          print("Cancel");
+        }
+        ttsState = TtsState.stopped;
+      });
+    });
+
+    flutterTts.setPauseHandler(() {
+      setState(() {
+        if (kDebugMode) {
+          print("Paused");
+        }
+        ttsState = TtsState.paused;
+      });
+    });
+
+    flutterTts.setContinueHandler(() {
+      setState(() {
+        if (kDebugMode) {
+          print("Continued");
+        }
+        ttsState = TtsState.continued;
+      });
+    });
+
+    flutterTts.setErrorHandler((msg) {
+      setState(() {
+        if (kDebugMode) {
+          print("error: $msg");
+        }
+        ttsState = TtsState.stopped;
+      });
+    });
+  }
+
+  Future<void> _getDefaultEngine() async {
+    var engine = await flutterTts.getDefaultEngine;
+    if (engine != null) {
+      if (kDebugMode) {
+        print(engine);
+      }
+    }
+  }
+
+  Future<void> _getDefaultVoice() async {
+    var voice = await flutterTts.getDefaultVoice;
+    if (voice != null) {
+      if (kDebugMode) {
+        print(voice);
+      }
+    }
+  }
+
+  Future<void> _speak() async {
+    await flutterTts.setVolume(volume);
+    await flutterTts.setSpeechRate(rate);
+    await flutterTts.setPitch(pitch);
+
+    if (_newVoiceText != null) {
+      if (_newVoiceText!.isNotEmpty) {
+        await flutterTts.speak(_newVoiceText!);
+      }
+    }
+  }
+
+  Future<void> _setAwaitOptions() async {
+    await flutterTts.awaitSpeakCompletion(true);
+  }
+
+  Future<void> _stop() async {
+    var result = await flutterTts.stop();
+    if (result == 1) setState(() => ttsState = TtsState.stopped);
+  }
+
+  Future<void> _pause() async {
+    var result = await flutterTts.pause();
+    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   @override
@@ -56,6 +207,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     _tabController.dispose();
     _search.dispose();
     _audioPlayer.dispose();
+    _playerStateSubscription?.cancel();
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -71,7 +224,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     }
 
     // Set up a listener to automatically play the next audio when one completes
-    _audioPlayer.playerStateStream.listen((state) {
+    _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         _playNextAudio(); // Automatically play the next audio when one finishes
       }
@@ -88,7 +241,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
         _audioQueue[_currentAudioIndex]; // Get the current audio by index
 
     try {
-      await _audioPlayer.setUrl(currentAudio.localpath); // Load the audio URL
+      await _audioPlayer
+          .setFilePath(currentAudio.localpath); // Load the audio URL
       _audioPlayer.play(); // Start playing
     } catch (e) {
       // Handle audio loading error
@@ -137,7 +291,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
                     child: IconButton(
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        _audioPlayer.stop();
+                        Navigator.pop(context);
+                      },
                       icon: const Icon(Icons.close, size: 24),
                     ),
                   ),
@@ -213,7 +370,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
 
   @override
   Widget build(BuildContext context) {
-    final tabDataState = ref.watch(tabDataProvider(widget.entity.id));
+    final tabDataState = ref
+        .watch(tabDataProvider(TabDataParams(widget.entity.id, dropdownValue)));
     final searchState = ref.watch(searchNotifireProvider);
 
     return DefaultTabController(
@@ -226,6 +384,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
           userId: widget.userId,
           topicTitle: widget.entity.title,
           topicColor: widget.entity.color,
+          dropdownValue: dropdownValue,
+          tileColor: widget.tileColor, // Use the reactive tileColor
         ),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -236,14 +396,58 @@ class _TopicPageState extends ConsumerState<TopicPage>
                 child: searchState.isSearchActive
                     ? searchState.isLoading
                         ? const Center(child: CircularProgressIndicator())
-                        : _buildSearchResults(searchState.searchResults)
+                        : _buildSearchResults(
+                            searchState.searchResults, dropdownValue)
                     : Column(
                         children: [
-                          _buildRecentItemsSection(tabDataState),
+                          _buildRecentItemsSection(tabDataState, dropdownValue),
                           const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Spacer(),
+                              Text(
+                                "Sort by :",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              SizedBox(width: 5),
+                              DropdownButton<String>(
+                                dropdownColor: AppColors.white,
+                                isDense: true,
+                                borderRadius: BorderRadius.circular(8),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primary,
+                                  fontSize: 12,
+                                ),
+                                value: dropdownValue,
+                                onChanged: (newValue) {
+                                  if (newValue != null &&
+                                      newValue != dropdownValue) {
+                                    setState(() {
+                                      dropdownValue =
+                                          newValue; // Update the value and rebuild the widget
+                                    });
+                                    ref.invalidate(tabDataProvider);
+                                    Logger().d("Sort value: $dropdownValue");
+                                  }
+                                },
+                                items: sortOptions.entries.map((entry) {
+                                  return DropdownMenuItem<String>(
+                                    value: entry.key,
+                                    child: Text(entry.value),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
+                          // const SizedBox(height: 8),
                           _buildTabBar(),
                           const SizedBox(height: 8),
-                          _buildTabView(tabDataState),
+                          _buildTabView(tabDataState, dropdownValue),
                         ],
                       ),
               ),
@@ -269,7 +473,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildRecentItemsSection(AsyncValue<TabDataState> tabDataState) {
+  Widget _buildRecentItemsSection(
+      AsyncValue<TabDataState> tabDataState, String dropdownvalue) {
     return tabDataState.when(
       data: (state) {
         final List<dynamic> items = [
@@ -304,14 +509,17 @@ class _TopicPageState extends ConsumerState<TopicPage>
                     return Row(
                       children: [
                         RecentTile(
-                            entity: item,
-                            type: item is Topic
-                                ? TopicType.topic
-                                : item is Note
-                                    ? TopicType.note
-                                    : TopicType.audio,
-                            userId: widget.userId,
-                            parentTopicId: widget.entity.id),
+                          entity: item,
+                          type: item is Topic
+                              ? TopicType.topic
+                              : item is Note
+                                  ? TopicType.note
+                                  : TopicType.audio,
+                          userId: widget.userId,
+                          parentTopicId: widget.entity.id,
+                          dropdownValue: dropdownvalue,
+                          tileColor: widget.tileColor,
+                        ),
                         const SizedBox(width: 15),
                       ],
                     );
@@ -356,24 +564,30 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildTabView(AsyncValue<TabDataState> tabDataState) {
+  Widget _buildTabView(
+      AsyncValue<TabDataState> tabDataState, String dropdownvalue) {
     return Expanded(
       child: tabDataState.when(
         data: (state) {
           _recordExists = state.audioRecordings.length > 1;
+          _noteExists = state.notes.isNotEmpty;
 
           return TabBarView(
             controller: _tabController,
             children: [
               _contentList(
-                [...state.topics, ...state.notes, ...state.audioRecordings],
-                TopicType.all,
-                state.hasMoreTopics || state.hasMoreNotes || state.hasMoreAudio,
-              ),
-              _contentList(state.topics, TopicType.topic, state.hasMoreTopics),
-              _contentList(state.notes, TopicType.note, state.hasMoreNotes),
-              _contentList(
-                  state.audioRecordings, TopicType.audio, state.hasMoreAudio),
+                  [...state.topics, ...state.notes, ...state.audioRecordings],
+                  TopicType.all,
+                  state.hasMoreTopics ||
+                      state.hasMoreNotes ||
+                      state.hasMoreAudio,
+                  dropdownvalue),
+              _contentList(state.topics, TopicType.topic, state.hasMoreTopics,
+                  dropdownvalue),
+              _contentList(state.notes, TopicType.note, state.hasMoreNotes,
+                  dropdownvalue),
+              _contentList(state.audioRecordings, TopicType.audio,
+                  state.hasMoreAudio, dropdownvalue),
             ],
           );
         },
@@ -383,7 +597,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _contentList(List<dynamic> items, TopicType type, bool hasMore) {
+  Widget _contentList(
+      List<dynamic> items, TopicType type, bool hasMore, String dropdownvalue) {
     final filteredItems = items.where((item) {
       if (type == TopicType.all) return true; // Show all items
       if (type == TopicType.topic && item is Topic) return true;
@@ -392,18 +607,165 @@ class _TopicPageState extends ConsumerState<TopicPage>
       return false;
     }).toList();
 
-    if (filteredItems.isEmpty) {
+    final List<Map<String, String>> emptyTopicPageItems = [
+      {
+        "title": "Create a Note",
+        "content":
+            "Allows you to add a new note with textual or graphical data.",
+      },
+      {
+        "title": "Record an Audio",
+        "content":
+            "With this you can create an audio recording with an option to transcribe what you speak.",
+      },
+      {
+        "title": "Add an Image",
+        "content":
+            "You can directly create a new note with an image with just a couple of clicks.",
+      },
+      {
+        "title": "Add a Sub Topic",
+        "content":
+            "If you prefer to have things more organized, here you can create a sub topic under the current topic. Inside that, you will have all these options again.",
+      },
+    ];
+
+    if (type == TopicType.all && filteredItems.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(25.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Looks like you haven’t created anything here.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Click on the + button in the bottom left corner to get started.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "It will provide you the following options.",
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: emptyTopicPageItems.length,
+                  shrinkWrap: true, // Ensures it doesn’t take infinite height
+                  physics:
+                      const NeverScrollableScrollPhysics(), // Prevents scrolling inside the centered column
+                  itemBuilder: (context, index) {
+                    final item = emptyTopicPageItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${index + 1}. ",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['title'] ?? '',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item['content'] ?? '',
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (type != TopicType.all && filteredItems.isEmpty) {
       return const Center(child: Text("No items to show"));
     }
 
     if (type == TopicType.all) {
-      filteredItems.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      if (dropdownvalue == 'updatedDate') {
+        filteredItems.sort(
+            (a, b) => b.updatedDate.compareTo(a.updatedDate)); // Descending
+      } else if (dropdownvalue == 'createdDate') {
+        filteredItems.sort(
+            (a, b) => b.createdDate.compareTo(a.createdDate)); // Descending
+      } else if (dropdownvalue == 'title') {
+        filteredItems.sort((a, b) => a.titleLowerCase
+            .compareTo(b.titleLowerCase)); // Ascending alphabetical order
+      }
     }
 
     return Column(
       children: [
         if (_recordExists && type == TopicType.audio) ...[
           _playAllButton(filteredItems),
+          const SizedBox(height: 5),
+        ],
+        if (_noteExists && type == TopicType.note) ...[
+          if (TtsState.stopped != ttsState)
+            // Show control row if TTS is playing
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (TtsState.paused == ttsState)
+                  IconButton(
+                      icon: const Icon(Icons.play_arrow),
+                      onPressed: () {
+                        _speak();
+                      }),
+                if (TtsState.playing == ttsState || TtsState.continued == ttsState)
+                IconButton(
+                  icon: const Icon(Icons.pause),
+                  onPressed: () {
+                    // Pause playback
+                    _pause();
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.stop),
+                  onPressed: () {
+                    // Stop playback completely
+                    _stop();
+                  },
+                ),
+              ],
+            )
+          else
+            // Show play button if TTS is not playing or completed
+            _playTTSButton(filteredItems),
           const SizedBox(height: 5),
         ],
         Expanded(
@@ -416,11 +778,13 @@ class _TopicPageState extends ConsumerState<TopicPage>
                         entity: item,
                         type: type,
                         parentTopicId: widget.entity.id,
+                        dropdownValue: dropdownvalue,
+                        tileColor: widget.tileColor,
                       ),
                       const SizedBox(height: 10),
                     ],
                   )),
-              if (hasMore) _loadMoreButton(type),
+              if (hasMore) _loadMoreButton(type, dropdownvalue),
             ],
           ),
         ),
@@ -471,10 +835,60 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _loadMoreButton(TopicType type) {
+  Widget _playTTSButton(List<dynamic> notes) {
+    final toast = CustomToast(context: context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            fixedSize: const Size(115, 15),
+            padding: const EdgeInsets.all(2),
+            backgroundColor: AppColors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          onPressed: () {
+            if (notes.isNotEmpty) {
+              _playtts(notes); // Start playing all audio
+            } else {
+              toast.showInfo(
+                  title: 'No audio files available.',
+                  description:
+                      'Please record or upload new audio to get started.');
+            }
+          },
+          child: Row(
+            children: [
+              Icon(
+                  (TtsState.playing == ttsState)
+                      ? Icons.stop
+                      : Icons.play_arrow,
+                  size: 15,
+                  color: AppColors.icon),
+              const SizedBox(width: 5),
+              const Text(
+                'Text to speech',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _loadMoreButton(TopicType type, String dropdownvalue) {
     return ElevatedButton(
       onPressed: () {
-        final notifier = ref.read(tabDataProvider(widget.entity.id).notifier);
+        final notifier = ref.read(
+            tabDataProvider(TabDataParams(widget.entity.id, dropdownvalue))
+                .notifier);
         switch (type) {
           case TopicType.all:
             Logger().i("Load more ${TopicType.all}");
@@ -512,7 +926,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
                 if (query.isNotEmpty) {
                   ref
                       .read(searchNotifireProvider.notifier)
-                      .performSearch(query);
+                      .performSearch(query, widget.userId);
                 }
               },
             ),
@@ -531,7 +945,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _buildSearchResults(List<dynamic> results) {
+  Widget _buildSearchResults(List<dynamic> results, dropdownValue) {
     if (results.isEmpty) {
       return Center(
         child: Text(
@@ -553,6 +967,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
             type: TopicType.note,
             userId: widget.userId,
             parentTopicId: widget.entity.id,
+            dropdownValue: dropdownValue,
+            tileColor: widget.tileColor,
           );
         } else if (item is AudioRecording) {
           return ContentTile(
@@ -560,6 +976,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
             type: TopicType.audio,
             userId: widget.userId,
             parentTopicId: widget.entity.id,
+            dropdownValue: dropdownValue,
+            tileColor: widget.tileColor,
           );
         }
 
@@ -567,6 +985,32 @@ class _TopicPageState extends ConsumerState<TopicPage>
             .shrink(); // Handle unexpected item types gracefully
       },
     );
+  }
+
+  void _playtts(List<dynamic> notes) async {
+    if (TtsState.playing == ttsState) {
+      _stop();
+    } else {
+      String newVoiceText = '';
+
+      // Loop through each note and concatenate the content
+      for (var note in notes) {
+        if (note is Note && note.content.length > 1) {
+          newVoiceText += 'Title, , ${note.title}, , , , , ';
+          newVoiceText +=
+              'Content, , ${note.content}, '; // Add note content to the newVoiceText string
+        }
+      }
+
+      // Update the state once after the loop completes
+      setState(() {
+        _newVoiceText = newVoiceText;
+      });
+
+      // Now, speak the concatenated text
+      _speak();
+      // _showTtsBottomSheet();
+    }
   }
 }
 

@@ -66,7 +66,7 @@ class CustomQuillToolbar extends StatelessWidget {
           showClearFormat: false,
           showBackgroundColorButton: false,
           buttonOptions: const QuillSimpleToolbarButtonOptions(
-            fontSize: QuillToolbarFontSizeButtonOptions(initialValue: '16'),
+            fontSize: QuillToolbarFontSizeButtonOptions(initialValue: '18'),
           ),
         ),
       ),

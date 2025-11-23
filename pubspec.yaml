@@ -52,6 +52,12 @@ dependencies:
   toastification: ^2.3.0
   flutter_quill_extensions: ^10.8.2
   cached_network_image: ^3.4.1
+  material_symbols_icons: ^4.2791.1
+  firebase_app_check: ^0.3.1+6
+  image_picker: ^1.1.2
+  shared_preferences: ^2.3.4
+  flutter_tts: ^4.2.0
+  http_parser: ^4.0.2
   
 dev_dependencies:
   flutter_test:

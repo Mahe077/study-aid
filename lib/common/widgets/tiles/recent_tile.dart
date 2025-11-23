@@ -19,13 +19,18 @@ class RecentTile extends StatefulWidget {
   final dynamic entity;
   final String userId;
   final String parentTopicId;
+  final String dropdownValue;
+  final Color tileColor;
 
-  const RecentTile(
-      {super.key,
-      required this.type,
-      required this.entity,
-      required this.userId,
-      required this.parentTopicId});
+  const RecentTile({
+    super.key,
+    required this.type,
+    required this.entity,
+    required this.userId,
+    required this.parentTopicId,
+    required this.dropdownValue,
+    required this.tileColor,
+  });
 
   @override
   State<RecentTile> createState() => _RecentTileState();
@@ -41,7 +46,6 @@ class _RecentTileState extends State<RecentTile> {
         File file = File(localPath);
         if (await file.exists()) {
           await controller.extractWaveformData(path: file.path);
-          Logger().i("Waveform Data: ${controller.waveformData}");
         } else {
           Logger().e("File does not exist at the provided path: $file");
         }
@@ -54,9 +58,25 @@ class _RecentTileState extends State<RecentTile> {
   @override
   void initState() {
     super.initState();
+    _initializeAudioLogic();
+  }
+
+  @override
+  void didUpdateWidget(RecentTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // Check if the entity has changed and trigger audio logic if necessary
+    if (widget.entity != oldWidget.entity) {
+      _initializeAudioLogic();
+    }
+  }
+
+  void _initializeAudioLogic() {
     if (widget.entity is AudioRecording) {
       recentTilePlayerController = PlayerController();
-      _preparePlayer(recentTilePlayerController!, widget.entity.localpath);
+     _preparePlayer(recentTilePlayerController!, widget.entity.localpath);
+    } else {
+      recentTilePlayerController = null;
     }
   }
 
@@ -78,6 +98,7 @@ class _RecentTileState extends State<RecentTile> {
                 userId: widget.userId,
                 topicTitle: widget.entity.title,
                 entity: widget.entity,
+                tileColor: widget.tileColor,
               ),
             ),
           );
@@ -92,6 +113,7 @@ class _RecentTileState extends State<RecentTile> {
                 entity: widget.entity,
                 isNewNote: false,
                 userId: widget.userId,
+                dropdownValue: widget.dropdownValue,
               ),
             ),
           );
@@ -104,6 +126,7 @@ class _RecentTileState extends State<RecentTile> {
                   entity: widget.entity,
                   userId: widget.userId,
                   parentId: widget.parentTopicId,
+                  dropdownValue: widget.dropdownValue,
                 );
               }));
         }

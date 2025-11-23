@@ -11,6 +11,7 @@ import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 
@@ -18,12 +19,14 @@ class ModalBottomSheet extends ConsumerStatefulWidget {
   final AudioRecording entity;
   final String userId;
   final String parentId;
+  final String dropdownValue;
 
   const ModalBottomSheet({
     super.key,
     required this.entity,
     required this.userId,
     required this.parentId,
+    required this.dropdownValue,
   });
 
   @override
@@ -285,9 +288,12 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
           await bottomSheetPlayerController.stopPlayer();
         }
         await ref
-            .read(audioProvider(widget.entity.id).notifier)
-            .deleteAudio(widget.parentId, widget.entity.id, widget.userId);
-        toast.showWarning(description: "Audio clip deleted successfully.");
+            .read(audioProvider(
+                    TabDataParams(widget.entity.id, widget.dropdownValue))
+                .notifier)
+            .deleteAudio(widget.parentId, widget.entity.id, widget.userId,
+                widget.dropdownValue);
+        toast.showSuccess(description: "Audio clip deleted successfully.");
         Navigator.pop(context);
       },
     );

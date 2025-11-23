@@ -8,6 +8,7 @@ import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
+import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/features/transcribe/domain/usecases/start_transcription_usecase.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:http/http.dart' as http;
@@ -24,7 +25,7 @@ abstract class RemoteDataSource {
   Future<bool> audioExists(String audioId);
   Future<File?> downloadFile(String url, String filePath, {int retries = 3});
   Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
-      String query);
+      String query, String userId);
 }
 
 class RemoteDataSourceImpl extends RemoteDataSource {
@@ -53,7 +54,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
       String localFilePath = audio.localpath;
       File audioFile = File(localFilePath);
-      if (!audioFile.existsSync()) {
+      if (!await audioFile.exists()) {
         return Left(Failure('Local file does not exist: $localFilePath'));
       }
 
@@ -64,9 +65,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
         (downloadUrl) async {
           // Create the audio recording with the download URL
           final audioWithId = audio.copyWith(
-              id: docRef.id,
-              syncStatus: ConstantStrings.synced,
-              url: downloadUrl);
+            id: docRef.id,
+            syncStatus: ConstantStrings.synced,
+            url: downloadUrl,
+          );
 
           await docRef.set(audioWithId.toFirestore());
 
@@ -180,20 +182,29 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
   @override
   Future<File?> downloadFile(String url, String filePath,
-      {int retries = 3}) async {
+      {int retries = 3,
+      Duration retryDelay = const Duration(seconds: 5)}) async {
     int attempts = 0;
     while (attempts < retries) {
       attempts++;
       try {
-        final uri = Uri.parse(url);
+        // Validate URL
+        final uri = Uri.tryParse(url);
+        if (uri == null || !uri.isAbsolute) {
+          Logger().e("Invalid URL: $url");
+          return null;
+        }
+
         final response = await http
             .get(uri)
             .timeout(const Duration(seconds: 60)); // Adjusted timeout
 
         if (response.statusCode == 200) {
-          final file = File(filePath);
+          final fullFilePath = await getAudioFilePath(filePath);
+          final file = File(fullFilePath);
+
           await file.writeAsBytes(response.bodyBytes);
-          Logger().d("File downloaded successfully: $filePath");
+          Logger().d("File downloaded successfully: $fullFilePath");
           return file;
         } else {
           Logger().e(
@@ -210,14 +221,13 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       }
 
       // If we exhausted the retries
-      if (attempts >= retries) {
+      if (attempts < retries) {
+        Logger().d("Retrying in ${retryDelay.inSeconds} seconds...");
+        await Future.delayed(retryDelay);
+      } else {
         Logger().e("Failed to download file after $attempts attempts.");
-        break;
       }
-      // Delay between retries
-      await Future.delayed(const Duration(seconds: 5));
     }
-
     return null;
   }
 
@@ -239,27 +249,38 @@ class RemoteDataSourceImpl extends RemoteDataSource {
 
   @override
   Future<Either<Failure, List<AudioRecordingModel>>> searchFromRemote(
-      String query) async {
+      String query, String userId) async {
+    query = query.toLowerCase();
     try {
       //   final lowerCaseQuery = query.toLowerCase();
 
       final audiosSnapshot = await _firestore
           .collection('audios')
+          .where('userId', isEqualTo: userId)
           .where('tags', arrayContainsAny: [query]).get();
 
       // Query for documents where the 'title' matches the query
       final titleQuerySnapshot = await _firestore
-          .collection('notes')
-          .where('title',
-              isGreaterThanOrEqualTo: query, isLessThan: '${query}z')
+          .collection('audios')
+          .where('userId', isEqualTo: userId)
+          .where('titleLowerCase',
+              isGreaterThanOrEqualTo: query, isLessThan: '$query\uf8ff')
           .get();
 
       // Combine the results, removing duplicates
-      final combinedResults = <DocumentSnapshot>{}
-        ..addAll(audiosSnapshot.docs)
-        ..addAll(titleQuerySnapshot.docs);
+      final Map<String, DocumentSnapshot> uniqueDocs = {};
 
-      final audios = combinedResults
+      // Add docs from tags search to the map
+      for (var doc in audiosSnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
+
+      // Add docs from title search to the map (duplicate IDs will be ignored)
+      for (var doc in titleQuerySnapshot.docs) {
+        uniqueDocs[doc.id] = doc;
+      }
+
+      final audios = uniqueDocs.values
           .map((doc) => AudioRecordingModel.fromFirestore(doc))
           .toList();
       return Right(audios);

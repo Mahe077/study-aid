@@ -33,16 +33,17 @@ class TopicsState {
 class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
   final TopicRepository repository;
   final String userId;
+  final String sortBy;
   final Ref _ref;
 
-  TopicsNotifier(this.repository, this.userId, this._ref)
+  TopicsNotifier(this.repository, this.userId, this.sortBy, this._ref)
       : super(const AsyncValue.loading()) {
     loadInitialTopics();
   }
 
   Future<void> loadInitialTopics() async {
     try {
-      final result = await repository.fetchUserTopics(userId, 5, 0);
+      final result = await repository.fetchUserTopics(userId, 5, 0, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -67,7 +68,8 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
     final lastDocument = currentState.value!.lastDocument;
     try {
-      final result = await repository.fetchUserTopics(userId, 5, lastDocument);
+      final result =
+          await repository.fetchUserTopics(userId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -91,8 +93,14 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
     }
   }
 
-  Future<void> createTopic(String? title, String? description, Color color,
-      String? parentId, String userId) async {
+  Future<void> createTopic(
+    String? title,
+    String? description,
+    Color color,
+    String? parentId,
+    String userId,
+    String dropdownValue,
+  ) async {
     final currentState = state;
     try {
       final createTopic = _ref.read(createTopicProvider);
@@ -132,8 +140,9 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
             }
           } else {
             // Notify TabDataNotifier to update state
-            final tabDataNotifier =
-                _ref.read(tabDataProvider(parentId).notifier);
+            final tabDataNotifier = _ref.read(
+                tabDataProvider(TabDataParams(parentId, dropdownValue))
+                    .notifier);
             tabDataNotifier.updateTopic(newTopic);
           }
         },
@@ -189,20 +198,34 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
     }
   }
 
-  Future<void> deleteTopic(String topicId) async {
+  Future<void> deleteTopic(String topicId, String? parentId, String userId,
+      String dropdownValue) async {
+    // Save the current state before setting it to loading
+    final previousState = state;
+
     state = const AsyncValue.loading();
     try {
       final deleteTopic = _ref.read(deleteTopicProvider);
-      await deleteTopic.call(topicId);
+      await deleteTopic.call(topicId, parentId, userId);
 
-      final currentState = state;
-      state = AsyncValue.data(
-        currentState.value!.copyWith(
-            topics: currentState.value!.topics
-                .where((topic) => topic.id != topicId)
-                .toList(),
-            lastDocument: currentState.value!.lastDocument),
-      );
+      if (parentId == null || parentId.isEmpty) {
+        if (previousState.value != null) {
+          state = AsyncValue.data(
+            previousState.value!.copyWith(
+              topics: previousState.value!.topics
+                  .where((topic) => topic.id != topicId)
+                  .toList(),
+              lastDocument: previousState.value!.lastDocument,
+            ),
+          );
+        } else {
+          state = AsyncValue.data(previousState.value!);
+        }
+      } else {
+        final tabDataNotifier = _ref.read(
+            tabDataProvider(TabDataParams(parentId, dropdownValue)).notifier);
+        tabDataNotifier.deleteTopic(topicId);
+      }
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
     }
@@ -212,9 +235,10 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
   final TopicRepository repository;
   final String topicId;
+  final String sortBy;
   final Ref _ref;
 
-  TopicChildNotifier(this.repository, this.topicId, this._ref)
+  TopicChildNotifier(this.repository, this.topicId, this._ref, this.sortBy)
       : super(const AsyncValue.loading()) {
     _loadInitialTopicChild();
   }
@@ -265,7 +289,7 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
   Future<void> _loadInitialTopicChild() async {
     try {
-      final result = await repository.fetchSubTopics(topicId, 5, 0);
+      final result = await repository.fetchSubTopics(topicId, 5, 0, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -290,7 +314,8 @@ class TopicChildNotifier extends StateNotifier<AsyncValue<TopicsState>> {
 
     final lastDocument = currentState.value!.lastDocument;
     try {
-      final result = await repository.fetchSubTopics(topicId, 5, lastDocument);
+      final result =
+          await repository.fetchSubTopics(topicId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),

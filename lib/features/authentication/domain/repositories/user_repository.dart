@@ -10,4 +10,6 @@ abstract class UserRepository {
   Future<Either<Failure, void>> syncUser(String userId);
   Future<void> updateRecentItems(String userId, String itemId, String itemType,
       {bool isDelete = false});
+  Future<Either<Failure, void>> updatePassword(String password);
+  Future<Either<Failure, void>> updateColor(User user);
 }

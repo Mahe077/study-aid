@@ -10,3 +10,9 @@ class ServerFailure extends Failure {
 class CacheFailure extends Failure {
   CacheFailure(super.message);
 }
+
+class NoInternetFailure extends Failure {
+  NoInternetFailure()
+      : super(
+            'No internet connection. Please connect to the internet and try again.');
+}

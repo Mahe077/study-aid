@@ -40,12 +40,12 @@ class SearchNotifier extends StateNotifier<SearchState> {
   SearchNotifier(this.searchRepository) : super(SearchState.initial());
 
   // Perform search with simulated loading
-  Future<void> performSearch(String query) async {
+  Future<void> performSearch(String query, String userId) async {
     state =
         SearchState(isLoading: true, searchResults: [], isSearchActive: true);
 
     try {
-      final results = await searchRepository.search(query);
+      final results = await searchRepository.search(query, userId);
       state = state.copyWith(searchResults: results);
     } catch (e) {
       Logger().e('Error during search: $e');

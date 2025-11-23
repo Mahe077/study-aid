@@ -14,7 +14,7 @@ abstract class LocalDataSource {
   List<TopicModel> fetchAllTopics();
   bool topicExists(String topicId);
   Future<Either<Failure, PaginatedObj<TopicModel>>> fetchPeginatedTopics(
-      int limit, List<dynamic> topicRefs, int startAfter);
+      int limit, List<dynamic> topicRefs, int startAfter, String sortBy);
 }
 
 class LocalDataSourceImpl implements LocalDataSource {
@@ -43,12 +43,10 @@ class LocalDataSourceImpl implements LocalDataSource {
 
   @override
   Future<Either<Failure, PaginatedObj<TopicModel>>> fetchPeginatedTopics(
-      int limit, List<dynamic> topicRefs, int startAfter) async {
+      int limit, List<dynamic> topicRefs, int startAfter, String sortBy) async {
     try {
       int startIndex = startAfter;
       int endIndex = startIndex + limit;
-
-      printTopicBoxContents(); //TODO:remove the prints
 
       List<Future<TopicModel?>> futureTopics = topicRefs.map((topicId) {
         return getCachedTopic(topicId);
@@ -61,7 +59,14 @@ class LocalDataSourceImpl implements LocalDataSource {
       List<TopicModel> nonNullTopics =
           topics.where((topic) => topic != null).cast<TopicModel>().toList();
 
-      nonNullTopics.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      if (sortBy == 'updatedDate') {
+        nonNullTopics.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      } else if (sortBy == 'createdDate') {
+        nonNullTopics.sort((a, b) => b.createdDate.compareTo(a.createdDate));
+      } else if (sortBy == 'title') {
+        nonNullTopics
+            .sort((a, b) => a.titleLowerCase.compareTo(b.titleLowerCase));
+      }
 
       final hasmore = topics.length > endIndex ? true : false;
 
@@ -78,7 +83,6 @@ class LocalDataSourceImpl implements LocalDataSource {
 
   @override
   Future<TopicModel?> getCachedTopic(String topicId) async {
-    printTopicBoxContents(); //TODO:remove the prints
     final topic = _topicBox.get(topicId);
     if (topic != null) {
       return topic;
@@ -92,7 +96,7 @@ class LocalDataSourceImpl implements LocalDataSource {
     return _topicBox.containsKey(topicId);
   }
 
-  //TODO:remove the prints
+  //Testing: remove the prints
   void printTopicBoxContents() {
     // Assuming _topicBox is your Hive box
     var allKeys = _topicBox.keys;

@@ -38,16 +38,18 @@ class AudioState {
 class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
   final AudioRecordingRepository repository;
   final String topicId;
+  final String sortBy;
   final Ref _ref;
 
-  AudioNotifier(this.repository, this.topicId, this._ref)
+  AudioNotifier(this.repository, this.topicId, this._ref, this.sortBy)
       : super(const AsyncValue.loading()) {
     _loadInitialAudio();
   }
 
   Future<void> _loadInitialAudio() async {
     try {
-      final result = await repository.fetchAudioRecordings(topicId, 5, 0);
+      final result =
+          await repository.fetchAudioRecordings(topicId, 5, 0, sortBy);
       result.fold(
         (failure) {
           if (mounted) {
@@ -79,8 +81,8 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
 
     final lastDocument = currentState.value!.lastDocument;
     try {
-      final result =
-          await repository.fetchAudioRecordings(topicId, 5, lastDocument);
+      final result = await repository.fetchAudioRecordings(
+          topicId, 5, lastDocument, sortBy);
       result.fold(
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
@@ -104,8 +106,12 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
     }
   }
 
-  Future<Either<Failure, AudioRecording>> createAudio(AudioRecording note,
-      String topicId, String userId, bool isTranscribe) async {
+  Future<Either<Failure, AudioRecording>> createAudio(
+      AudioRecording note,
+      String topicId,
+      String userId,
+      bool isTranscribe,
+      String dropdownValue) async {
     try {
       final createAudio = _ref.read(createAudioRecodingProvider);
       final result =
@@ -117,7 +123,8 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
         },
         (R) async {
           final syncedAudio = R.value1;
-          final tabDataNotifier = _ref.read(tabDataProvider(topicId).notifier);
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
           tabDataNotifier.updateAudioRecording(syncedAudio);
 
           final recentItemNotifier =
@@ -126,8 +133,9 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
 
           if (isTranscribe) {
             Note note = getNote(syncedAudio, R.value2);
-            final notesNotifier = _ref.read(notesProvider(topicId).notifier);
-            notesNotifier.createNote(note, topicId, userId);
+            final notesNotifier = _ref.read(
+                notesProvider(TabDataParams(topicId, dropdownValue)).notifier);
+            notesNotifier.createNote(note, topicId, userId, dropdownValue);
           }
 
           return Right(syncedAudio);
@@ -141,22 +149,25 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
 
   Note getNote(AudioRecording audio, String content) {
     return Note(
-        id: UniqueKey().toString(),
-        title: audio.title,
-        content: content,
-        contentJson: '[{"insert":"$content\\n"}]',
-        createdDate: DateTime.now(),
-        color: audio.color,
-        remoteChangeTimestamp: DateTime.now(),
-        tags: audio.tags,
-        updatedDate: DateTime.now(),
-        syncStatus: ConstantStrings.pending,
-        localChangeTimestamp: DateTime.now(),
-        parentId: audio.parentId);
+      id: UniqueKey().toString(),
+      title: audio.title,
+      content: content,
+      contentJson: '[{"insert":"$content\\n"}]',
+      createdDate: DateTime.now(),
+      color: audio.color,
+      remoteChangeTimestamp: DateTime.now(),
+      tags: audio.tags,
+      updatedDate: DateTime.now(),
+      syncStatus: ConstantStrings.pending,
+      localChangeTimestamp: DateTime.now(),
+      parentId: audio.parentId,
+      titleLowerCase: audio.titleLowerCase,
+      userId: audio.userId,
+    );
   }
 
-  Future<Either<Failure, AudioRecording>> updateAudio(
-      AudioRecording note, String topicId, String userId) async {
+  Future<Either<Failure, AudioRecording>> updateAudio(AudioRecording note,
+      String topicId, String userId, String dropdownValue) async {
     // final currentState = state;
     try {
       final updateAudio = _ref.read(updateAudioRecodingProvider);
@@ -169,7 +180,8 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
         },
         (updatedAudio) {
           // Notify TabDataNotifier to update state
-          final tabDataNotifier = _ref.read(tabDataProvider(topicId).notifier);
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
           tabDataNotifier.updateAudioRecording(updatedAudio);
 
           final recentItemNotifier =
@@ -204,13 +216,14 @@ class AudioNotifier extends StateNotifier<AsyncValue<AudioState>> {
   //   }
   // }
 
-  Future<void> deleteAudio(
-      String parentId, String audioId, String userId) async {
+  Future<void> deleteAudio(String parentId, String audioId, String userId,
+      String dropdownValue) async {
     try {
       final deleteAudio = _ref.read(deleteAudioRecodingProvider);
       await deleteAudio.call(parentId, audioId, userId);
 
-      final tabDataNotifier = _ref.read(tabDataProvider(parentId).notifier);
+      final tabDataNotifier = _ref.read(
+          tabDataProvider(TabDataParams(parentId, dropdownValue)).notifier);
       tabDataNotifier.deleteAudio(audioId);
 
       final recentItemNotifier = _ref.read(recentItemProvider(userId).notifier);

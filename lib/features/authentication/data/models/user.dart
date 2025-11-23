@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive/hive.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
@@ -23,6 +25,8 @@ class UserModel extends User {
   @HiveField(7)
   final List<Map<String, dynamic>>
       recentItems; // Updated to hold item ID and type
+  @HiveField(8)
+  final Color color;
 
   UserModel({
     required this.id,
@@ -33,6 +37,7 @@ class UserModel extends User {
     required this.createdTopics,
     required this.syncStatus,
     required this.recentItems, // Added recentItems to the constructor
+    required this.color,
   }) : super(
             id: id,
             username: username,
@@ -41,7 +46,8 @@ class UserModel extends User {
             updatedDate: updatedDate,
             createdTopics: createdTopics,
             syncStatus: syncStatus,
-            recentItems: recentItems);
+            recentItems: recentItems,
+            color: color);
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
@@ -55,6 +61,7 @@ class UserModel extends User {
       syncStatus: data['syncStatus'] ?? '',
       recentItems: List<Map<String, dynamic>>.from(
           data['recentItems'] ?? []), // Initialize recentItems
+      color: Color(data['color']),
     );
   }
 
@@ -68,6 +75,7 @@ class UserModel extends User {
       createdTopics: user.createdTopics,
       syncStatus: user.syncStatus,
       recentItems: user.recentItems, // Initialize recentItems if it's null
+      color: user.color,
     );
   }
 
@@ -80,6 +88,7 @@ class UserModel extends User {
       'createdTopics': createdTopics,
       'syncStatus': syncStatus,
       'recentItems': recentItems, // Add recentItems to the Firestore map
+      'color': color.value,
     };
   }
 
@@ -94,6 +103,7 @@ class UserModel extends User {
     List<String>? subTopics,
     String? syncStatus,
     List<Map<String, dynamic>>? recentItems, // Added recentItems to copyWith
+    Color? color,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -105,6 +115,21 @@ class UserModel extends User {
       syncStatus: syncStatus ?? this.syncStatus,
       recentItems:
           recentItems ?? this.recentItems, // Handle recentItems in copyWith
+      color: color ?? this.color,
+    );
+  }
+
+  User toDomain() {
+    return User(
+      id: id,
+      username: username,
+      email: email,
+      createdDate: createdDate,
+      updatedDate: updatedDate,
+      createdTopics: createdTopics,
+      syncStatus: syncStatus,
+      recentItems: recentItems,
+      color: color,
     );
   }
 }

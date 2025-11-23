@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/dialogs/dialogs.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
@@ -19,10 +20,8 @@ void showCustomDialog(
   Widget content,
   VoidCallback onConfirm, {
   GlobalKey<FormState>? formKey, // Make formKey optional
+  Color? initialColor, // Optional initial color
 }) {
-  // If no formKey is passed, create one
-  formKey ??= GlobalKey<FormState>();
-
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -30,7 +29,7 @@ void showCustomDialog(
         title: _getDialogTitle(mode, component),
         content: content,
         actions:
-            _getDialogActions(context, mode, component, onConfirm, formKey!),
+            _getDialogActions(context, mode, component, onConfirm, formKey),
       );
     },
   );
@@ -54,7 +53,7 @@ List<Widget> _getDialogActions(
   DialogMode mode,
   String component,
   VoidCallback onConfirm,
-  GlobalKey<FormState> formKey,
+  GlobalKey<FormState>? formKey,
 ) {
   switch (mode) {
     case DialogMode.view:
@@ -89,7 +88,8 @@ List<Widget> _getDialogActions(
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8))),
               onPressed: () {
-                if (formKey.currentState?.validate() ?? false) {
+                if (formKey == null ||
+                    formKey.currentState?.validate() == true) {
                   onConfirm();
                   Navigator.of(context).pop(); // Close dialog
                 }
@@ -150,4 +150,10 @@ String formatDateTime(DateTime date) {
 
   // Format the date
   return formatter.format(date);
+}
+
+Future<String> getAudioFilePath(String filePath) async {
+  final filename = filePath.split('/').last;
+  final directory = await getApplicationDocumentsDirectory();
+  return '${directory.path}/$filename';
 }

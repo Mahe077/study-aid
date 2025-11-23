@@ -4,15 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
-import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/presentation/home/pages/home.dart';
 import 'package:study_aid/features/authentication/presentation/pages/revcovery_email.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signup.dart';
@@ -79,8 +81,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
               ),
               const SizedBox(height: 20),
               BasicAppButton(
-                onPressed: () =>
-                    _signInClicked(context, AuthMethod.emailAndPassword),
+                onPressed: () {
+                  if (!_isLoading && _signInKey.currentState!.validate()) {
+                    _signInClicked(context, AuthMethod.emailAndPassword);
+                  }
+                },
                 title: "Log In",
               ),
               const SizedBox(height: 20),
@@ -130,11 +135,15 @@ class _SigninPageState extends ConsumerState<SigninPage> {
     result.fold(
       (failure) {
         Logger().e(failure.message);
-        showSnackBar(context, failure.message);
+        CustomToast(context: context).showFailure(description: failure.message);
       },
-      (user) {
+      (user) async {
         Logger().d(user.toString());
         if (user != null) {
+          ref.invalidate(userProvider);
+
+          await initUserPref();
+
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -145,6 +154,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
         }
       },
     );
+  }
+
+  Future<void> initUserPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('showGuide', false);
   }
 
   Widget _buildAlternativeText() {
@@ -206,9 +220,6 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       validator: (value) {
         return emailError = isValidEmail(value);
       },
-      onChanged: (_) {
-        _signInKey.currentState?.validate();
-      },
       decoration: InputDecoration(
         suffixIcon: const Icon(Icons.mail),
         hintText: 'Email',
@@ -222,10 +233,10 @@ class _SigninPageState extends ConsumerState<SigninPage> {
       controller: _passwordController,
       obscureText: !_passwordVisible,
       validator: (value) {
-        return passwordError = validatePassword(value);
-      },
-      onChanged: (_) {
-        _signInKey.currentState?.validate();
+        if (value == null || value.isEmpty) {
+          return passwordError = 'Password is required';
+        }
+        return null;
       },
       decoration: InputDecoration(
         suffixIcon: IconButton(

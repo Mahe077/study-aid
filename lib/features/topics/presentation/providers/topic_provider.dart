@@ -9,6 +9,7 @@ import 'package:study_aid/features/topics/data/repositories/topic_repository_imp
 import 'package:study_aid/features/topics/domain/repositories/topic_repository.dart';
 import 'package:study_aid/features/topics/domain/usecases/topic.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 // Data source providers
 final remoteDataSourceProvider =
@@ -41,18 +42,36 @@ final deleteTopicProvider =
 final fetchAllTopicsProvider =
     Provider((ref) => FetchAllTopics(ref.read(topicRepositoryProvider)));
 
+class TopicParams {
+  final String userId;
+  final String sortBy;
+
+  TopicParams(this.userId, this.sortBy);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TopicParams &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          sortBy == other.sortBy;
+
+  @override
+  int get hashCode => userId.hashCode ^ sortBy.hashCode;
+}
+
 final topicsProvider = StateNotifierProvider.autoDispose
-    .family<TopicsNotifier, AsyncValue<TopicsState>, String>((ref, userId) {
+    .family<TopicsNotifier, AsyncValue<TopicsState>, TopicParams>((ref, param) {
   final repository = ref.read(topicRepositoryProvider);
-  return TopicsNotifier(repository, userId, ref);
+  return TopicsNotifier(repository, param.userId, param.sortBy, ref);
 });
 
 final syncTopicsUseCaseProvider =
     Provider((ref) => SyncTopicsUseCase(ref.read(topicRepositoryProvider)));
 
 final topicChildProvider = StateNotifierProvider.autoDispose
-    .family<TopicChildNotifier, AsyncValue<TopicsState>, String?>(
-        (ref, parentTopicId) {
+    .family<TopicChildNotifier, AsyncValue<TopicsState>, TabDataParams>(
+        (ref, param) {
   final repository = ref.read(topicRepositoryProvider);
-  return TopicChildNotifier(repository, parentTopicId!, ref);
+  return TopicChildNotifier(repository, param.parentTopicId, ref, param.sortBy);
 });

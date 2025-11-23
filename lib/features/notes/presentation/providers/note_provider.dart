@@ -10,6 +10,7 @@ import 'package:study_aid/features/notes/domain/repository/note_repository.dart'
 import 'package:study_aid/features/notes/domain/usecases/note.dart';
 import 'package:study_aid/features/notes/presentation/notifiers/note_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 
 // Data source providers
 final remoteDataSourceProvider =
@@ -44,9 +45,9 @@ final deleteNoteProvider =
 //     Provider((ref) => FetchAllTopics(ref.read(noteRepositoryProvider)));
 
 final notesProvider = StateNotifierProvider.autoDispose
-    .family<NotesNotifier, AsyncValue<NotesState>, String>((ref, topicId) {
+    .family<NotesNotifier, AsyncValue<NotesState>, TabDataParams>((ref, param) {
   final repository = ref.read(noteRepositoryProvider);
-  return NotesNotifier(repository, topicId, ref);
+  return NotesNotifier(repository, param.parentTopicId, ref, param.sortBy);
 });
 
 final syncNotesUseCaseProvider =

@@ -33,6 +33,10 @@ class TopicModel extends Topic {
   final DateTime remoteChangeTimestamp;
   @HiveField(12)
   final String parentId;
+  @HiveField(13)
+  final String titleLowerCase;
+  @HiveField(14)
+  final String userId;
 
   TopicModel({
     required this.id,
@@ -48,20 +52,25 @@ class TopicModel extends Topic {
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
     required this.parentId,
+    required this.titleLowerCase,
+    required this.userId,
   }) : super(
-            id: id,
-            title: title,
-            description: description,
-            color: color,
-            createdDate: createdDate,
-            updatedDate: updatedDate,
-            subTopics: subTopics,
-            notes: notes,
-            audioRecordings: audioRecordings,
-            syncStatus: syncStatus,
-            localChangeTimestamp: localChangeTimestamp,
-            remoteChangeTimestamp: remoteChangeTimestamp,
-      parentId:parentId);
+          id: id,
+          title: title,
+          description: description,
+          color: color,
+          createdDate: createdDate,
+          updatedDate: updatedDate,
+          subTopics: subTopics,
+          notes: notes,
+          audioRecordings: audioRecordings,
+          syncStatus: syncStatus,
+          localChangeTimestamp: localChangeTimestamp,
+          remoteChangeTimestamp: remoteChangeTimestamp,
+          parentId: parentId,
+          titleLowerCase: titleLowerCase,
+          userId: userId,
+        );
 
   factory TopicModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -80,7 +89,9 @@ class TopicModel extends Topic {
           (data['localChangeTimestamp'] as Timestamp).toDate(),
       remoteChangeTimestamp:
           (data['remoteChangeTimestamp'] as Timestamp).toDate(),
-        parentId: data['parentId']
+      parentId: data['parentId'],
+      titleLowerCase: data['titleLowerCase'],
+      userId: data['userId'],
     );
   }
 
@@ -98,7 +109,9 @@ class TopicModel extends Topic {
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
-      'parentId': parentId
+      'parentId': parentId,
+      'titleLowerCase': titleLowerCase,
+      'userId': userId,
     };
   }
 
@@ -115,7 +128,9 @@ class TopicModel extends Topic {
     String? syncStatus,
     DateTime? localChangeTimestamp,
     DateTime? remoteChangeTimestamp,
-    String? parentId
+    String? parentId,
+    String? titleLowerCase,
+    String? userId,
   }) {
     return TopicModel(
       id: id ?? this.id,
@@ -131,7 +146,9 @@ class TopicModel extends Topic {
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
           remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId
+      parentId: parentId ?? this.parentId,
+      titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -149,7 +166,9 @@ class TopicModel extends Topic {
       audioRecordings: topic.audioRecordings,
       localChangeTimestamp: topic.localChangeTimestamp,
       remoteChangeTimestamp: topic.remoteChangeTimestamp,
-        parentId: topic.parentId
+      parentId: topic.parentId,
+      titleLowerCase: topic.titleLowerCase,
+      userId: topic.userId,
     );
   }
 
@@ -167,7 +186,9 @@ class TopicModel extends Topic {
       audioRecordings: audioRecordings,
       localChangeTimestamp: localChangeTimestamp,
       remoteChangeTimestamp: remoteChangeTimestamp,
-        parentId: parentId
+      parentId: parentId,
+      titleLowerCase: titleLowerCase,
+      userId: userId,
     );
   }
 }

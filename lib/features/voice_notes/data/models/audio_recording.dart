@@ -32,6 +32,10 @@ class AudioRecordingModel extends AudioRecording {
   final DateTime remoteChangeTimestamp;
   @HiveField(12)
   final String parentId;
+  @HiveField(13)
+  final String titleLowerCase;
+  @HiveField(14)
+  final String userId;
 
   AudioRecordingModel({
     required this.id,
@@ -46,6 +50,8 @@ class AudioRecordingModel extends AudioRecording {
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
     required this.parentId,
+    required this.titleLowerCase,
+    required this.userId,
   }) : super(
             id: id,
             title: title,
@@ -58,7 +64,9 @@ class AudioRecordingModel extends AudioRecording {
             syncStatus: syncStatus,
             localChangeTimestamp: localChangeTimestamp,
             remoteChangeTimestamp: remoteChangeTimestamp,
-            parentId: parentId);
+            parentId: parentId,
+            titleLowerCase: titleLowerCase,
+            userId: userId);
 
   factory AudioRecordingModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -76,7 +84,9 @@ class AudioRecordingModel extends AudioRecording {
           (data['localChangeTimestamp'] as Timestamp).toDate(),
       remoteChangeTimestamp:
           (data['remoteChangeTimestamp'] as Timestamp).toDate(),
-        parentId:data['parentId']
+      parentId: data['parentId'],
+      titleLowerCase: data['titleLowerCase'],
+      userId: data['userId'],
     );
   }
 
@@ -93,7 +103,9 @@ class AudioRecordingModel extends AudioRecording {
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
-      'parentId': parentId
+      'parentId': parentId,
+      'titleLowerCase': titleLowerCase,
+      'userId': userId,
     };
   }
 
@@ -110,7 +122,9 @@ class AudioRecordingModel extends AudioRecording {
     String? syncStatus,
     DateTime? localChangeTimestamp,
     DateTime? remoteChangeTimestamp,
-    String? parentId
+    String? parentId,
+    String? titleLowerCase,
+    String? userId,
   }) {
     return AudioRecordingModel(
       id: id ?? this.id,
@@ -125,7 +139,9 @@ class AudioRecordingModel extends AudioRecording {
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
           remoteChangeTimestamp ?? this.remoteChangeTimestamp,
-        parentId: parentId ?? this.parentId
+      parentId: parentId ?? this.parentId,
+      titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -142,22 +158,27 @@ class AudioRecordingModel extends AudioRecording {
       syncStatus: audio.syncStatus,
       localChangeTimestamp: audio.localChangeTimestamp,
       remoteChangeTimestamp: audio.remoteChangeTimestamp,
-        parentId: audio.parentId
+      parentId: audio.parentId,
+      titleLowerCase: audio.titleLowerCase,
+      userId: audio.userId,
     );
   }
   AudioRecording toDomain() {
     return AudioRecording(
-        id: id,
-        title: title,
-        color: color,
-        tags: tags,
-        createdDate: createdDate,
-        updatedDate: updatedDate,
-        url: url,
-        localpath: localpath,
-        syncStatus: syncStatus,
-        localChangeTimestamp: localChangeTimestamp,
-        remoteChangeTimestamp: remoteChangeTimestamp,
-        parentId:parentId);
+      id: id,
+      title: title,
+      color: color,
+      tags: tags,
+      createdDate: createdDate,
+      updatedDate: updatedDate,
+      url: url,
+      localpath: localpath,
+      syncStatus: syncStatus,
+      localChangeTimestamp: localChangeTimestamp,
+      remoteChangeTimestamp: remoteChangeTimestamp,
+      parentId: parentId,
+      titleLowerCase: titleLowerCase,
+      userId: userId,
+    );
   }
 }

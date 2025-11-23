@@ -3,11 +3,12 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/features/authentication/domain/entities/user.dart';
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
@@ -18,13 +19,17 @@ class FAB extends ConsumerStatefulWidget {
   final String? parentId;
   final String? topicTitle;
   final Color? topicColor;
+  final String dropdownValue;
+  final Color? tileColor;
 
   const FAB(
       {super.key,
       this.parentId,
       required this.userId,
       this.topicTitle,
-      this.topicColor});
+      this.topicColor,
+      required this.dropdownValue,
+      required this.tileColor});
 
   @override
   ConsumerState<FAB> createState() => _FABState();
@@ -35,7 +40,26 @@ class _FABState extends ConsumerState<FAB> {
   final GlobalKey<ExpandableFabState> _fabKey = GlobalKey<ExpandableFabState>();
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  Color selectedColor = AppColors.grey;
+  Color? selectedColor;
+  Color? appearanceColor;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final userAsyncValue = ref.watch(userProvider);
+
+    // Fetch the color only if it's not already set
+    if (userAsyncValue is AsyncData && appearanceColor == null) {
+      appearanceColor = userAsyncValue.value?.color;
+      selectedColor = appearanceColor;
+    }
+  }
 
   @override
   void dispose() {
@@ -44,7 +68,9 @@ class _FABState extends ConsumerState<FAB> {
     super.dispose();
   }
 
-  Future<void> _showColorPickerDialog() async {
+  Future<Color?> _showColorPickerDialog() async {
+    // Save the currently selected color in a local variable
+    Color? tempSelectedColor = selectedColor;
     return showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -62,7 +88,7 @@ class _FABState extends ConsumerState<FAB> {
               pickerColor: selectedColor,
               onColorChanged: (Color color) {
                 setState(() {
-                  selectedColor = color;
+                  tempSelectedColor = color;
                 });
               },
             ),
@@ -71,7 +97,7 @@ class _FABState extends ConsumerState<FAB> {
             TextButton(
               child: const Text('Done'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(tempSelectedColor);
               },
             ),
           ],
@@ -91,49 +117,57 @@ class _FABState extends ConsumerState<FAB> {
     // Get the TopicsNotifier instance using ref
     AsyncValue<TopicsState> currentState;
     if (widget.parentId == null) {
-      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
+      final topicsNotifier = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue))
+              .notifier);
 
       // Call the createTopic method from the TopicsNotifier
       await topicsNotifier.createTopic(
         title,
         description,
-        selectedColor,
+        selectedColor!,
         widget.parentId,
         widget.userId,
+        widget.dropdownValue,
       );
 
       if (!mounted) return;
 
       // Check the state after attempting to create the topic
-      currentState = ref.read(topicsProvider(widget.userId));
+      currentState = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue)));
     } else {
-      final topicsNotifier = ref.read(topicsProvider(widget.userId).notifier);
+      final topicsNotifier = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue))
+              .notifier);
 
       // Call the createTopic method from the TopicsNotifier
       await topicsNotifier.createTopic(
         title,
         description,
-        selectedColor,
+        selectedColor!,
         widget.parentId,
         widget.userId,
+        widget.dropdownValue,
       );
 
       if (!mounted) return;
 
-      currentState = ref.read(topicsProvider(widget.userId));
+      currentState = ref.read(
+          topicsProvider(TopicParams(widget.userId, widget.dropdownValue)));
     }
 
     if (currentState.hasError) {
       toast.showFailure(
           description: 'An error occurred while creating the topic.');
-      Logger().d(currentState.error.toString());
+      // Logger().d(currentState.error.toString());
     } else if (currentState.isLoading) {
       const Center(child: CircularProgressIndicator());
     } else {
       setState(() {
         _topicController.clear();
         _descriptionController.clear();
-        selectedColor = AppColors.grey;
+        selectedColor = appearanceColor ?? AppColors.defaultColor;
       });
 
       toast.showSuccess(
@@ -144,6 +178,19 @@ class _FABState extends ConsumerState<FAB> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for changes to the userProvider
+    ref.listen<AsyncValue<User?>>(userProvider, (previous, next) {
+      if (next is AsyncData) {
+        // If the color has changed, update the selected color
+        if (next.value?.color != appearanceColor) {
+          setState(() {
+            appearanceColor = next.value?.color;
+            selectedColor = appearanceColor;
+          });
+        }
+      }
+    });
+
     return ExpandableFab(
       key: _fabKey,
       type: ExpandableFabType.up,
@@ -171,90 +218,11 @@ class _FABState extends ConsumerState<FAB> {
         backgroundColor: AppColors.primary,
       ),
       children: [
-        if (widget.parentId != null) ...[
-          FloatingActionButton.extended(
-            label: const Row(
-              children: [
-                Text(
-                  'Record an Audio',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary),
-                ),
-                SizedBox(width: 8),
-                FaIcon(FontAwesomeIcons.microphone,
-                    size: 20, color: AppColors.primary),
-              ],
-            ),
-            heroTag: null,
-            onPressed: () {
-              widget.parentId != null
-                  ? {
-                      _fabKey.currentState?.toggle(),
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (BuildContext context) => VoicePage(
-                              topicId: widget.parentId ?? '',
-                              topicTitle: widget.topicTitle,
-                              entity: null,
-                              noteColor: widget.topicColor,
-                              userId: widget.userId,
-                            ),
-                          ))
-                    }
-                  : {_fabKey.currentState?.toggle()};
-            },
-            backgroundColor: widget.parentId != null
-                ? AppColors.grey
-                : AppColors.black.withOpacity(0.30),
-          ),
-          FloatingActionButton.extended(
-            label: const Row(
-              children: [
-                Text(
-                  'Create a New Note',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary),
-                ),
-                SizedBox(width: 8),
-                FaIcon(FontAwesomeIcons.solidNoteSticky,
-                    size: 20, color: AppColors.primary),
-              ],
-            ),
-            heroTag: null,
-            onPressed: () {
-              widget.parentId != null
-                  ? {
-                      _fabKey.currentState?.toggle(),
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (BuildContext context) => NotePage(
-                              topicId: widget.parentId ?? '',
-                              topicTitle: widget.topicTitle,
-                              entity: null,
-                              isNewNote: true,
-                              noteColor: widget.topicColor,
-                              userId: widget.userId,
-                            ),
-                          ))
-                    }
-                  : {_fabKey.currentState?.toggle()};
-            },
-            backgroundColor: widget.parentId != null
-                ? AppColors.grey
-                : AppColors.black.withOpacity(0.30),
-          ),
-        ],
         FloatingActionButton.extended(
-          label: const Row(
+          label: Row(
             children: [
               Text(
-                'Add a Topic',
+                'Add a ${widget.parentId != null ? 'Sub Topic' : 'Topic'}',
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -292,13 +260,13 @@ class _FABState extends ConsumerState<FAB> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        hintText: "Enter description here",
-                      ).applyDefaults(Theme.of(context).inputDecorationTheme),
-                    ),
+                    // const SizedBox(height: 10),
+                    // TextFormField(
+                    //   controller: _descriptionController,
+                    //   decoration: const InputDecoration(
+                    //     hintText: "Enter description here",
+                    //   ).applyDefaults(Theme.of(context).inputDecorationTheme),
+                    // ),
                     const SizedBox(height: 15),
                     Row(
                       children: [
@@ -311,8 +279,18 @@ class _FABState extends ConsumerState<FAB> {
                         ),
                         const SizedBox(height: 5),
                         IconButton(
-                          onPressed: _showColorPickerDialog,
-                          icon: const Icon(Icons.color_lens),
+                          onPressed: () async {
+                            final color = await _showColorPickerDialog();
+                            if (color != null) {
+                              setState(() {
+                                selectedColor = color;
+                              });
+                            }
+                          },
+                          icon: Icon(
+                            Icons.color_lens,
+                            color: AppColors.black,
+                          ),
                         ),
                       ],
                     ),
@@ -325,10 +303,133 @@ class _FABState extends ConsumerState<FAB> {
                 }
               },
               formKey: _formKey,
+              initialColor: selectedColor,
             );
           },
           backgroundColor: AppColors.grey,
         ),
+        if (widget.parentId != null) ...[
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Add an Image',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.solidImage,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => NotePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              isNewNote: true,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
+                              isImage: true,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
+          ),
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Record an Audio',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.microphone,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => VoicePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
+          ),
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Create a Note',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.solidNoteSticky,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () {
+              widget.parentId != null
+                  ? {
+                      _fabKey.currentState?.toggle(),
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (BuildContext context) => NotePage(
+                              topicId: widget.parentId ?? '',
+                              topicTitle: widget.topicTitle,
+                              entity: null,
+                              isNewNote: true,
+                              noteColor: widget.topicColor,
+                              userId: widget.userId,
+                              dropdownValue: widget.dropdownValue,
+                            ),
+                          ))
+                    }
+                  : {_fabKey.currentState?.toggle()};
+            },
+            backgroundColor: widget.parentId != null
+                ? AppColors.grey
+                : AppColors.black.withOpacity(0.30),
+          ),
+        ],
       ],
     );
   }

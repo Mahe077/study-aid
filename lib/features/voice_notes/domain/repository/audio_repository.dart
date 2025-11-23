@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dartz/dartz.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
@@ -13,13 +11,14 @@ abstract class AudioRecordingRepository {
   Future<void> deleteAudioRecording(
       String parentId, String audioId, String userId);
   Future<Either<Failure, PaginatedObj<AudioRecording>>> fetchAudioRecordings(
-      String topicId, int limit, int startAfter);
+      String topicId, int limit, int startAfter, String sortBy);
   Future<Either<Failure, void>> syncAudioRecordings();
   Future<Either<Failure, void>> updateAudioRecordingOfParent(
       String parentId, String audioId);
-  Future<File?> downloadFile(String url, String filePath);
+  // Future<File?> downloadFile(String url, String filePath);
   Future<Either<Failure, AudioRecording?>> getAudio(String audioId);
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId);
-  Future<Either<Failure, List<AudioRecording>>> searchFromTags(String query);
+  Future<Either<Failure, List<AudioRecording>>> search(
+      String query, String userId);
 }

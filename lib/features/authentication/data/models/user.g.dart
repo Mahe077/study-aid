@@ -27,13 +27,14 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       recentItems: (fields[7] as List)
           .map((dynamic e) => (e as Map).cast<String, dynamic>())
           .toList(),
+      color: fields[8] as Color,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -49,7 +50,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(6)
       ..write(obj.syncStatus)
       ..writeByte(7)
-      ..write(obj.recentItems);
+      ..write(obj.recentItems)
+      ..writeByte(8)
+      ..write(obj.color);
   }
 
   @override

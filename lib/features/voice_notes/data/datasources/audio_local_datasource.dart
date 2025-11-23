@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
@@ -12,7 +13,7 @@ abstract class LocalDataSource {
   Future<void> deleteAudioRecording(String audioId);
   Future<Either<Failure, PaginatedObj<AudioRecordingModel>>>
       fetchPeginatedAudioRecordings(
-          int limit, List<dynamic> audioRefs, int startAfter);
+          int limit, List<dynamic> audioRefs, int startAfter, String sortBy);
   Future<AudioRecordingModel?> getCachedAudioRecording(String audioId);
   Future<List<AudioRecordingModel>> fetchAllAudioRecordings();
   bool audioExists(String audioId);
@@ -26,8 +27,8 @@ class LocalDataSourceImpl extends LocalDataSource {
 
   @override
   Future<Either<Failure, PaginatedObj<AudioRecordingModel>>>
-      fetchPeginatedAudioRecordings(
-          int limit, List<dynamic> audioRefs, int startAfter) async {
+      fetchPeginatedAudioRecordings(int limit, List<dynamic> audioRefs,
+          int startAfter, String sortBy) async {
     try {
       int startIndex = startAfter;
       int endIndex = startIndex + limit;
@@ -46,7 +47,23 @@ class LocalDataSourceImpl extends LocalDataSource {
           .cast<AudioRecordingModel>()
           .toList();
 
-      nonNullAudios.sort((a, b) => b.updatedDate.compareTo(a.updatedDate));
+      final directory = await getApplicationDocumentsDirectory();
+      // Update localPath for each audio
+      nonNullAudios = nonNullAudios.map((audio) {
+        final filename = audio.localpath.split('/').last;
+        return audio.copyWith(localpath: '${directory.path}/$filename');
+      }).toList();
+
+      if (sortBy == 'updatedDate') {
+        nonNullAudios.sort(
+            (a, b) => b.updatedDate.compareTo(a.updatedDate)); // Descending
+      } else if (sortBy == 'createdDate') {
+        nonNullAudios.sort(
+            (a, b) => b.createdDate.compareTo(a.createdDate)); // Descending
+      } else if (sortBy == 'title') {
+        nonNullAudios.sort((a, b) => a.titleLowerCase
+            .compareTo(b.titleLowerCase)); // Ascending alphabetical order
+      }
 
       final hasmore = audios.length > endIndex ? true : false;
 
@@ -125,7 +142,7 @@ class LocalDataSourceImpl extends LocalDataSource {
         .where((audio) =>
             audio.tags
                 .any((tag) => tag.toLowerCase().contains(lowerCaseQuery)) ||
-            (audio.title.toLowerCase().contains(lowerCaseQuery)))
+            (audio.titleLowerCase.contains(lowerCaseQuery)))
         .toList();
 
     return audios;

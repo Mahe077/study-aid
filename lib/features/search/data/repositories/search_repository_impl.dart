@@ -11,12 +11,12 @@ class SearchRepositoryImpl implements SearchRepository {
       {required this.noteRepository, required this.audioRecordingRepository});
 
   @override
-  Future<List<dynamic>> search(String query) async {
+  Future<List<dynamic>> search(String query, String userId) async {
     List<dynamic> combinedResults = [];
 
     try {
       // Fetch notes from the note repository using tags
-      final noteResult = await noteRepository.searchFromTags(query);
+      final noteResult = await noteRepository.search(query, userId);
       noteResult.fold(
         (failure) {
           Logger().e('Error searching notes: $failure');
@@ -28,7 +28,7 @@ class SearchRepositoryImpl implements SearchRepository {
       );
 
       // Fetch audio recordings from the audio repository using tags
-      final audioResult = await audioRecordingRepository.searchFromTags(query);
+      final audioResult = await audioRecordingRepository.search(query, userId);
       audioResult.fold(
         (failure) {
           Logger().e('Error searching audio: $failure');

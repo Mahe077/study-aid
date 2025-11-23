@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
+import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
-import 'package:study_aid/core/error/failures.dart';
-import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
@@ -98,18 +97,12 @@ class _VerificationPageState extends ConsumerState<VerificationPage> {
                 result.fold(
                   (failure) {
                     Logger().e(failure.message);
-                    showSnackBar(
-                      context,
-                      failure is ServerFailure
-                          ? failure.message
-                          : 'An unknown error occurred',
-                    );
+                    CustomToast(context: context)
+                        .showFailure(description: failure.message);
                   },
                   (user) {
-                    showSnackBar(
-                      context,
-                      'Email send',
-                    );
+                    CustomToast(context: context).showSuccess(
+                        description: 'Password reset link sent to your email.');
                   },
                 );
               },
