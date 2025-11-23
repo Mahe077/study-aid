@@ -86,8 +86,7 @@ class _GetStartedPageState extends State<GetStartedPage> {
                                       : AppColors.grey,
                                   shape: BoxShape.circle,
                                 ),
-                              );
-                            }),
+                            ],
                           ),
                           // Right-align the Next button
                           if (index != (images.length - 1))
