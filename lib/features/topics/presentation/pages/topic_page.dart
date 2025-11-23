@@ -60,7 +60,6 @@ class _TopicPageState extends ConsumerState<TopicPage>
   bool isCurrentLanguageInstalled = false;
 
   String? _newVoiceText;
-  int? _inputLength;
 
   TtsState ttsState = TtsState.stopped;
 

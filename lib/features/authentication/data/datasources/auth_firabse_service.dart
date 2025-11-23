@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -311,7 +309,9 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   Future<UserModel?> signInWithFacebook() async {
     try {
       // Trigger the Facebook login flow
-      final LoginResult facebookUser = await _facebookAuth.login();
+      final LoginResult facebookUser = await _facebookAuth.login(
+        permissions: ['email', 'public_profile'],
+      );
 
       if (facebookUser.status != LoginStatus.success ||
           facebookUser.accessToken == null) {
@@ -375,8 +375,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
   @override
   Future<UserModel?> signInWithApple() async {
-     try {
-
+    try {
       final appleProvider = AppleAuthProvider();
 
       // Sign in to Firebase with the Google credential
@@ -493,23 +492,22 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   }
 
   @override
-Future<Either<Failure, void>> updateColor(UserModel user) async {
-  final userCredential = _auth.currentUser;
+  Future<Either<Failure, void>> updateColor(UserModel user) async {
+    final userCredential = _auth.currentUser;
 
-  // Ensure the user is signed in
-  if (userCredential != null) {
-    try {
-      // Update user's color if already exists
-      await updateUser(user.copyWith(updatedDate: DateTime.now()));
+    // Ensure the user is signed in
+    if (userCredential != null) {
+      try {
+        // Update user's color if already exists
+        await updateUser(user.copyWith(updatedDate: DateTime.now()));
 
-      return const Right(null);
-    } catch (e) {
-      Logger().e('Error updating user color', error: e);
-      return Left(Failure('Failed to update user color.'));
+        return const Right(null);
+      } catch (e) {
+        Logger().e('Error updating user color', error: e);
+        return Left(Failure('Failed to update user color.'));
+      }
     }
+
+    return Left(Failure('No user is currently signed in.'));
   }
-
-  return Left(Failure('No user is currently signed in.'));
-}
-
 }

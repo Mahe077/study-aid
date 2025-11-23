@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';

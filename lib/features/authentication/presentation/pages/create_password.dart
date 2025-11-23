@@ -6,7 +6,6 @@ import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
-import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';

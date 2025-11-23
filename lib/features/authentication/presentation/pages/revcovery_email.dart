@@ -7,8 +7,6 @@ import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
-import 'package:study_aid/core/error/failures.dart';
-import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:study_aid/features/authentication/presentation/pages/verfication.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
@@ -97,7 +95,7 @@ class _RevcoveryEmailPageState extends ConsumerState<RevcoveryEmailPage> {
                       },
                     );
                   }
-                }, //TODO:implement correctly adding logic onPrecessd
+                },
                 title: "Send Verification Code",
               )
             ],

@@ -48,8 +48,6 @@ class LocalDataSourceImpl implements LocalDataSource {
       int startIndex = startAfter;
       int endIndex = startIndex + limit;
 
-      printTopicBoxContents(); //TODO:remove the prints
-
       List<Future<TopicModel?>> futureTopics = topicRefs.map((topicId) {
         return getCachedTopic(topicId);
       }).toList();
@@ -85,7 +83,6 @@ class LocalDataSourceImpl implements LocalDataSource {
 
   @override
   Future<TopicModel?> getCachedTopic(String topicId) async {
-    printTopicBoxContents(); //TODO:remove the prints
     final topic = _topicBox.get(topicId);
     if (topic != null) {
       return topic;
@@ -99,7 +96,7 @@ class LocalDataSourceImpl implements LocalDataSource {
     return _topicBox.containsKey(topicId);
   }
 
-  //TODO:remove the prints
+  //Testing: remove the prints
   void printTopicBoxContents() {
     // Assuming _topicBox is your Hive box
     var allKeys = _topicBox.keys;
