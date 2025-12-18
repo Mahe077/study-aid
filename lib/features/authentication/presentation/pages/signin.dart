@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/helpers/enums.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
@@ -134,11 +134,11 @@ class _SigninPageState extends ConsumerState<SigninPage> {
 
     result.fold(
       (failure) {
-        Logger().e(failure.message);
+        AppLogger.e(failure.message);
         CustomToast(context: context).showFailure(description: failure.message);
       },
       (user) async {
-        Logger().d(user.toString());
+        AppLogger.d(user.toString());
         if (user != null) {
           ref.invalidate(userProvider);
 

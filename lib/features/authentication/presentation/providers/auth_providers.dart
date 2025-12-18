@@ -5,6 +5,7 @@ import 'package:study_aid/features/authentication/data/datasources/auth_local_st
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/data/repositories/auth_repository_impl.dart';
 import 'package:study_aid/features/authentication/domain/repositories/auth.dart';
+import 'package:study_aid/features/authentication/domain/usecases/delete_account.dart';
 import 'package:study_aid/features/authentication/domain/usecases/reset_password.dart';
 import 'package:study_aid/features/authentication/domain/usecases/signin.dart';
 import 'package:study_aid/features/authentication/domain/usecases/signout.dart';
@@ -50,3 +51,6 @@ final resetPasswordProvider =
 
 final sendPasswordResetEmailProvider =
     Provider((ref) => SendPasswordResetEmail(ref.read(authRepositoryProvider)));
+
+final deleteAccountProvider =
+    Provider((ref) => DeleteAccountUseCase(ref.read(authRepositoryProvider)));

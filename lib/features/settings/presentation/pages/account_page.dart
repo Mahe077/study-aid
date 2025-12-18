@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
+import 'package:study_aid/common/widgets/dialogs/account_deletion_dialog.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
+import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart'
+    as auth_notifier;
+import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
+import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
+import 'package:study_aid/features/notes/data/models/note.dart';
 import 'package:study_aid/features/settings/presentation/providers/account_provider.dart';
+import 'package:study_aid/features/topics/data/models/topic.dart';
+import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 
 class AccountPage extends ConsumerStatefulWidget {
   const AccountPage({super.key});
@@ -57,6 +68,131 @@ class _AccountPageState extends ConsumerState<AccountPage> {
     }
   }
 
+  void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AccountDeletionDialog(
+          requiresPassword: !_isSocialLogin,
+          onConfirm: (String? password) async {
+            Navigator.of(context).pop(); // Close dialog
+            await _deleteAccount(context, ref, password);
+          },
+          onCancel: () {
+            Navigator.of(context).pop(); // Close dialog
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteAccount(
+      BuildContext context, WidgetRef ref, String? password) async {
+    // Capture navigator and scaffold messenger to use even if context is unmounted
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      // First, reauthenticate the user
+      final remoteDataSource = ref.read(remoteDataSourceProvider);
+      await remoteDataSource.reauthenticate(password);
+
+      // Then delete the account
+      final userNotifier = ref.read(auth_notifier.userProvider.notifier);
+      await userNotifier.deleteAccount();
+
+      // Check the state after deletion to see if it was successful
+      final state = ref.read(auth_notifier.userProvider);
+
+      // Check if there was an error
+      if (state.hasError) {
+        // Close loading dialog
+        navigator.pop();
+
+        // Show error message
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              state.error.toString(),
+              style: const TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // If successful, clear user provider
+      ref.invalidate(userProvider);
+
+      // Clear other Hive boxes (use existing opened boxes)
+      try {
+        if (Hive.isBoxOpen('topicBox')) {
+          final topicBox = Hive.box<TopicModel>('topicBox');
+          await topicBox.clear();
+        }
+      } catch (e) {
+        AppLogger.e('Error clearing topicBox', error: e);
+      }
+
+      try {
+        if (Hive.isBoxOpen('noteBox')) {
+          final noteBox = Hive.box<NoteModel>('noteBox');
+          await noteBox.clear();
+        }
+      } catch (e) {
+        AppLogger.e('Error clearing noteBox', error: e);
+      }
+
+      try {
+        if (Hive.isBoxOpen('audioBox')) {
+          final audioBox = Hive.box<AudioRecordingModel>('audioBox');
+          await audioBox.clear();
+        }
+      } catch (e) {
+        AppLogger.e('Error clearing audioBox', error: e);
+      }
+
+      // Clear shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Close loading dialog
+      navigator.pop();
+
+      // Navigate to sign-in page and remove all previous routes
+      navigator.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const SigninPage()),
+        (route) => false, // Remove all previous routes
+      );
+    } catch (e) {
+      // Close loading dialog
+      navigator.pop();
+
+      // Show error message
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceAll('Exception: ', ''),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isSaving = ref.watch(accountNotifierProvider);
@@ -79,7 +215,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
                 data: (user) => _buildAccountForm(context, user, isSaving),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) {
-                  Logger().e('Error loading user info',
+                  AppLogger.e('Error loading user info',
                       error: error, stackTrace: stack);
                   return const Center(child: Text("Something went wrong!"));
                 },
@@ -147,21 +283,72 @@ class _AccountPageState extends ConsumerState<AccountPage> {
             onPressed: () {
               if (isSaving.isLoading) {
                 // Log or handle the case where saving is already in progress
-                Logger().d("Save in progress, button disabled.");
+                AppLogger.d("Save in progress, button disabled.");
                 return;
               }
 
               // Validate the form and call _saveChanges if valid
               if (_accountSettingsKey.currentState?.validate() ?? false) {
-                Logger()
+                AppLogger
                     .d("Form validated successfully, calling _saveChanges...");
                 _saveChanges(ref, user);
               } else {
-                Logger().d("Form validation failed.");
+                AppLogger.d("Form validation failed.");
               }
             },
             title: isSaving.isLoading ? "Saving..." : "Save Changes",
           ),
+          const SizedBox(height: 40),
+          // Danger zone separator
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: const Text(
+              'Danger Zone',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ),
+          const SizedBox(height: 15),
+          ElevatedButton(
+            onPressed: () => _showDeleteAccountDialog(context, ref),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 16,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.delete_forever, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  'Delete Account',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );
@@ -265,7 +452,7 @@ class _AccountPageState extends ConsumerState<AccountPage> {
       // Refresh user state
       ref.invalidate(userProvider);
     } catch (error, stack) {
-      Logger().e('Error saving changes', error: error, stackTrace: stack);
+      AppLogger.e('Error saving changes', error: error, stackTrace: stack);
       toast.showFailure(description: 'Failed to update account settings');
     }
   }
