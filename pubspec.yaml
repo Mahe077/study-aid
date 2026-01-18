@@ -1,7 +1,7 @@
 name: study_aid
 description: "Study Aid."
-publish_to: 'none' 
-version: 1.0.0+1
+publish_to: 'none'
+version: 1.0.1+2
 environment:
   sdk: '>=3.5.0-277.0.dev <4.0.0'
 
@@ -58,10 +58,10 @@ dependencies:
   shared_preferences: ^2.3.4
   flutter_tts: ^4.2.0
   http_parser: ^4.0.2
-  
+
 dev_dependencies:
   flutter_test:
-    sdk: flutter  
+    sdk: flutter
   flutter_lints: ^5.0.0
   riverpod_generator: ^2.4.2
   custom_lint: ^0.6.4
@@ -87,7 +87,6 @@ flutter:
           weight: 400
         - asset: assets/fonts/Ubuntu-Italic.ttf
           weight: 300
-
 
 flutter_launcher_icons:
   android: "launcher_icon"
