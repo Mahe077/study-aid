@@ -386,6 +386,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
       // Retrieve the user's data from Firestore
       UserModel? user = await getUserById(userCredential.user!.uid);
+
       if (user == null) {
         // Create a new user in Firestore if not already present
         user = UserModel(
