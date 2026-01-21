@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
 import 'package:study_aid/features/authentication/data/datasources/auth_firabse_service.dart';
@@ -164,7 +164,7 @@ class UserRepositoryImpl implements UserRepository {
         await localDataSource.updateUser(newUser);
       }
     } on Exception catch (e) {
-      Logger().e("Error updating recent items: $e");
+      AppLogger.e("Error updating recent items: $e");
       // Handle any other specific errors if needed
     }
   }

@@ -131,4 +131,20 @@ class UserNotifier extends StateNotifier<AsyncValue<User?>> {
       state = AsyncValue.error(e, stackTrace);
     }
   }
+
+  Future<void> deleteAccount() async {
+    state = const AsyncValue.loading();
+    try {
+      final deleteAccount = _ref.read(deleteAccountProvider);
+      final result = await deleteAccount.call();
+
+      state = result.fold(
+        (failure) => AsyncValue.error(failure.message, StackTrace.current),
+        (_) => const AsyncValue.data(null), // Reset state after deletion
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
 }
+

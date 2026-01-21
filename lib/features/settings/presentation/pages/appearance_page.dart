@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
@@ -57,7 +58,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) {
-                  Logger().e('Error loading user info',
+                  AppLogger.e('Error loading user info',
                       error: error, stackTrace: stack);
                   return const Center(
                     child: Text("Something went wrong! Please try again."),
@@ -101,13 +102,13 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
       onPressed: () {
         if (isSaving.isLoading) {
           // Log or handle the case where saving is already in progress
-          Logger().d("Save in progress, button disabled.");
+          AppLogger.d("Save in progress, button disabled.");
           return;
         }
 
         // Check if the selected color differs from the current user color
       if (user == null || selectedColor == user.color) {
-        Logger().d("No changes detected, save not triggered.");
+        AppLogger.d("No changes detected, save not triggered.");
         return;
       }
 
@@ -180,7 +181,7 @@ class _AppearancePageState extends ConsumerState<AppearancePage> {
         });
       }
     } catch (error, stack) {
-      Logger().e('Error saving changes', error: error, stackTrace: stack);
+      AppLogger.e('Error saving changes', error: error, stackTrace: stack);
       toast.showFailure(description: 'Failed to update appearance settings');
     }
   }

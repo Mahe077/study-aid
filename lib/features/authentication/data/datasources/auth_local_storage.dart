@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import 'package:logger/logger.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 
@@ -20,10 +20,10 @@ class LocalDataSourceImpl implements LocalDataSource {
     try {
       await _userBox.put(user.id, user);
       final cachedUser = _userBox.get(user.id);
-      Logger().d('Cached users in Hive box: $cachedUser');
+      AppLogger.d('Cached users in Hive box: $cachedUser');
     } catch (e) {
       // Handle or log error
-      Logger().e('Error caching user: $e');
+      AppLogger.e('Error caching user: $e');
     }
   }
 
@@ -33,7 +33,7 @@ class LocalDataSourceImpl implements LocalDataSource {
       return _userBox.get(id);
     } catch (e) {
       // Handle or log error
-      Logger().e('Error getting cached user: $e');
+      AppLogger.e('Error getting cached user: $e');
       return null;
     }
   }
@@ -44,7 +44,7 @@ class LocalDataSourceImpl implements LocalDataSource {
       await _userBox.clear();
     } catch (e) {
       // Handle or log error
-      Logger().d('Error clearing user box: $e');
+      AppLogger.d('Error clearing user box: $e');
     }
   }
 
@@ -54,7 +54,7 @@ class LocalDataSourceImpl implements LocalDataSource {
       await _userBox.put(user.id, UserModel.fromEntity(user));
     } catch (e) {
       // Handle or log error
-      Logger().e('Error updating user: $e');
+      AppLogger.e('Error updating user: $e');
     }
   }
 }
