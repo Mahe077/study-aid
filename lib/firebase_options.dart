@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -30,10 +27,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -60,7 +54,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '544057525889',
     projectId: 'study-aid-e2fc5',
     storageBucket: 'study-aid-e2fc5.appspot.com',
-    androidClientId: '544057525889-ero5ibu14svjmt4dhmf2hfj8kkn7c9gn.apps.googleusercontent.com',
+    androidClientId: '544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com',
     iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
   );
@@ -71,9 +65,29 @@ class DefaultFirebaseOptions {
     messagingSenderId: '544057525889',
     projectId: 'study-aid-e2fc5',
     storageBucket: 'study-aid-e2fc5.appspot.com',
-    androidClientId: '544057525889-ero5ibu14svjmt4dhmf2hfj8kkn7c9gn.apps.googleusercontent.com',
+    androidClientId: '544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com',
     iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: "AIzaSyDp9nZj8ZCPs3xgoc-7VzdcZ83wKh4aa0A",
+    authDomain: "study-aid-e3671.firebaseapp.com",
+    projectId: "study-aid-e3671",
+    storageBucket: "study-aid-e3671.firebasestorage.app",
+    messagingSenderId: "494696942035",
+    appId: "1:494696942035:web:82a6a45e0f4fc33efbc726",
+    measurementId: "G-PQR70J890E"
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyBHD-kUnZvGmwiLDu7UafNcIIrzxPbd5YY',
+    appId: '1:544057525889:web:25a2a717ce7d9ad5d72f80',
+    messagingSenderId: '544057525889',
+    projectId: 'study-aid-e2fc5',
+    authDomain: 'study-aid-e2fc5.firebaseapp.com',
+    storageBucket: 'study-aid-e2fc5.appspot.com',
+    measurementId: 'G-6ECV4RGWEK',
   );
 
 }

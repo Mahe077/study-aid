@@ -22,6 +22,7 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
+import 'package:study_aid/features/files/presentation/widgets/files_list_view.dart';
 
 class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
@@ -88,7 +89,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _audioPlayer = AudioPlayer();
     initTts();
   }
@@ -375,7 +376,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     final searchState = ref.watch(searchNotifireProvider);
 
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: const BasicAppbar(showMenu: true),
         floatingActionButtonLocation: ExpandableFab.location,
@@ -480,7 +481,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
         final List<dynamic> items = [
           ...state.topics,
           ...state.notes,
-          ...state.audioRecordings
+          ...state.audioRecordings,
+          ...state.files,
         ];
 
         if (items.isEmpty) return Container();
@@ -514,7 +516,9 @@ class _TopicPageState extends ConsumerState<TopicPage>
                               ? TopicType.topic
                               : item is Note
                                   ? TopicType.note
-                                  : TopicType.audio,
+                                  : item is AudioRecording
+                                      ? TopicType.audio
+                                      : TopicType.file,
                           userId: widget.userId,
                           parentTopicId: widget.entity.id,
                           dropdownValue: dropdownvalue,
@@ -546,6 +550,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
         Tab(text: "Topic"),
         Tab(text: "Notes"),
         Tab(child: Text("Audio Clips")),
+        Tab(text: "Files"),
       ],
       isScrollable: true,
       unselectedLabelColor: AppColors.darkGrey,
@@ -576,11 +581,17 @@ class _TopicPageState extends ConsumerState<TopicPage>
             controller: _tabController,
             children: [
               _contentList(
-                  [...state.topics, ...state.notes, ...state.audioRecordings],
+                  [
+                    ...state.topics,
+                    ...state.notes,
+                    ...state.audioRecordings,
+                    ...state.files
+                  ],
                   TopicType.all,
                   state.hasMoreTopics ||
                       state.hasMoreNotes ||
-                      state.hasMoreAudio,
+                      state.hasMoreAudio ||
+                      state.hasMoreFiles,
                   dropdownvalue),
               _contentList(state.topics, TopicType.topic, state.hasMoreTopics,
                   dropdownvalue),
@@ -588,6 +599,13 @@ class _TopicPageState extends ConsumerState<TopicPage>
                   dropdownvalue),
               _contentList(state.audioRecordings, TopicType.audio,
                   state.hasMoreAudio, dropdownvalue),
+              FilesListView(
+                topicId: widget.entity.id,
+                userId: widget.userId,
+                sortBy: dropdownvalue,
+                scrollController: ScrollController(),
+                tileColor: widget.tileColor,
+              ),
             ],
           );
         },
@@ -905,6 +923,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
           case TopicType.audio:
             Logger().i("Load more ${TopicType.audio}");
             notifier.loadMoreAudio(widget.entity.id);
+            break;
+          case TopicType.file:
+            Logger().i("Load more ${TopicType.file}");
+            notifier.loadMoreFiles(widget.entity.id);
             break;
         }
       },

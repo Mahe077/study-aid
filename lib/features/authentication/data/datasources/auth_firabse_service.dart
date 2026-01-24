@@ -68,6 +68,9 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           errorMessage =
               'This user account has been disabled. Please contact support.';
           break;
+        case 'invalid-credential':
+          errorMessage = 'Invalid email or password. Please check and try again.';
+          break;
         default:
           errorMessage = 'An unknown error occurred. Please try again later.';
       }

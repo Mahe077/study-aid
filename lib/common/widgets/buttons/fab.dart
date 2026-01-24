@@ -13,6 +13,7 @@ import 'package:study_aid/features/notes/presentation/pages/note_page.dart';
 import 'package:study_aid/features/topics/presentation/notifiers/topic_notifire.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_page.dart';
+import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
 
 class FAB extends ConsumerStatefulWidget {
   final String userId;
@@ -309,6 +310,46 @@ class _FABState extends ConsumerState<FAB> {
           backgroundColor: AppColors.grey,
         ),
         if (widget.parentId != null) ...[
+          FloatingActionButton.extended(
+            label: const Row(
+              children: [
+                Text(
+                  'Upload File',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary),
+                ),
+                SizedBox(width: 8),
+                FaIcon(FontAwesomeIcons.fileArrowUp,
+                    size: 20, color: AppColors.primary),
+              ],
+            ),
+            heroTag: null,
+            onPressed: () async {
+              _fabKey.currentState?.toggle();
+              final result = await ref
+                  .read(filesProvider(FilesParams(
+                          topicId: widget.parentId!,
+                          sortBy: widget.dropdownValue))
+                      .notifier)
+                  .uploadFile(
+                    userId: widget.userId,
+                    dropdownValue: widget.dropdownValue,
+                    allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
+                  );
+
+              result.fold(
+                (failure) => ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(failure.message)),
+                ),
+                (success) => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('File uploaded successfully')),
+                ),
+              );
+            },
+            backgroundColor: AppColors.grey,
+          ),
           FloatingActionButton.extended(
             label: const Row(
               children: [

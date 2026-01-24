@@ -18,6 +18,7 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       subTopics: reader.readList().cast<String>(),
       notes: reader.readList().cast<String>(),
       audioRecordings: reader.readList().cast<String>(),
+      files: reader.readList().cast<String>(),
       syncStatus: reader.readString(),
       localChangeTimestamp: reader.read(),
       remoteChangeTimestamp: reader.read(),
@@ -38,6 +39,7 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
     writer.writeList(obj.subTopics);
     writer.writeList(obj.notes);
     writer.writeList(obj.audioRecordings);
+    writer.writeList(obj.files);
     writer.writeString(obj.syncStatus);
     writer.write(obj.localChangeTimestamp);
     writer.write(obj.remoteChangeTimestamp);

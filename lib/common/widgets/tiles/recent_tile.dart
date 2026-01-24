@@ -13,6 +13,8 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/topics/presentation/pages/topic_page.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
+import 'package:study_aid/features/files/domain/entities/file_entity.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RecentTile extends StatefulWidget {
   final Enum type;
@@ -130,16 +132,40 @@ class _RecentTileState extends State<RecentTile> {
                 );
               }));
         }
+        if (widget.entity is FileEntity) {
+          _openFile(context, widget.entity.fileUrl);
+        }
       },
       child: _buildContentTileBody(),
     );
+  }
+
+  Future<void> _openFile(BuildContext context, String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open file')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening file: $e')),
+        );
+      }
+    }
   }
 
   Container _buildContentTileBody() {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: widget.entity.color,
+        color: (widget.entity is FileEntity) ? widget.tileColor : (widget.entity.color ?? AppColors.grey),
       ),
       width: 200,
       height: 100,
@@ -165,12 +191,16 @@ class _RecentTileState extends State<RecentTile> {
                     FontAwesomeIcons.microphone,
                     size: 16,
                   ),
+                if (widget.type == TopicType.file)
+                  _buildFileIcon(widget.entity.fileType),
                 const SizedBox(
                   width: 10,
                 ),
                 Expanded(
                   child: AppSubHeadings(
-                    text: widget.entity.title,
+                    text: widget.entity is FileEntity
+                        ? widget.entity.fileName
+                        : widget.entity.title,
                     size: 16,
                     alignment: TextAlign.left,
                     maxLine: 1,
@@ -249,7 +279,18 @@ class _RecentTileState extends State<RecentTile> {
                                     ),
                                 ],
                               )
-                            : Container(), // Empty for unsupported entity types
+                            : widget.entity is FileEntity
+                                ? Text(
+                                    "${widget.entity.fileType.toUpperCase()} • ${_formatSize(widget.entity.fileSizeBytes)}",
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.left,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  )
+                                : Container(), // Empty for unsupported entity types
               ),
             ),
             const Spacer(),
@@ -275,5 +316,43 @@ class _RecentTileState extends State<RecentTile> {
         ),
       ),
     );
+  }
+
+  Widget _buildFileIcon(String extension) {
+    IconData iconData;
+    Color color;
+
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        iconData = Icons.picture_as_pdf;
+        color = Colors.black;
+        break;
+      case 'doc':
+      case 'docx':
+        iconData = Icons.description;
+        color = Colors.black;
+        break;
+      case 'txt':
+        iconData = Icons.text_snippet;
+        color = Colors.black;
+        break;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        iconData = Icons.image;
+        color = Colors.black;
+        break;
+      default:
+        iconData = Icons.insert_drive_file;
+        color = Colors.black;
+    }
+
+    return Icon(iconData, color: color, size: 16);
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

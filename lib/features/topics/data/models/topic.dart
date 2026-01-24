@@ -37,6 +37,8 @@ class TopicModel extends Topic {
   final String titleLowerCase;
   @HiveField(14)
   final String userId;
+  @HiveField(15)
+  final List<String> files;
 
   TopicModel({
     required this.id,
@@ -48,6 +50,7 @@ class TopicModel extends Topic {
     required this.subTopics,
     required this.notes,
     required this.audioRecordings,
+    required this.files,
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,
@@ -64,6 +67,7 @@ class TopicModel extends Topic {
           subTopics: subTopics,
           notes: notes,
           audioRecordings: audioRecordings,
+          files: files,
           syncStatus: syncStatus,
           localChangeTimestamp: localChangeTimestamp,
           remoteChangeTimestamp: remoteChangeTimestamp,
@@ -84,6 +88,7 @@ class TopicModel extends Topic {
       subTopics: List<String>.from(data['subTopics']),
       notes: List<String>.from(data['notes']),
       audioRecordings: List<String>.from(data['audioRecordings']),
+      files: List<String>.from(data['files'] ?? []),
       syncStatus: data['syncStatus'],
       localChangeTimestamp:
           (data['localChangeTimestamp'] as Timestamp).toDate(),
@@ -106,6 +111,7 @@ class TopicModel extends Topic {
       'subTopics': subTopics,
       'notes': notes,
       'audioRecordings': audioRecordings,
+      'files': files,
       'syncStatus': syncStatus,
       'localChangeTimestamp': Timestamp.fromDate(localChangeTimestamp),
       'remoteChangeTimestamp': Timestamp.fromDate(remoteChangeTimestamp),
@@ -125,6 +131,7 @@ class TopicModel extends Topic {
     List<String>? subTopics,
     List<String>? notes,
     List<String>? audioRecordings,
+    List<String>? files,
     String? syncStatus,
     DateTime? localChangeTimestamp,
     DateTime? remoteChangeTimestamp,
@@ -142,6 +149,7 @@ class TopicModel extends Topic {
       subTopics: subTopics ?? this.subTopics,
       notes: notes ?? this.notes,
       audioRecordings: audioRecordings ?? this.audioRecordings,
+      files: files ?? this.files,
       syncStatus: syncStatus ?? this.syncStatus,
       localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
       remoteChangeTimestamp:
@@ -164,6 +172,7 @@ class TopicModel extends Topic {
       subTopics: topic.subTopics,
       notes: topic.notes,
       audioRecordings: topic.audioRecordings,
+      files: topic.files,
       localChangeTimestamp: topic.localChangeTimestamp,
       remoteChangeTimestamp: topic.remoteChangeTimestamp,
       parentId: topic.parentId,
@@ -184,6 +193,7 @@ class TopicModel extends Topic {
       subTopics: subTopics,
       notes: notes,
       audioRecordings: audioRecordings,
+      files: files,
       localChangeTimestamp: localChangeTimestamp,
       remoteChangeTimestamp: remoteChangeTimestamp,
       parentId: parentId,
