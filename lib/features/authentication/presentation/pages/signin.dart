@@ -292,12 +292,12 @@ class _SigninPageState extends ConsumerState<SigninPage> {
           onPressed: () => _signInClicked(context, AuthMethod.google),
         ),
         const SizedBox(width: 10),
-        buildSocialButton(
-          icon: FontAwesomeIcons.facebookF,
-          color: AppColors.primary,
-          onPressed: () => _signInClicked(context, AuthMethod.facebook),
-        ),
-        const SizedBox(width: 10),
+        // buildSocialButton(
+        //   icon: FontAwesomeIcons.facebookF,
+        //   color: AppColors.primary,
+        //   onPressed: () => _signInClicked(context, AuthMethod.facebook),
+        // ),
+        // const SizedBox(width: 10),
         buildSocialButton(
           icon: FontAwesomeIcons.apple,
           color: AppColors.primary,

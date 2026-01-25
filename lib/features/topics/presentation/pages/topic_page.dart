@@ -22,7 +22,9 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
+import 'package:study_aid/common/widgets/buttons/sync_button.dart';
 import 'package:study_aid/features/files/presentation/widgets/files_list_view.dart';
+import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
 
 class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
@@ -378,7 +380,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
     return DefaultTabController(
       length: 5,
       child: Scaffold(
-        appBar: const BasicAppbar(showMenu: true),
+        appBar: BasicAppbar(
+          showMenu: true,
+          action: SyncButton(userId: widget.userId),
+        ),
         floatingActionButtonLocation: ExpandableFab.location,
         floatingActionButton: FAB(
           parentId: widget.entity.id,
@@ -783,7 +788,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             )
           else
             // Show play button if TTS is not playing or completed
-            _playTTSButton(filteredItems),
+          _playTTSButton(filteredItems),
           const SizedBox(height: 5),
         ],
         Expanded(
@@ -1032,6 +1037,80 @@ class _TopicPageState extends ConsumerState<TopicPage>
       // Now, speak the concatenated text
       _speak();
       // _showTtsBottomSheet();
+    }
+  }
+
+  Widget _summarizeButton(List<dynamic> notes) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            fixedSize: const Size(125, 15),
+            padding: const EdgeInsets.all(2),
+            backgroundColor: AppColors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          onPressed: () {
+            if (notes.isNotEmpty) {
+                 _showSummarizationDialog(notes);
+            }
+          },
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.summarize, size: 15, color: AppColors.icon),
+              SizedBox(width: 5),
+              Text(
+                'AI Summary',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSummarizationDialog(List<dynamic> notes) async {
+    // Concatenate note contents
+    String contentToSummarize = '';
+    for (var note in notes) {
+        if (note is Note) {
+             contentToSummarize += "${note.title}\n${note.content}\n\n";
+        }
+    }
+    
+    if (contentToSummarize.trim().isEmpty) {
+         CustomToast(context: context).showInfo(
+            title: 'No content',
+            description: 'There are no notes to summarize.');
+        return;
+    }
+    
+    final result = await showDialog(
+      context: context,
+      builder: (_) => SummarizationDialog(
+          content: contentToSummarize,
+          topicId: widget.entity.id,
+          userId: widget.userId,
+          title: 'Topic Summary: ${widget.topicTitle}',
+          noteColor: widget.tileColor,
+      ),
+    );
+    
+    // Manually update the UI with the new note if created
+    if (result is Note && mounted) {
+       final notifier = ref.read(
+           tabDataProvider(TabDataParams(widget.entity.id, dropdownValue)).notifier
+       );
+       notifier.updateNote(result);
     }
   }
 }

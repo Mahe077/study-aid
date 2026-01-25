@@ -23,6 +23,9 @@ import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.d
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
+import 'package:study_aid/features/notes/presentation/providers/summarization_provider.dart';
+import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContentTile extends ConsumerStatefulWidget {
@@ -433,6 +436,12 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             childPadding: EdgeInsets.zero,
             children: [
               SpeedDialChild(
+                label: 'Summarize',
+                onTap: _summarizeFile,
+                backgroundColor: AppColors.primary,
+                labelBackgroundColor: AppColors.white,
+              ),
+              SpeedDialChild(
                 label: 'Delete File',
                 onTap: _deleteFile,
                 backgroundColor: AppColors.grey,
@@ -491,6 +500,55 @@ class _ContentTileState extends ConsumerState<ContentTile> {
         }
       },
     );
+  }
+
+  void _summarizeFile() async {
+    if (widget.entity is! FileEntity) return;
+
+    final fileEntity = widget.entity as FileEntity;
+    final toast = CustomToast(context: context);
+
+    // 1. Show loading
+    toast.showInfo(
+        title: 'Processing', description: 'Extracting text from file...');
+
+    try {
+      final extractor = ref.read(fileTextExtractorServiceProvider);
+      final text =
+          await extractor.extractText(fileEntity.fileUrl, fileEntity.fileType);
+
+      if (text.isEmpty) {
+        toast.showInfo(
+            title: 'No Text',
+            description: 'Could not extract any text from this file.');
+        return;
+      }
+
+      // 2. Show Dialog
+      if (context.mounted) {
+        final result = await showDialog(
+          context: context,
+          builder: (_) => SummarizationDialog(
+            content: text,
+            topicId: widget.parentTopicId,
+            userId: widget.userId,
+            title: 'Summary: ${fileEntity.fileName}',
+            noteColor: widget.tileColor,
+          ),
+        );
+        if (result is Note && mounted) {
+          ref
+              .read(tabDataProvider(
+                      TabDataParams(widget.parentTopicId, widget.dropdownValue))
+                  .notifier)
+              .updateNote(result);
+        }
+      }
+    } catch (e) {
+      Logger().e("Error extracting text: $e");
+      toast.showFailure(
+          description: e.toString().replaceAll('Exception: ', ''));
+    }
   }
 
   Widget _buildFileIcon(String extension) {

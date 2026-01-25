@@ -1,7 +1,9 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:study_aid/core/config/azure_config.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 
 abstract class TranscriptionRemoteDataSource {
@@ -16,12 +18,10 @@ class TranscriptionRemoteDataSourceImpl
 
   @override
   Future<String> startTranscription(String localMp3Path) async {
-    final uri = Uri.parse(
-        'https://ai-dilanappx1279ai299442749445.cognitiveservices.azure.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15');
+    final uri = Uri.parse(AzureConfig.sttEndpoint);
 
     final headers = {
-      'Ocp-Apim-Subscription-Key':
-          '4PXF7zxMEOYiWIzaoOSkDkjHGu7kcd1FviPcUT4RTGLvvPndVXrvJQQJ99BCACHYHv6XJ3w3AAAAACOGRqQn',
+      'Ocp-Apim-Subscription-Key': AzureConfig.sttSubscriptionKey,
       'Accept': 'application/json',
     };
 
