@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:494696942035:android:abd3307a54ab6891fbc726",
+        "mobilesdk_app_id": "1:494696942035:android:0f5d46b398abb710fbc726",
         "android_client_info": {
-          "package_name": "com.example.study_aid"
+          "package_name": "com.medhelplanka.study_aid"
         }
       },
       "oauth_client": [
         {
-          "client_id": "494696942035-gl5f2h4ds3v2ujnbt19rl3vs1naffldh.apps.googleusercontent.com",
+          "client_id": "494696942035-m1pfnos17kv9vhe5kf01eb53ufml1oo1.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.study_aid",
+            "package_name": "com.medhelplanka.study_aid",
             "certificate_hash": "10f8848f59b02f13a97e89049a371b9d846e7d75"
           }
         },
@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1.apps.googleusercontent.com",
+              "client_id": "494696942035-gishpbrb9bit2citf7b584acma5m4nri.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.studyAid"
+                "bundle_id": "com.medhelplanka.studyaid"
               }
             }
           ]
