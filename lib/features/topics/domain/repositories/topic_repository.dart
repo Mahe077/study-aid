@@ -15,6 +15,8 @@ abstract class TopicRepository {
       String parentId, String subTopicId);
   Future<Either<Failure, void>> updateNoteOfParent(
       String parentId, String noteId);
+  Future<Either<Failure, void>> updateFileOfParent(
+      String parentId, String fileId);
   Future<Either<Failure, void>> updateAudioOfParent(
       String parentId, String audioId);
   Future<Either<Failure, PaginatedObj<Topic>>> fetchUserTopics(

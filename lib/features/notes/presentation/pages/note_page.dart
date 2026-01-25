@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
@@ -416,10 +418,15 @@ class _NotePageState extends ConsumerState<NotePage> {
                         padding: EdgeInsets.only(right: 10),
                         child: QuillEditor.basic(
                           configurations: QuillEditorConfigurations(
-                            embedBuilders: FlutterQuillEmbeds.editorBuilders(
-                              imageEmbedConfigurations:
-                                  QuillEditorImageEmbedConfigurations(),
-                            ),
+                            embedBuilders: kIsWeb
+                                ? FlutterQuillEmbeds.editorWebBuilders(
+                                    imageEmbedConfigurations:
+                                        QuillEditorImageEmbedConfigurations(),
+                                  )
+                                : FlutterQuillEmbeds.editorBuilders(
+                                    imageEmbedConfigurations:
+                                        QuillEditorImageEmbedConfigurations(),
+                                  ),
                             controller: quillController,
                             expands: true,
                           ),

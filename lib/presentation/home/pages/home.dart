@@ -13,6 +13,7 @@ import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/content_tile.dart';
+import 'package:study_aid/features/files/domain/entities/file_entity.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
@@ -200,12 +201,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                               : item is Note
                                                                   ? TopicType
                                                                       .note
-                                                                  : TopicType
-                                                                      .audio,
+                                                                  : item is AudioRecording
+                                                                      ? TopicType
+                                                                          .audio
+                                                                      : TopicType
+                                                                          .file,
                                                           userId:
                                                               widget.user.id,
-                                                          parentTopicId:
-                                                              item.parentId,
+                                                          parentTopicId: item is FileEntity
+                                                              ? (item as FileEntity).topicId
+                                                              : item.parentId,
                                                           dropdownValue:
                                                               dropdownValue,
                                                           tileColor:

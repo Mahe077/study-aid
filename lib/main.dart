@@ -13,6 +13,7 @@ import 'package:study_aid/features/authentication/presentation/providers/user_pr
 import 'package:study_aid/features/notes/data/models/note.dart';
 import 'package:study_aid/features/topics/data/models/topic.dart';
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
+import 'package:study_aid/features/files/data/models/file_model.dart';
 import 'package:study_aid/presentation/splash/pages/splash_screen.dart';
 import 'package:toastification/toastification.dart';
 import 'firebase_options.dart';
@@ -51,6 +52,10 @@ void main() async {
 
   if (!Hive.isBoxOpen('audioBox')) {
     await Hive.openBox<AudioRecordingModel>('audioBox');
+  }
+
+  if (!Hive.isBoxOpen('fileBox')) {
+    await Hive.openBox<FileModel>('fileBox');
   }
 
   setupInjection();

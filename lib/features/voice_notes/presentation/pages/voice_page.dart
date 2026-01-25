@@ -196,8 +196,13 @@ class _VoicePageState extends ConsumerState<VoicePage> {
 
     updateAudioRes.fold(
       (failure) {
-        toast.showFailure(
-            description: 'An error occurred while saving the audio clip.');
+        if (mounted) {
+          setState(() {
+            isSaving = false;
+          });
+          toast.showFailure(
+              description: 'An error occurred while saving the audio clip.');
+        }
         Logger().d(failure.message);
       },
       (newNote) {
@@ -205,6 +210,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
         toast.showSuccess(description: 'Audio Clip updated successfully.');
         setState(() {
           isSaved = true;
+          isSaving = false;
         });
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {

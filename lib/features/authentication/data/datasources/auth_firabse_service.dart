@@ -70,6 +70,9 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           errorMessage =
               'This user account has been disabled. Please contact support.';
           break;
+        case 'invalid-credential':
+          errorMessage = 'Invalid email or password. Please check and try again.';
+          break;
         default:
           errorMessage = 'An unknown error occurred. Please try again later.';
       }
@@ -386,6 +389,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
       // Retrieve the user's data from Firestore
       UserModel? user = await getUserById(userCredential.user!.uid);
+
       if (user == null) {
         // Create a new user in Firestore if not already present
         user = UserModel(

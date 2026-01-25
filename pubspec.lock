@@ -962,6 +962,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  google_generative_ai:
+    dependency: "direct main"
+    description:
+      name: google_generative_ai
+      sha256: "71f613d0247968992ad87a0eb21650a566869757442ba55a31a81be6746e0d1f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.7"
   google_identity_services_web:
     dependency: transitive
     description:
@@ -1610,6 +1618,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.2"
+  read_pdf_text:
+    dependency: "direct main"
+    description:
+      name: read_pdf_text
+      sha256: "49e8e81636092789d812e01ffe351d9a4258dbea12fc8acde3c10c059044efab"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   riverpod:
     dependency: transitive
     description:
@@ -1952,7 +1968,7 @@ packages:
     source: hosted
     version: "2.2.2"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: "9d06212b1362abc2f0f0d78e6f09f726608c74e3b9462e8368bb03314aa8d603"

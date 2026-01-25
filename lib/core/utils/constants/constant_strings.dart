@@ -5,4 +5,5 @@ class ConstantStrings {
   static const topic = "T";
   static const note = "N";
   static const audio = "A";
+  static const file = "F";
 }

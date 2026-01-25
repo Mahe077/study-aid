@@ -1,5 +1,5 @@
 // Define an enum for topic types
-enum TopicType { topic, note, audio, all }
+enum TopicType { topic, note, audio, file, all }
 
 enum AuthMethod { emailAndPassword, google, apple, facebook }
 

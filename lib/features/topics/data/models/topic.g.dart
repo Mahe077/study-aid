@@ -26,6 +26,7 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       subTopics: (fields[6] as List).cast<String>(),
       notes: (fields[7] as List).cast<String>(),
       audioRecordings: (fields[8] as List).cast<String>(),
+      files: (fields[15] as List).cast<String>(),
       syncStatus: fields[9] as String,
       localChangeTimestamp: fields[10] as DateTime,
       remoteChangeTimestamp: fields[11] as DateTime,
@@ -38,7 +39,7 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
   @override
   void write(BinaryWriter writer, TopicModel obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(16)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -68,7 +69,9 @@ class TopicModelAdapter extends TypeAdapter<TopicModel> {
       ..writeByte(13)
       ..write(obj.titleLowerCase)
       ..writeByte(14)
-      ..write(obj.userId);
+      ..write(obj.userId)
+      ..writeByte(15)
+      ..write(obj.files);
   }
 
   @override

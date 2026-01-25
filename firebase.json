@@ -14,8 +14,26 @@
           "configurations": {
             "android": "1:544057525889:android:8b3abd20b77dd65bd72f80",
             "ios": "1:544057525889:ios:afd46761701a37cfd72f80",
-            "macos": "1:544057525889:ios:afd46761701a37cfd72f80"
+            "macos": "1:544057525889:ios:afd46761701a37cfd72f80",
+            "web": "1:544057525889:web:4817838dd8c5d9bdd72f80",
+            "windows": "1:544057525889:web:25a2a717ce7d9ad5d72f80"
           }
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "study-aid-e2fc5",
+          "appId": "1:544057525889:ios:afd46761701a37cfd72f80",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "study-aid-e2fc5",
+          "appId": "1:544057525889:ios:afd46761701a37cfd72f80",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
         }
       }
     }
