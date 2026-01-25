@@ -13,6 +13,7 @@ class Topic extends BaseEntity {
   final List<String> subTopics;
   final List<String> notes;
   final List<String> audioRecordings;
+  final List<String> files;
   final String syncStatus;
   final DateTime localChangeTimestamp;
   final DateTime remoteChangeTimestamp;
@@ -30,6 +31,7 @@ class Topic extends BaseEntity {
     required this.subTopics,
     required this.notes,
     required this.audioRecordings,
+    required this.files,
     required this.syncStatus,
     required this.localChangeTimestamp,
     required this.remoteChangeTimestamp,

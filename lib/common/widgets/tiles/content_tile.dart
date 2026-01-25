@@ -21,6 +21,12 @@ import 'package:study_aid/features/topics/presentation/providers/topic_provider.
 import 'package:study_aid/features/voice_notes/data/models/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
+import 'package:study_aid/features/files/domain/entities/file_entity.dart';
+import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
+import 'package:study_aid/features/notes/presentation/providers/summarization_provider.dart';
+import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
+import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ContentTile extends ConsumerStatefulWidget {
   final Enum type;
@@ -155,16 +161,42 @@ class _ContentTileState extends ConsumerState<ContentTile> {
                 );
               }));
         }
+        if (widget.entity is FileEntity) {
+          _openFile(context, widget.entity.fileUrl);
+        }
       },
       child: _tileBody(),
     );
+  }
+
+  Future<void> _openFile(BuildContext context, String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open file')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error opening file: $e')),
+        );
+      }
+    }
   }
 
   Container _tileBody() {
     return Container(
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: widget.entity.color ?? AppColors.grey),
+          color: (widget.entity is FileEntity)
+              ? widget.tileColor
+              : (widget.entity.color ?? AppColors.grey)),
       child: IntrinsicHeight(
         child: ConstrainedBox(
           constraints: const BoxConstraints(
@@ -180,16 +212,18 @@ class _ContentTileState extends ConsumerState<ContentTile> {
                 const SizedBox(height: 8),
                 widget.type == TopicType.topic || widget.entity is Topic
                     ? tileTag()
-                    : Row(
-                        children: (widget.entity.tags as List<dynamic>)
-                            .map<Widget>((tag) => Row(
-                                  children: [
-                                    Tag(text: tag.toString()),
-                                    const SizedBox(width: 5),
-                                  ],
-                                ))
-                            .toList(),
-                      ),
+                    : (widget.entity is FileEntity)
+                        ? const SizedBox.shrink() // Files don't have tags
+                        : Row(
+                            children: (widget.entity.tags as List<dynamic>)
+                                .map<Widget>((tag) => Row(
+                                      children: [
+                                        Tag(text: tag.toString()),
+                                        const SizedBox(width: 5),
+                                      ],
+                                    ))
+                                .toList(),
+                          ),
                 const SizedBox(height: 8),
                 _tileCreatedDate(),
               ],
@@ -229,7 +263,9 @@ class _ContentTileState extends ConsumerState<ContentTile> {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
-          'Created: ${formatDateTime(widget.entity.createdDate)}',
+          widget.entity is FileEntity
+              ? 'Uploaded: ${formatDateTime(widget.entity.uploadedDate)}'
+              : 'Created: ${formatDateTime(widget.entity.createdDate)}',
           style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w400,
@@ -305,6 +341,23 @@ class _ContentTileState extends ConsumerState<ContentTile> {
               ),
             ],
           ),
+        ] else if (widget.entity is FileEntity) ...[
+          const SizedBox(height: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Type: ${widget.entity.fileType.toUpperCase()}",
+                  style: const TextStyle(fontSize: 10),
+                ),
+                Text(
+                  "Size: ${_formatSize(widget.entity.fileSizeBytes)}",
+                  style: const TextStyle(fontSize: 10),
+                ),
+              ],
+            ),
+          )
         ]
       ],
     );
@@ -328,13 +381,22 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             FontAwesomeIcons.microphone,
             size: 16,
           ),
+        if (widget.type == TopicType.file || widget.entity is FileEntity)
+          _buildFileIcon(widget.entity is FileEntity
+              ? widget.entity.fileType
+              : 'file'),
         const SizedBox(width: 10),
-        AppSubHeadings(
-          text: widget.entity.title,
-          size: 16,
+        Expanded(
+          child: AppSubHeadings(
+            text: widget.entity is FileEntity
+                ? widget.entity.fileName
+                : widget.entity.title,
+            size: 16,
+            maxLine: 1,
+            alignment: TextAlign.start,
+          ),
         ),
         if (widget.type == TopicType.topic || widget.entity is Topic) ...[
-          Spacer(),
           SpeedDial(
             mini: false,
             icon: Icons.more_vert,
@@ -353,6 +415,35 @@ class _ContentTileState extends ConsumerState<ContentTile> {
               SpeedDialChild(
                 label: 'Delete Topic',
                 onTap: _deleteTopic,
+                backgroundColor: AppColors.grey,
+              ),
+            ],
+          ),
+        ],
+        if (widget.type == TopicType.file || widget.entity is FileEntity) ...[
+          SpeedDial(
+            mini: false,
+            icon: Icons.more_vert,
+            iconTheme: IconThemeData(size: 30),
+            buttonSize: const Size(25, 25),
+            childrenButtonSize: const Size(0, 0),
+            backgroundColor: widget.tileColor,
+            elevation: 0,
+            overlayColor: Colors.black,
+            overlayOpacity: 0.4,
+            spacing: 0,
+            childMargin: EdgeInsets.zero,
+            childPadding: EdgeInsets.zero,
+            children: [
+              SpeedDialChild(
+                label: 'Summarize',
+                onTap: _summarizeFile,
+                backgroundColor: AppColors.primary,
+                labelBackgroundColor: AppColors.white,
+              ),
+              SpeedDialChild(
+                label: 'Delete File',
+                onTap: _deleteFile,
                 backgroundColor: AppColors.grey,
               ),
             ],
@@ -385,5 +476,116 @@ class _ContentTileState extends ConsumerState<ContentTile> {
         }
       },
     );
+  }
+
+  void _deleteFile() async {
+    final toast = CustomToast(context: context);
+    showCustomDialog(
+      context,
+      DialogMode.delete,
+      "Confirm Delete",
+      const Text('Are you sure you want to delete this file?'),
+      () async {
+        try {
+          await ref
+              .read(filesProvider(
+                      FilesParams(topicId: widget.parentTopicId, sortBy: widget.dropdownValue))
+                  .notifier)
+              .deleteFile(widget.entity.id, widget.userId, widget.dropdownValue);
+          toast.showSuccess(description: "File deleted successfully.");
+        } catch (e) {
+          // Log the error and notify the user
+          Logger().e("Error deleting file: $e");
+          toast.showFailure(description: 'Failed to delete the file');
+        }
+      },
+    );
+  }
+
+  void _summarizeFile() async {
+    if (widget.entity is! FileEntity) return;
+
+    final fileEntity = widget.entity as FileEntity;
+    final toast = CustomToast(context: context);
+
+    // 1. Show loading
+    toast.showInfo(
+        title: 'Processing', description: 'Extracting text from file...');
+
+    try {
+      final extractor = ref.read(fileTextExtractorServiceProvider);
+      final text =
+          await extractor.extractText(fileEntity.fileUrl, fileEntity.fileType);
+
+      if (text.isEmpty) {
+        toast.showInfo(
+            title: 'No Text',
+            description: 'Could not extract any text from this file.');
+        return;
+      }
+
+      // 2. Show Dialog
+      if (context.mounted) {
+        final result = await showDialog(
+          context: context,
+          builder: (_) => SummarizationDialog(
+            content: text,
+            topicId: widget.parentTopicId,
+            userId: widget.userId,
+            title: 'Summary: ${fileEntity.fileName}',
+            noteColor: widget.tileColor,
+          ),
+        );
+        if (result is Note && mounted) {
+          ref
+              .read(tabDataProvider(
+                      TabDataParams(widget.parentTopicId, widget.dropdownValue))
+                  .notifier)
+              .updateNote(result);
+        }
+      }
+    } catch (e) {
+      Logger().e("Error extracting text: $e");
+      toast.showFailure(
+          description: e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Widget _buildFileIcon(String extension) {
+    IconData iconData;
+    Color color;
+
+    switch (extension.toLowerCase()) {
+      case 'pdf':
+        iconData = Icons.picture_as_pdf;
+        color = Colors.black;
+        break;
+      case 'doc':
+      case 'docx':
+        iconData = Icons.description;
+        color = Colors.black;
+        break;
+      case 'txt':
+        iconData = Icons.text_snippet;
+        color = Colors.black;
+        break;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        iconData = Icons.image;
+        color = Colors.black;
+        break;
+      default:
+        iconData = Icons.insert_drive_file;
+        color = Colors.black;
+    }
+
+    return Icon(iconData, color: color, size: 16);
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }

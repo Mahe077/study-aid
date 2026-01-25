@@ -39,6 +39,7 @@ class TopicRepositoryImpl implements TopicRepository {
         subTopics: [],
         notes: [],
         audioRecordings: [],
+        files: [],
         syncStatus: ConstantStrings.pending,
         localChangeTimestamp: now,
         remoteChangeTimestamp: now,
@@ -211,6 +212,52 @@ class TopicRepositoryImpl implements TopicRepository {
               localChangeTimestamp: now,
               syncStatus: ConstantStrings.pending);
           newTopic.audioRecordings.add(audioId);
+          await localDataSource.updateTopic(newTopic);
+        } else {
+          return Left(Failure("Something Wrong Try again later!"));
+        }
+      }
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateFileOfParent(
+      String parentId, String fileId) async {
+    try {
+      final now = DateTime.now();
+      if (await networkInfo.isConnected) {
+        final result = await remoteDataSource.getTopicById(parentId);
+        result.fold(
+          (failure) => Left(failure),
+          (topic) async {
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            if (!newTopic.files.contains(fileId)) {
+              newTopic.files.add(fileId);
+            }
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
+            return updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
+              return const Right(null);
+            });
+          },
+        );
+      } else {
+        final localParentTopic = await localDataSource.getCachedTopic(parentId);
+        if (localParentTopic != null) {
+          TopicModel newTopic = localParentTopic.copyWith(
+              updatedDate: now,
+              localChangeTimestamp: now,
+              syncStatus: ConstantStrings.pending);
+          if (!newTopic.files.contains(fileId)) {
+            newTopic.files.add(fileId);
+          }
           await localDataSource.updateTopic(newTopic);
         } else {
           return Left(Failure("Something Wrong Try again later!"));

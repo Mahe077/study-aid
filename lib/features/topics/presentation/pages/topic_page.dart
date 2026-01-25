@@ -22,6 +22,9 @@ import 'package:study_aid/features/topics/domain/entities/topic.dart';
 import 'package:study_aid/features/search/presentation/providers/search_provider.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
 import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.dart';
+import 'package:study_aid/common/widgets/buttons/sync_button.dart';
+import 'package:study_aid/features/files/presentation/widgets/files_list_view.dart';
+import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
 
 class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
@@ -88,7 +91,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _audioPlayer = AudioPlayer();
     initTts();
   }
@@ -375,9 +378,12 @@ class _TopicPageState extends ConsumerState<TopicPage>
     final searchState = ref.watch(searchNotifireProvider);
 
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
-        appBar: const BasicAppbar(showMenu: true),
+        appBar: BasicAppbar(
+          showMenu: true,
+          action: SyncButton(userId: widget.userId),
+        ),
         floatingActionButtonLocation: ExpandableFab.location,
         floatingActionButton: FAB(
           parentId: widget.entity.id,
@@ -480,7 +486,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
         final List<dynamic> items = [
           ...state.topics,
           ...state.notes,
-          ...state.audioRecordings
+          ...state.audioRecordings,
+          ...state.files,
         ];
 
         if (items.isEmpty) return Container();
@@ -514,7 +521,9 @@ class _TopicPageState extends ConsumerState<TopicPage>
                               ? TopicType.topic
                               : item is Note
                                   ? TopicType.note
-                                  : TopicType.audio,
+                                  : item is AudioRecording
+                                      ? TopicType.audio
+                                      : TopicType.file,
                           userId: widget.userId,
                           parentTopicId: widget.entity.id,
                           dropdownValue: dropdownvalue,
@@ -546,6 +555,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
         Tab(text: "Topic"),
         Tab(text: "Notes"),
         Tab(child: Text("Audio Clips")),
+        Tab(text: "Files"),
       ],
       isScrollable: true,
       unselectedLabelColor: AppColors.darkGrey,
@@ -576,11 +586,17 @@ class _TopicPageState extends ConsumerState<TopicPage>
             controller: _tabController,
             children: [
               _contentList(
-                  [...state.topics, ...state.notes, ...state.audioRecordings],
+                  [
+                    ...state.topics,
+                    ...state.notes,
+                    ...state.audioRecordings,
+                    ...state.files
+                  ],
                   TopicType.all,
                   state.hasMoreTopics ||
                       state.hasMoreNotes ||
-                      state.hasMoreAudio,
+                      state.hasMoreAudio ||
+                      state.hasMoreFiles,
                   dropdownvalue),
               _contentList(state.topics, TopicType.topic, state.hasMoreTopics,
                   dropdownvalue),
@@ -588,6 +604,13 @@ class _TopicPageState extends ConsumerState<TopicPage>
                   dropdownvalue),
               _contentList(state.audioRecordings, TopicType.audio,
                   state.hasMoreAudio, dropdownvalue),
+              FilesListView(
+                topicId: widget.entity.id,
+                userId: widget.userId,
+                sortBy: dropdownvalue,
+                scrollController: ScrollController(),
+                tileColor: widget.tileColor,
+              ),
             ],
           );
         },
@@ -765,7 +788,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
             )
           else
             // Show play button if TTS is not playing or completed
-            _playTTSButton(filteredItems),
+          _playTTSButton(filteredItems),
           const SizedBox(height: 5),
         ],
         Expanded(
@@ -906,6 +929,10 @@ class _TopicPageState extends ConsumerState<TopicPage>
             Logger().i("Load more ${TopicType.audio}");
             notifier.loadMoreAudio(widget.entity.id);
             break;
+          case TopicType.file:
+            Logger().i("Load more ${TopicType.file}");
+            notifier.loadMoreFiles(widget.entity.id);
+            break;
         }
       },
       child: const Icon(Icons.keyboard_arrow_down, size: 25),
@@ -1010,6 +1037,80 @@ class _TopicPageState extends ConsumerState<TopicPage>
       // Now, speak the concatenated text
       _speak();
       // _showTtsBottomSheet();
+    }
+  }
+
+  Widget _summarizeButton(List<dynamic> notes) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            fixedSize: const Size(125, 15),
+            padding: const EdgeInsets.all(2),
+            backgroundColor: AppColors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(5),
+            ),
+          ),
+          onPressed: () {
+            if (notes.isNotEmpty) {
+                 _showSummarizationDialog(notes);
+            }
+          },
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.summarize, size: 15, color: AppColors.icon),
+              SizedBox(width: 5),
+              Text(
+                'AI Summary',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSummarizationDialog(List<dynamic> notes) async {
+    // Concatenate note contents
+    String contentToSummarize = '';
+    for (var note in notes) {
+        if (note is Note) {
+             contentToSummarize += "${note.title}\n${note.content}\n\n";
+        }
+    }
+    
+    if (contentToSummarize.trim().isEmpty) {
+         CustomToast(context: context).showInfo(
+            title: 'No content',
+            description: 'There are no notes to summarize.');
+        return;
+    }
+    
+    final result = await showDialog(
+      context: context,
+      builder: (_) => SummarizationDialog(
+          content: contentToSummarize,
+          topicId: widget.entity.id,
+          userId: widget.userId,
+          title: 'Topic Summary: ${widget.topicTitle}',
+          noteColor: widget.tileColor,
+      ),
+    );
+    
+    // Manually update the UI with the new note if created
+    if (result is Note && mounted) {
+       final notifier = ref.read(
+           tabDataProvider(TabDataParams(widget.entity.id, dropdownValue)).notifier
+       );
+       notifier.updateNote(result);
     }
   }
 }

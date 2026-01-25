@@ -26,6 +26,7 @@ class BasicAppbar extends ConsumerWidget implements PreferredSizeWidget {
       centerTitle: true,
       title: title ?? const Text(''),
       actions: [
+        if (action != null) action!,
         if (showMenu)
           IconButton(
             onPressed: () {
