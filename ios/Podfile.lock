@@ -1461,6 +1461,8 @@ PODS:
   - PromisesObjC (2.4.0)
   - quill_native_bridge_ios (0.0.1):
     - Flutter
+  - read_pdf_text (0.0.1):
+    - Flutter
   - RecaptchaInterop (100.0.0)
   - SDWebImage (5.21.0):
     - SDWebImage/Core (= 5.21.0)
@@ -1506,6 +1508,7 @@ DEPENDENCIES:
   - just_audio (from `.symlinks/plugins/just_audio/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - quill_native_bridge_ios (from `.symlinks/plugins/quill_native_bridge_ios/ios`)
+  - read_pdf_text (from `.symlinks/plugins/read_pdf_text/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - super_native_extensions (from `.symlinks/plugins/super_native_extensions/ios`)
@@ -1597,6 +1600,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   quill_native_bridge_ios:
     :path: ".symlinks/plugins/quill_native_bridge_ios/ios"
+  read_pdf_text:
+    :path: ".symlinks/plugins/read_pdf_text/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   sqflite_darwin:
@@ -1665,6 +1670,7 @@ SPEC CHECKSUMS:
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   quill_native_bridge_ios: 277bdf5bf0fa5d7a12999556b415a5c63dd76ec4
+  read_pdf_text: e29ee5e80e1dad2f855cdbfc0cbb2097a1cae569
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
   SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
   shared_preferences_foundation: fcdcbc04712aee1108ac7fda236f363274528f78
