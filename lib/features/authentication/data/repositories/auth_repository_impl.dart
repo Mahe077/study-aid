@@ -6,6 +6,7 @@ import 'package:study_aid/features/authentication/data/datasources/auth_local_st
 import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/domain/repositories/auth.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final RemoteDataSource remoteDataSource;
@@ -140,4 +141,18 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, Unit>> deleteAccount() async {
+    try {
+      AppLogger.d("deleting the Account");
+      await remoteDataSource.deleteAccount();
+      // Clear the cached user data from local storage
+      await localDataSource.clearUser();
+      return const Right(unit);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
+

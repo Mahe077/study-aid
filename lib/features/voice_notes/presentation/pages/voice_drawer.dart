@@ -82,8 +82,7 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
     if (bottomSheetPlayerController.playerState == PlayerState.playing) {
       await bottomSheetPlayerController.pausePlayer();
     } else {
-      await bottomSheetPlayerController.startPlayer(
-          finishMode: FinishMode.pause);
+      await bottomSheetPlayerController.startPlayer();
     }
     setState(() {});
   }

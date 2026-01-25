@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:logger/logger.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
 import 'package:study_aid/features/authentication/data/datasources/auth_firabse_service.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
@@ -20,12 +20,12 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) => NetworkInfo());
 final userBoxProvider = FutureProvider<Box<UserModel>>((ref) async {
   // Check if the box is already open
   if (Hive.isBoxOpen('userBox')) {
-    Logger().d("userBox is already open");
+    AppLogger.d("userBox is already open");
     return Hive.box<UserModel>('userBox');
   }
 
   // If the box is not open, open it
-  Logger().d("Opening userBox...");
+  AppLogger.d("Opening userBox...");
   final box = await Hive.openBox<UserModel>('userBox');
   return box;
 });
@@ -57,7 +57,7 @@ final userProvider = FutureProvider<UserModel?>((ref) async {
     return null;
   } catch (e, stackTrace) {
     // Log the error with a stack trace for debugging purposes
-    Logger().e('Error fetching user from Hive: $e', stackTrace: stackTrace);
+    AppLogger.e('Error fetching user from Hive: $e', stackTrace: stackTrace);
     return null;
   }
 });

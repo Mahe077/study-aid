@@ -7,24 +7,24 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:study_aid/main.dart';
 
+import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
+
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('App startup smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(ProviderScope(
+      overrides: [
+        userProvider.overrideWith((ref) async => null),
+        userBoxProvider.overrideWith((ref) async => throw UnimplementedError()),
+      ],
+      child: const MyApp(),
+    ));
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify that the splash screen is shown
+    expect(find.byType(FadeTransition), findsOneWidget);
   });
 }

@@ -12,6 +12,7 @@ import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/buttons/social_buttons.dart';
 import 'package:study_aid/common/widgets/mask/loading_mask.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
@@ -29,7 +30,6 @@ class SignupPage extends ConsumerStatefulWidget {
 }
 
 class _SignupPageState extends ConsumerState<SignupPage> {
-  final Logger _log = Logger();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -148,11 +148,11 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 
     result.fold(
       (failure) {
-        _log.e(failure.message);
+        AppLogger.e(failure.message);
         CustomToast(context: context).showFailure(description: failure.message);
       },
       (user) async {
-        _log.d(user);
+        AppLogger.d(user.toString());
         if (user != null) {
           ref.invalidate(userProvider);
 
@@ -348,7 +348,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             ),
             recognizer: TapGestureRecognizer()
               ..onTap = () {
-                _log.i("Terms of Use clicked");
+                AppLogger.i("Terms of Use clicked");
                 //TODO: Navigate to Terms of Use page
               },
           ),

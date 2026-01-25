@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
-import 'package:logger/logger.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
 
 class UserNotifier extends AsyncNotifier<UserModel?> {
@@ -11,26 +11,26 @@ class UserNotifier extends AsyncNotifier<UserModel?> {
 
   Future<UserModel?> _fetchUser() async {
     try {
-      Logger().d("Trying to open userBox...");
+      AppLogger.d("Trying to open userBox...");
 
       // Open the box if it's not already open
       final userBox = Hive.isBoxOpen('userBox')
           ? Hive.box<UserModel>('userBox')
           : await Hive.openBox<UserModel>('userBox');
 
-      Logger().d("User box opened. Box length: ${userBox.length}");
+      AppLogger.d("User box opened. Box length: ${userBox.length}");
 
       // Fetch the user
       if (userBox.isNotEmpty) {
         final user = userBox.get(userBox.keys.first);
-        Logger().d("User found in box: ${user?.email}");
+        AppLogger.d("User found in box: ${user?.email}");
         return user;
       } else {
-        Logger().d("No user found in the box.");
+        AppLogger.d("No user found in the box.");
         return null;
       }
     } catch (e) {
-      Logger().e("Error opening or fetching from Hive box: $e");
+      AppLogger.e("Error opening or fetching from Hive box: $e");
       return null;
     }
   }
@@ -39,7 +39,7 @@ class UserNotifier extends AsyncNotifier<UserModel?> {
   Future<void> logOut() async {
     final userBox = await Hive.openBox<UserModel>('userBox');
     await userBox.clear();
-    Logger().d("User logged out.");
+    AppLogger.d("User logged out.");
     state = const AsyncValue.data(null);
   }
 }

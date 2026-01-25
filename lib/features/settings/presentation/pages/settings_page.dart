@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/buttons/basic_app_button.dart';
 import 'package:study_aid/common/widgets/headings/headings.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart'
     as UserProvider;
@@ -119,7 +119,7 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 10),
                       ElevatedButton(
-                        onPressed: () => {Logger().i("Notifications")},
+                        onPressed: () => {AppLogger.i("Notifications")},
                         style: ElevatedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5.0),

@@ -2,8 +2,8 @@ import 'package:dartz/dartz.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
@@ -23,6 +23,8 @@ abstract class RemoteDataSource {
   Future<Unit> sendPasswordResetEmail(String email);
   Future<Either<Failure, void>> updatePassword(String password);
   Future<Either<Failure, void>> updateColor(UserModel user);
+  Future<Unit> reauthenticate(String? password);
+  Future<Unit> deleteAccount();
 }
 
 class RemoteDataSourceImpl implements RemoteDataSource {
@@ -75,11 +77,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           errorMessage = 'An unknown error occurred. Please try again later.';
       }
 
-      Logger().e("Error signing in: ${e.message}"); // Log the detailed error
+      AppLogger.e("Error signing in: ${e.message}"); // Log the detailed error
       throw Exception(errorMessage); // Return user-friendly error
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Error signing in: $e");
+      AppLogger.e("Error signing in: $e");
       throw Exception('An error occurred while signing in. Please try again.');
     }
   }
@@ -129,11 +131,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           errorMessage = 'An unknown error occurred. Please try again later.';
       }
 
-      Logger().e("Error signing up: ${e.message}"); // Log the detailed error
+      AppLogger.e("Error signing up: ${e.message}"); // Log the detailed error
       throw Exception(errorMessage); // Return user-friendly error
     } catch (e) {
       // Handle any other unexpected errors
-      Logger().e("Error signing up: $e");
+      AppLogger.e("Error signing up: $e");
       throw Exception('An error occurred while signing up. Please try again.');
     }
   }
@@ -164,11 +166,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
               'An unknown error occurred while updating the user. Please try again.';
       }
 
-      Logger().e("Error updating user: ${e.message}"); // Log the detailed error
+      AppLogger.e("Error updating user: ${e.message}"); // Log the detailed error
       throw Exception(errorMessage); // Throw a user-friendly error
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error updating user: $e");
+      AppLogger.e("Unexpected error updating user: $e");
       throw Exception(
           'An unexpected error occurred while updating the user. Please try again.');
     }
@@ -202,12 +204,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           errorMessage = 'An unknown error occurred while retrieving the user.';
       }
 
-      Logger().e(
+      AppLogger.e(
           "Error retrieving user by ID: ${e.message}"); // Log the detailed error
       throw Exception(errorMessage); // Throw a user-friendly error message
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error retrieving user by ID: $e");
+      AppLogger.e("Unexpected error retrieving user by ID: $e");
       throw Exception(
           'An unexpected error occurred while retrieving the user. Please try again.');
     }
@@ -230,12 +232,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
               'An error occurred while signing out. Please try again.';
       }
 
-      Logger().e(
+      AppLogger.e(
           "Firebase error during sign out: ${e.message}"); // Log detailed error
       throw Exception(errorMessage); // Throw user-friendly error
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error during sign out: $e");
+      AppLogger.e("Unexpected error during sign out: $e");
       throw Exception(
           'An unexpected error occurred while signing out. Please try again.');
     }
@@ -248,8 +250,8 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         // User canceled the sign-in flow
-        Logger().i("Google Sign-In canceled by user");
-        return null;
+        AppLogger.i("Google Sign-In canceled by user");
+        throw Exception("Google Sign-In canceled by user."); 
       }
 
       // Obtain authentication details from the Google Sign-In flow
@@ -282,15 +284,15 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           color: AppColors.defaultColor,
         );
         await updateUser(user); // Save the new user to Firestore
-        Logger().i("New user created with Google Sign-In: ${user.email}");
+        AppLogger.i("New user created with Google Sign-In: ${user.email}");
       } else {
-        Logger().i("Existing user signed in with Google: ${user.email}");
+        AppLogger.i("Existing user signed in with Google: ${user.email}");
       }
 
       return user; // Return the user model
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific errors
-      Logger().e("Firebase error during Google Sign-In: ${e.message}");
+      AppLogger.e("Firebase error during Google Sign-In: ${e.message}");
       switch (e.code) {
         case 'account-exists-with-different-credential':
           throw Exception(
@@ -303,7 +305,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       }
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error during Google Sign-In: $e");
+      AppLogger.e("Unexpected error during Google Sign-In: $e");
       throw Exception("An unexpected error occurred. Please try again.");
     }
   }
@@ -318,7 +320,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
       if (facebookUser.status != LoginStatus.success ||
           facebookUser.accessToken == null) {
-        Logger()
+        AppLogger
             .i("Facebook Sign-In canceled or failed: ${facebookUser.status}");
         return null; // User canceled or login failed
       }
@@ -350,15 +352,15 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           color: AppColors.defaultColor,
         );
         await updateUser(user); // Save the new user to Firestore
-        Logger().i("New user created with Facebook Sign-In: ${user.email}");
+        AppLogger.i("New user created with Facebook Sign-In: ${user.email}");
       } else {
-        Logger().i("Existing user signed in with Facebook: ${user.email}");
+        AppLogger.i("Existing user signed in with Facebook: ${user.email}");
       }
 
       return user; // Return the user model
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific errors
-      Logger().e("Firebase error during Facebook Sign-In: ${e.message}");
+      AppLogger.e("Firebase error during Facebook Sign-In: ${e.message}");
       switch (e.code) {
         case 'account-exists-with-different-credential':
           throw Exception(
@@ -371,7 +373,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       }
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error during Facebook Sign-In: $e");
+      AppLogger.e("Unexpected error during Facebook Sign-In: $e");
       throw Exception("An unexpected error occurred. Please try again.");
     }
   }
@@ -387,6 +389,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
       // Retrieve the user's data from Firestore
       UserModel? user = await getUserById(userCredential.user!.uid);
+
       if (user == null) {
         // Create a new user in Firestore if not already present
         user = UserModel(
@@ -401,15 +404,15 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           color: AppColors.defaultColor,
         );
         await updateUser(user); // Save the new user to Firestore
-        Logger().i("New user created with Apple Sign-In: ${user.email}");
+        AppLogger.i("New user created with Apple Sign-In: ${user.email}");
       } else {
-        Logger().e("Existing user signed in with Apple: ${user.email}");
+        AppLogger.e("Existing user signed in with Apple: ${user.email}");
       }
 
       return user; // Return the user model
     } on FirebaseAuthException catch (e) {
       // Handle Firebase-specific errors
-      Logger().e("Firebase error during Apple Sign-In: ${e.message}");
+      AppLogger.e("Firebase error during Apple Sign-In: ${e.message}");
       switch (e.code) {
         case 'account-exists-with-different-credential':
           throw Exception(
@@ -417,13 +420,13 @@ class RemoteDataSourceImpl implements RemoteDataSource {
         case 'invalid-credential':
           throw Exception("The credential provided is invalid.");
         default:
-          Logger().e(e);
+          AppLogger.e(e as String);
           throw Exception(
               "An error occurred during Apple Sign-In. Please try again.");
       }
     } catch (e) {
       // Handle unexpected errors
-      Logger().e("Unexpected error during Aoogle Sign-In: $e");
+      AppLogger.e("Unexpected error during Aoogle Sign-In: $e");
       throw Exception("An unexpected error occurred. Please try again.");
     }
   }
@@ -462,11 +465,11 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       try {
         // Attempt to update the password
         await user.updatePassword(password);
-        Logger().d("Successfully changed password");
+        AppLogger.d("Successfully changed password");
 
         return const Right(null); // Success, no error message
       } on FirebaseAuthException catch (e) {
-        Logger().e("Password update error: ${e.code}, ${e.message}");
+        AppLogger.e("Password update error: ${e.code}, ${e.message}");
 
         // Handle specific FirebaseAuthException cases
         switch (e.code) {
@@ -483,7 +486,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
             return Left(Failure('An unexpected error occurred: ${e.message}'));
         }
       } catch (e) {
-        Logger().e("Unexpected error during password update: $e");
+        AppLogger.e("Unexpected error during password update: $e");
         // Generic error handling
         return Left(
             Failure('An unexpected error occurred. Please try again later.'));
@@ -506,11 +509,166 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
         return const Right(null);
       } catch (e) {
-        Logger().e('Error updating user color', error: e);
+        AppLogger.e('Error updating user color', error: e);
         return Left(Failure('Failed to update user color.'));
       }
     }
 
     return Left(Failure('No user is currently signed in.'));
   }
+
+  @override
+  Future<Unit> reauthenticate(String? password) async {
+    try {
+      final user = _auth.currentUser;
+
+      if (user == null) {
+        throw Exception('No user is currently signed in.');
+      }
+
+      // Check if user signed in with email/password
+      final isEmailProvider = user.providerData.any(
+        (provider) => provider.providerId == 'password',
+      );
+
+      if (isEmailProvider) {
+        // Reauthenticate with email and password
+        if (password == null || password.isEmpty) {
+          throw Exception('Password is required for reauthentication.');
+        }
+
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: password,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+        AppLogger.i('Successfully reauthenticated with email/password');
+      } else {
+        // Reauthenticate with social provider
+        final providerId = user.providerData.first.providerId;
+        
+        AuthCredential? credential;
+        
+        switch (providerId) {
+          case 'google.com':
+            final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+            if (googleUser == null) {
+              throw Exception('Google Sign-In canceled by user.');
+            }
+            final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+            credential = GoogleAuthProvider.credential(
+              accessToken: googleAuth.accessToken,
+              idToken: googleAuth.idToken,
+            );
+            break;
+            
+          case 'facebook.com':
+            final LoginResult facebookUser = await _facebookAuth.login(
+              permissions: ['email', 'public_profile'],
+            );
+            if (facebookUser.status != LoginStatus.success || facebookUser.accessToken == null) {
+              throw Exception('Facebook Sign-In canceled or failed.');
+            }
+            credential = FacebookAuthProvider.credential(
+              facebookUser.accessToken!.tokenString,
+            );
+            break;
+            
+          case 'apple.com':
+            final appleProvider = AppleAuthProvider();
+            await _auth.signInWithProvider(appleProvider);
+            // For Apple, we need to use the credential from the new sign-in
+            AppLogger.i('Successfully reauthenticated with Apple');
+            return unit;
+            
+          default:
+            throw Exception('Unsupported authentication provider: $providerId');
+        }
+        
+        await user.reauthenticateWithCredential(credential);
+        AppLogger.i('Successfully reauthenticated with $providerId');
+      }
+
+      return unit;
+    } on FirebaseAuthException catch (e) {
+      AppLogger.e('Error during reauthentication: ${e.message}');
+      
+      switch (e.code) {
+        case 'wrong-password':
+          throw Exception('Incorrect password. Please try again.');
+        case 'user-mismatch':
+          throw Exception('The credentials do not match the current user.');
+        case 'user-not-found':
+          throw Exception('No user found with these credentials.');
+        case 'invalid-credential':
+          throw Exception('The credential is invalid or expired.');
+        case 'invalid-email':
+          throw Exception('The email address is invalid.');
+        default:
+          throw Exception('Reauthentication failed. Please try again.');
+      }
+    } catch (e) {
+      AppLogger.e('Unexpected error during reauthentication: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Unit> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+
+      if (user == null) {
+        throw Exception('No user is currently signed in.');
+      }
+
+      final userId = user.uid;
+
+      // Delete user document from Firestore
+      try {
+        await _firestore.collection('users').doc(userId).delete();
+        AppLogger.i('Successfully deleted user document from Firestore: $userId');
+      } on FirebaseException catch (e) {
+        AppLogger.e('Error deleting user document from Firestore: ${e.message}');
+        
+        switch (e.code) {
+          case 'permission-denied':
+            throw Exception(
+                'You do not have permission to delete this account. Please contact support.');
+          case 'unavailable':
+            throw Exception(
+                'Firestore is currently unavailable. Please try again later.');
+          default:
+            throw Exception(
+                'Failed to delete user data. Please try again.');
+        }
+      }
+
+      // Delete Firebase Authentication user
+      try {
+        await user.delete();
+        AppLogger.i('Successfully deleted Firebase Auth user: $userId');
+      } on FirebaseAuthException catch (e) {
+        AppLogger.e('Error deleting Firebase Auth user: ${e.message}');
+        
+        switch (e.code) {
+          case 'requires-recent-login':
+            throw Exception(
+                'For security, please sign out and sign in again before deleting your account.');
+          case 'no-current-user':
+            throw Exception('No user is currently signed in.');
+          default:
+            throw Exception(
+                'Failed to delete account. Please try again.');
+        }
+      }
+
+      return unit;
+    } catch (e) {
+      AppLogger.e('Unexpected error during account deletion: $e');
+      throw Exception(e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
+
