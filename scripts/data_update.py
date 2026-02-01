@@ -2,7 +2,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import random
 
-cred = credentials.Certificate("D:/Work/note/study_aid/scripts/study-aid-e2fc5-firebase-adminsdk-9b01y-8d5c0e0d6b.json")
+cred = credentials.Certificate("D:/Work/note/study_aid/scripts/study-aid-e3671-firebase-adminsdk-9b01y-8d5c0e0d6b.json")
 firebase_admin.initialize_app(cred)
 
 # Get a Firestore client
