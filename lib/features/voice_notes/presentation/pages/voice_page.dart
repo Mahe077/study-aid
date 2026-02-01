@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
@@ -110,7 +111,7 @@ class _VoicePageState extends ConsumerState<VoicePage> {
   // Function to generate a unique name if the user doesn't provide one
   String _generateUniqueName() {
     String timeStamp = DateTime.now().millisecondsSinceEpoch.toString();
-    return '$path/recording_$timeStamp.aac'; // Example: recording_1694959200.aac
+    return '$path/recording_$timeStamp.m4a'; // Example: recording_1694959200.m4a
   }
 
   void _getDir() async {
@@ -724,10 +725,26 @@ class _VoicePageState extends ConsumerState<VoicePage> {
         recordingEnded = true;
       });
 
-      waveformData = await playerController.extractWaveformData(
-        path: recordPath ?? '',
-        noOfSamples: 100,
-      );
+      try {
+        File file = File(recordPath!);
+        if (await file.exists()) {
+          final length = await file.length();
+          if (length > 0) {
+            waveformData = await playerController.extractWaveformData(
+              path: recordPath ?? '',
+              noOfSamples: 100,
+            );
+          } else {
+            Logger().w("Recorded audio file is empty: $recordPath");
+          }
+        } else {
+          Logger().e("Recorded file does not exist: $recordPath");
+        }
+      } on PlatformException catch (e) {
+        Logger().w("Error extracting waveform (PlatformException): ${e.message}");
+      } catch (e) {
+        Logger().e("Error extracting waveform: $e");
+      }
     }
     Logger().d("Recorded file path: $recordPath");
   }

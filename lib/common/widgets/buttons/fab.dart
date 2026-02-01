@@ -328,6 +328,7 @@ class _FABState extends ConsumerState<FAB> {
             heroTag: null,
             onPressed: () async {
               _fabKey.currentState?.toggle();
+              final toast = CustomToast(context: context);
               final result = await ref
                   .read(filesProvider(FilesParams(
                           topicId: widget.parentId!,
@@ -337,14 +338,19 @@ class _FABState extends ConsumerState<FAB> {
                     userId: widget.userId,
                     dropdownValue: widget.dropdownValue,
                     allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
+                    onUploadStarted: () {
+                      toast.showInfo(
+                          title: 'File Upload',
+                          description: 'Upload started. You will be notified shortly.');
+                    },
                   );
 
               result.fold(
-                (failure) => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(failure.message)),
+                (failure) => toast.showFailure(
+                  description: failure.message,
                 ),
-                (success) => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('File uploaded successfully')),
+                (success) => toast.showSuccess(
+                  description: 'File uploaded successfully',
                 ),
               );
             },

@@ -157,3 +157,8 @@ Future<String> getAudioFilePath(String filePath) async {
   final directory = await getApplicationDocumentsDirectory();
   return '${directory.path}/$filename';
 }
+
+
+String getCount(int number){
+  return number>99 ? '99+' : number.toString();
+}

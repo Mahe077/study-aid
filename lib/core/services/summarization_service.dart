@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 
-import '../config/azure_config.dart';
+import '../config/open_ai_config.dart';
 
 /// ----------------------------
 /// MODELS
@@ -25,15 +25,14 @@ class SummarizationUpdate {
 
 /// ----------------------------
 /// SERVICE - Text Summarization
-/// Uses Azure Language Service Text Analytics API
+/// Uses OpenAI GPT API for high-quality summaries
 /// Handles large texts by chunking
 /// ----------------------------
 class SummarizationService {
   final Logger _logger = Logger();
 
-  // Azure limit: 125KB per request, ~40k chars per doc is safe
-  static const int _maxCharsPerDoc = 40000;
-  static const int _docsPerBatch = 2;
+  // OpenAI has a context limit, we'll chunk at ~12k chars to leave room for response
+  static const int _maxCharsPerChunk = 12000;
 
   /// Public API
   Stream<SummarizationUpdate> summarizeText(String text) async* {
@@ -56,26 +55,26 @@ class SummarizationService {
     }
 
     try {
-      // Split text into chunks
+      // Split text into chunks if needed
       final chunks = _splitTextIntoChunks(text);
-      final batches = _createBatches(chunks);
 
-      _logger.i('Text split into ${chunks.length} chunks, ${batches.length} batches');
+      _logger.i('Text split into ${chunks.length} chunk(s)');
 
       final summaries = <String>[];
 
-      for (int i = 0; i < batches.length; i++) {
+      for (int i = 0; i < chunks.length; i++) {
         yield SummarizationUpdate(
-          statusMessage: 'Processing part ${i + 1} of ${batches.length}...',
+          statusMessage: 'Summarizing part ${i + 1} of ${chunks.length}...',
         );
 
-        final batchSummary = await _processBatch(batches[i]);
-        if (batchSummary != null && batchSummary.isNotEmpty) {
-          summaries.add(batchSummary);
+        final chunkSummary = await _summarizeChunk(chunks[i], i + 1, chunks.length);
+        
+        if (chunkSummary != null && chunkSummary.isNotEmpty) {
+          summaries.add(chunkSummary);
 
           yield SummarizationUpdate(
             statusMessage: 'Part ${i + 1} complete.',
-            partialSummary: batchSummary,
+            partialSummary: chunkSummary,
             isSummary: true,
           );
         }
@@ -83,6 +82,29 @@ class SummarizationService {
 
       if (summaries.isEmpty) {
         throw Exception('No summary could be generated.');
+      }
+
+      // If we had multiple chunks, create a final combined summary
+      if (summaries.length > 1) {
+        yield SummarizationUpdate(
+          statusMessage: 'Creating final summary...',
+        );
+
+        final combinedText = summaries.join('\n\n');
+        final finalSummary = await _summarizeChunk(
+          combinedText, 
+          1, 
+          1,
+          isFinalSummary: true,
+        );
+
+        if (finalSummary != null && finalSummary.isNotEmpty) {
+          yield SummarizationUpdate(
+            statusMessage: 'Final summary complete.',
+            partialSummary: finalSummary,
+            isSummary: true,
+          );
+        }
       }
 
       yield SummarizationUpdate(
@@ -99,18 +121,33 @@ class SummarizationService {
 
   /// Split text into manageable chunks
   List<String> _splitTextIntoChunks(String text) {
+    if (text.length <= _maxCharsPerChunk) {
+      return [text];
+    }
+
     final chunks = <String>[];
     int start = 0;
 
     while (start < text.length) {
-      int end = start + _maxCharsPerDoc;
+      int end = start + _maxCharsPerChunk;
+      
       if (end >= text.length) {
         end = text.length;
       } else {
-        // Avoid splitting in middle of surrogate pair
-        if (text.codeUnitAt(end - 1) >= 0xD800 &&
-            text.codeUnitAt(end - 1) <= 0xDBFF) {
-          end--;
+        // Try to break at a sentence or paragraph boundary
+        final searchStart = (end - 500).clamp(start, end);
+        final searchText = text.substring(searchStart, end);
+        
+        // Look for paragraph break first
+        int breakPoint = searchText.lastIndexOf('\n\n');
+        if (breakPoint == -1) {
+          // Look for sentence break
+          breakPoint = searchText.lastIndexOf('. ');
+          if (breakPoint != -1) breakPoint += 1; // Include the period
+        }
+        
+        if (breakPoint != -1 && breakPoint > 0) {
+          end = searchStart + breakPoint + 1;
         }
       }
 
@@ -124,161 +161,76 @@ class SummarizationService {
     return chunks;
   }
 
-  /// Create batches of documents for API calls
-  List<List<Map<String, String>>> _createBatches(List<String> chunks) {
-    final allDocs = <Map<String, String>>[];
-
-    for (int i = 0; i < chunks.length; i++) {
-      allDocs.add({
-        'id': '${i + 1}',
-        'language': 'en',
-        'text': chunks[i],
-      });
-    }
-
-    final batches = <List<Map<String, String>>>[];
-    for (int i = 0; i < allDocs.length; i += _docsPerBatch) {
-      final end = (i + _docsPerBatch > allDocs.length)
-          ? allDocs.length
-          : i + _docsPerBatch;
-      batches.add(allDocs.sublist(i, end));
-    }
-
-    return batches;
-  }
-
-  /// Process a single batch
-  Future<String?> _processBatch(List<Map<String, String>> documents) async {
-    final operationLocation = await _submitJob(documents);
-    if (operationLocation == null) {
-      throw Exception('Failed to submit batch.');
-    }
-
-    // Poll for results
-    int pollCount = 0;
-    const maxPolls = 60;
-
-    while (pollCount < maxPolls) {
-      await Future.delayed(const Duration(seconds: 2));
-
-      final pollResponse = await _pollJob(operationLocation);
-      final status = pollResponse['status'];
-
-      _logger.i('Poll status: $status');
-
-      if (status == 'succeeded') {
-        return _extractSummaryFromResponse(pollResponse);
-      }
-
-      if (status == 'failed') {
-        final errors = pollResponse['errors'] as List?;
-        final errorMsg = errors?.isNotEmpty == true
-            ? errors!.first['message'] ?? 'Batch failed.'
-            : 'Batch failed.';
-        throw Exception(errorMsg);
-      }
-
-      pollCount++;
-    }
-
-    throw Exception('Batch timed out.');
-  }
-
-  /// ----------------------------
-  /// AZURE API CALLS
-  /// ----------------------------
-
-  /// Submit summarization job
-  Future<String?> _submitJob(List<Map<String, String>> documents) async {
-    final url = Uri.parse(
-        '${AzureConfig.languageResourceEndpoint}language/analyze-text/jobs?api-version=2023-04-01');
+  /// Summarize a single chunk using OpenAI
+  Future<String?> _summarizeChunk(
+    String text, 
+    int partNumber, 
+    int totalParts, {
+    bool isFinalSummary = false,
+  }) async {
+    final systemPrompt = isFinalSummary
+        ? '''You are an expert summarizer. You are given multiple summaries from different parts of a document. 
+Create a cohesive, comprehensive final summary that captures all the key points.
+Write in clear, well-structured paragraphs. Use bullet points for lists of key concepts if appropriate.
+The summary should be detailed enough to be useful for studying.'''
+        : '''You are an expert summarizer for educational content. 
+Summarize the following text, capturing all key concepts, definitions, and important details.
+Write in clear, well-structured paragraphs. Use bullet points for lists of key concepts if appropriate.
+The summary should be detailed enough to be useful for studying.
+${totalParts > 1 ? "This is part $partNumber of $totalParts parts of a larger document." : ""}''';
 
     final body = {
-      "displayName": "StudyAid Summarization",
-      "analysisInput": {"documents": documents},
-      "tasks": [
-        {
-          "kind": "ExtractiveSummarization",
-          "taskName": "extractiveSummary",
-          "parameters": {"sentenceCount": 10}
-        }
-      ]
+      "model": OpenAIConfig.model,
+      "messages": [
+        {"role": "system", "content": systemPrompt},
+        {"role": "user", "content": "Please summarize the following text:\n\n$text"}
+      ],
+      "temperature": 0.3,
+      "max_tokens": 2000,
     };
 
-    _logger.i('Submitting batch with ${documents.length} documents');
+    _logger.i('Sending request to OpenAI (${text.length} chars)...');
 
     final response = await http.post(
-      url,
+      Uri.parse(OpenAIConfig.apiEndpoint),
       headers: {
         'Content-Type': 'application/json',
-        'Ocp-Apim-Subscription-Key': AzureConfig.languageResourceKey,
+        'Authorization': 'Bearer ${OpenAIConfig.apiKey}',
       },
       body: jsonEncode(body),
     );
 
-    if (response.statusCode == 202) {
-      final operationLocation = response.headers['operation-location'];
-      _logger.i('Job submitted: $operationLocation');
-      return operationLocation;
-    }
+    _logger.d('OpenAI response status: ${response.statusCode}');
 
-    _logger.e('Azure API error: ${response.statusCode} - ${response.body}');
-    final error = jsonDecode(response.body);
-    throw Exception(
-      error['error']?['message'] ?? 'Request failed (${response.statusCode})',
-    );
-  }
-
-  /// Poll job status
-  Future<Map<String, dynamic>> _pollJob(String operationLocation) async {
-    final response = await http.get(
-      Uri.parse(operationLocation),
-      headers: {
-        'Ocp-Apim-Subscription-Key': AzureConfig.languageResourceKey,
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Polling failed: ${response.statusCode}');
-    }
-
-    return jsonDecode(response.body) as Map<String, dynamic>;
-  }
-
-  /// Extract summary from response
-  String? _extractSummaryFromResponse(Map<String, dynamic> response) {
-    try {
-      final tasks = response['tasks'];
-      if (tasks == null) return null;
-
-      final items = tasks['items'] as List?;
-      if (items == null || items.isEmpty) return null;
-
-      final results = items.first['results'];
-      if (results == null) return null;
-
-      final documents = results['documents'] as List?;
-      if (documents == null || documents.isEmpty) return null;
-
-      // Sort by document ID and combine summaries
-      final sortedDocs = List<dynamic>.from(documents);
-      sortedDocs.sort(
-          (a, b) => int.parse(a['id']).compareTo(int.parse(b['id'])));
-
-      final allSentences = <String>[];
-      for (final doc in sortedDocs) {
-        final sentences = doc['sentences'] as List?;
-        if (sentences != null) {
-          for (final s in sentences) {
-            allSentences.add(s['text'] as String);
-          }
-        }
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final content = data['choices']?[0]?['message']?['content'] as String?;
+      
+      if (content != null) {
+        _logger.i('Summary generated successfully (${content.length} chars)');
+        return content.trim();
       }
-
-      return allSentences.isNotEmpty ? allSentences.join(' ') : null;
-    } catch (e) {
-      _logger.e('Error extracting summary: $e');
-      return null;
+      
+      throw Exception('Empty response from OpenAI');
     }
+
+    // Handle errors
+    _logger.e('OpenAI API error: ${response.statusCode} - ${response.body}');
+    
+    final error = jsonDecode(response.body);
+    final errorMessage = error['error']?['message'] ?? 'Request failed';
+    
+    if (response.statusCode == 401) {
+      _logger.e('Invalid OpenAI API key. Please check your configuration.');
+      throw Exception('Please try again later.');
+    } else if (response.statusCode == 429) {
+      _logger.e('Rate limit exceeded. Please try again later.');
+      throw Exception('Please try again later.');
+    } else if (response.statusCode == 503) {
+      throw Exception('OpenAI service temporarily unavailable. Please try again.');
+    }
+    
+    throw Exception(errorMessage);
   }
 }
+

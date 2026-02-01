@@ -1,7 +1,7 @@
 name: study_aid
 description: "Study Aid."
 publish_to: "none"
-version: 1.0.2+4
+version: 1.0.3+5
 environment:
   sdk: ">=3.5.0-277.0.dev <4.0.0"
 
@@ -69,6 +69,7 @@ dev_dependencies:
   riverpod_generator: ^2.4.2
   custom_lint: ^0.6.4
   riverpod_lint: ^2.3.12
+  flutter_native_splash: ^2.4.0
 
 flutter:
   uses-material-design: true
@@ -109,3 +110,10 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/images/logo.png"
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: "assets/images/logo.png"
+  android_12:
+    image: "assets/images/logo.png"
+    color: "#ffffff"

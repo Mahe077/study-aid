@@ -44,12 +44,14 @@ class _GetStartedPageState extends State<GetStartedPage> {
                 const Spacer(),
                 AppHeadings(
                   text: headings[index],
+                  size: 26, 
                 ),
                 const SizedBox(
                   height: 20,
                 ),
                 AppSubHeadings(
                   text: subHeadings[index],
+                  size: 18,
                 ),
                 const SizedBox(
                   height: 30,

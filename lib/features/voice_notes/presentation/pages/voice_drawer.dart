@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'dart:io';
+
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/helpers/audio_file_utils.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
@@ -48,23 +52,42 @@ class _ModalBottomSheetState extends ConsumerState<ModalBottomSheet> {
     bottomSheetPlayerController = PlayerController();
 
     if (widget.entity.localpath.isNotEmpty) {
-      await bottomSheetPlayerController.preparePlayer(
-          path: widget.entity.localpath);
-      _playerStateSubscription =
-          bottomSheetPlayerController.onPlayerStateChanged.listen((_) {
-        if (mounted) setState(() {});
-      });
-
-      // Get waveform data asynchronously
       try {
-        final waveStyle = PlayerWaveStyle();
-        final samples = waveStyle.getSamplesForWidth(300.0);
-        waveformData = await bottomSheetPlayerController.extractWaveformData(
-            path: widget.entity.localpath, noOfSamples: samples);
+        String? compatiblePath = await AudioFileUtils.getCompatibleAudioPath(widget.entity.localpath);
+        File file = File(compatiblePath ?? widget.entity.localpath);
+        
+        if (await file.exists()) {
+          final length = await file.length();
+          if (length > 0) {
+            await bottomSheetPlayerController.preparePlayer(
+                path: file.path);
+            _playerStateSubscription =
+                bottomSheetPlayerController.onPlayerStateChanged.listen((_) {
+              if (mounted) setState(() {});
+            });
 
-        if (mounted) setState(() {});
+            // Get waveform data asynchronously
+            try {
+              final waveStyle = PlayerWaveStyle();
+              final samples = waveStyle.getSamplesForWidth(300.0);
+              waveformData =
+                  await bottomSheetPlayerController.extractWaveformData(
+                      path: file.path, noOfSamples: samples);
+
+              if (mounted) setState(() {});
+            } catch (e) {
+              Logger().e("Error extracting waveform data: $e");
+            }
+          } else {
+            Logger().w("Audio file is empty: ${file.path}");
+          }
+        } else {
+          Logger().e("File does not exist: ${file.path}");
+        }
+      } on PlatformException catch (e) {
+        Logger().w("Error preparing player (PlatformException): ${e.message}");
       } catch (e) {
-        Logger().e("Error extracting waveform data: $e");
+        Logger().e("Error initializing player: $e");
       }
     } else {
       Logger().e("Audio path is null or empty");

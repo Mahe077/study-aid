@@ -17,9 +17,9 @@
 	<key>BUNDLE_ID</key>
 	<string>com.example.studyAid</string>
 	<key>PROJECT_ID</key>
-	<string>study-aid-e2fc5</string>
+	<string>study-aid-e3671</string>
 	<key>STORAGE_BUCKET</key>
-	<string>study-aid-e2fc5.appspot.com</string>
+	<string>study-aid-e3671.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>

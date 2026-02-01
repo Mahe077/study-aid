@@ -42,3 +42,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 lib/core/config/azure_config.dart
+lib/core/config/open_ai_config.dart
+
