@@ -1,3 +1,4 @@
+import 'dart:io'; // Added for Platform check
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
@@ -162,7 +163,12 @@ class FileCard extends ConsumerWidget {
     try {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
+        // Force external application on iOS to avoid embedded view issues
+        final mode = Platform.isIOS 
+            ? LaunchMode.externalApplication 
+            : LaunchMode.platformDefault;
+            
+        await launchUrl(uri, mode: mode);
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

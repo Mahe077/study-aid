@@ -187,7 +187,12 @@ class _ContentTileState extends ConsumerState<ContentTile> {
     try {
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
+        // Force external application on iOS to avoid embedded view issues
+        final mode = Platform.isIOS 
+            ? LaunchMode.externalApplication 
+            : LaunchMode.platformDefault;
+            
+        await launchUrl(uri, mode: mode);
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -254,19 +259,25 @@ class _ContentTileState extends ConsumerState<ContentTile> {
         Tag(
           icon: FontAwesomeIcons.bookOpen,
           text:
-              '${(widget.entity is Topic) ? widget.entity.subTopics.length.toString() : 0} Topics',
+              '${(widget.entity is Topic) ? getCount(widget.entity.subTopics.length) : 0} Topics',
         ),
         const SizedBox(width: 5),
         Tag(
           icon: FontAwesomeIcons.solidNoteSticky,
           text:
-              '${(widget.entity is Topic) ? widget.entity.notes.length.toString() : 0} Notes',
+              '${(widget.entity is Topic) ? getCount(widget.entity.notes.length) : 0} Notes',
         ),
         const SizedBox(width: 5),
         Tag(
           icon: FontAwesomeIcons.microphone,
           text:
-              '${(widget.entity is Topic) ? widget.entity.audioRecordings.length.toString() : 0} Audio Clips',
+              '${(widget.entity is Topic) ? getCount(widget.entity.audioRecordings.length) : 0} Audio Clips',
+        ),
+        const SizedBox(width: 5),
+        Tag(
+          icon: FontAwesomeIcons.file,
+          text:
+              '${(widget.entity is Topic) ? getCount(widget.entity.files.length) : 0} Files',
         ),
       ],
     );

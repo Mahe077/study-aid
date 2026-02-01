@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/services/file_text_extractor_service.dart';
 import 'package:study_aid/core/services/summarization_service.dart';
+import 'package:study_aid/core/utils/helpers/markdown_to_quill_converter.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/domain/usecases/note.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart'; // For BaseEntity if needed
@@ -131,28 +132,31 @@ class SummarizationNotifier extends StateNotifier<SummarizationState> {
       
       final now = DateTime.now();
       
-      // Properly escape the summary for JSON (Quill delta format)
-      final escapedSummary = state.accumulatedSummary
-          .replaceAll('\\', '\\\\')
-          .replaceAll('"', '\\"')
-          .replaceAll('\n', '\\n')
-          .replaceAll('\r', '\\r')
-          .replaceAll('\t', '\\t');
+
       
+      // Convert markdown to Quill format and extract metadata
+      final conversionResult = MarkdownToQuillConverter.convert(state.accumulatedSummary);
+      
+      // Determine title: User provided > Extracted from Markdown > Default timestamp
+      String noteTitle = title ?? conversionResult.title;
+      if (noteTitle.isEmpty || noteTitle == 'Summary') {
+        noteTitle = title ?? 'Summary ${now.toString().split('.')[0]}';
+      }
+
       final note = Note(
         id: now.millisecondsSinceEpoch.toString(),
-        title: title ?? 'Summary ${now.toString().split('.')[0]}',
+        title: noteTitle,
         color: noteColor ?? const Color(0xFFFFFFFF), // Use provided color or default white
         tags: ['summary', 'ai'],
         createdDate: now,
         updatedDate: now,
-        content: state.accumulatedSummary,
-        contentJson: '[{"insert":"$escapedSummary\\n"}]', // Properly escaped Quill delta
+        content: conversionResult.plainContent, // Store plain text for previews
+        contentJson: conversionResult.contentJson, // Store formatted Quill Delta
         syncStatus: 'pending',
         localChangeTimestamp: now,
         remoteChangeTimestamp: now,
         parentId: topicId,
-        titleLowerCase: (title ?? 'summary').toLowerCase(),
+        titleLowerCase: noteTitle.toLowerCase(),
         userId: userId,
       );
 

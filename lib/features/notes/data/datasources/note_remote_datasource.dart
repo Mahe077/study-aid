@@ -99,7 +99,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       contentJson = jsonEncode(contentList);
     }
 
-    Logger().d("updatedContentJson:: $contentJson");
+    // Logger().d("updatedContentJson:: $contentJson");
 
     return {
       'updatedContentJson': contentJson,
