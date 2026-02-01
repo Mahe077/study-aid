@@ -21,10 +21,14 @@ class UserRepositoryImpl implements UserRepository {
   });
 
   @override
-  Future<Either<Failure, User?>> getUser(String userId) async {
+  Future<Either<Failure, User?>> getUser(String userId,
+      {bool forceFetch = false}) async {
     try {
       // Try to get the user from local storage
-      UserModel? user = await localDataSource.getCachedUser(userId);
+      UserModel? user;
+      if (!forceFetch) {
+        user = await localDataSource.getCachedUser(userId);
+      }
       if (user != null) {
         return Right(user);
       } else if (await networkInfo.isConnected) {

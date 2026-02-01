@@ -146,8 +146,40 @@ class FileRepositoryImpl extends FileRepository {
   }
 
   @override
-  Future<Either<Failure, void>> syncFiles() async {
+  Future<Either<Failure, void>> syncFiles(String userId) async {
     try {
+      // 1. Fetch available topics to scan for missing files
+      final allTopics = await topicRepository.fetchAllTopics();
+
+      await allTopics.fold(
+        (failure) async {
+          Logger().e("SyncFiles: Failed to fetch topics: $failure");
+        },
+        (topics) async {
+          // 2. Iterate through all topics and their files
+          for (var topic in topics) {
+            for (var fileId in topic.files) {
+              if (!localDataSource.fileExists(fileId)) {
+                if (await networkInfo.isConnected) {
+                  final remoteFileResult =
+                      await remoteDataSource.getFileById(fileId);
+                  await remoteFileResult.fold(
+                    (failure) async {
+                       Logger().e("SyncFiles: Failed to fetch missing file $fileId: $failure");
+                    },
+                    (remoteFile) async {
+                      await localDataSource.createFile(remoteFile);
+                      Logger().i("SyncFiles: Pulled missing file $fileId");
+                    },
+                  );
+                }
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Keep existing sync logic
       var localFiles = await localDataSource.fetchAllFiles();
 
       for (var localFile in localFiles) {

@@ -63,8 +63,8 @@ class SyncTopicsUseCase {
 
   SyncTopicsUseCase(this.repository);
 
-  Future<void> call() async {
-    final result = await repository.syncTopics();
+  Future<void> call(String userId) async {
+    final result = await repository.syncTopics(userId);
     return result.fold(
       (failure) => Left(failure),
       (success) => Right(success),

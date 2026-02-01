@@ -8,8 +8,8 @@ class SyncNotesUseCase {
 
   SyncNotesUseCase(this.repository);
 
-  Future<void> call() async {
-    final result = await repository.syncNotes();
+  Future<void> call(String userId) async {
+    final result = await repository.syncNotes(userId);
     return result.fold(
       (failure) => Left(failure),
       (success) => Right(success),

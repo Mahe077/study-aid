@@ -33,9 +33,7 @@ Welcome to the initial release of **Study Aid**! This version establishes the fo
 - **Local Database**: Hive for high-performance offline data storage.
 - **Audio**: Just Audio & Audio Waveforms for high-quality audio processing.
 
-## Version 1.0.3
-
-**Release Date:** February 01, 2026
+## [1.0.3] - 2026-02-01
 
 ### 🚀 New Features
 

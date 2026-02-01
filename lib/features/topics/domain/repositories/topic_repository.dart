@@ -23,5 +23,5 @@ abstract class TopicRepository {
       String userId, int limit, int startAfter, String sortBy);
   Future<Either<Failure, PaginatedObj<Topic>>> fetchSubTopics(
       String topicId, int limit, int startAfter, String sortBy);
-  Future<Either<Failure, void>> syncTopics();
+  Future<Either<Failure, void>> syncTopics(String userId);
 }

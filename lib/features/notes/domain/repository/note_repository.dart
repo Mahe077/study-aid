@@ -11,7 +11,7 @@ abstract class NoteRepository {
   Future<void> deleteNote(String parentId, String noteId, String userId);
   Future<Either<Failure, PaginatedObj<Note>>> fetchNotes(
       String topicId, int limit, int startAfter, String sortBy);
-  Future<Either<Failure, void>> syncNotes();
+  Future<Either<Failure, void>> syncNotes(String userId);
   Future<Either<Failure, void>> updateNoteOfParent(
       String parentId, String noteId);
   Future<Either<Failure, Note?>> getNote(String noteId);

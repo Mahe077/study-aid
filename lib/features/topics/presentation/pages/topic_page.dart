@@ -382,7 +382,13 @@ class _TopicPageState extends ConsumerState<TopicPage>
       child: Scaffold(
         appBar: BasicAppbar(
           showMenu: true,
-          action: SyncButton(userId: widget.userId),
+          action: SyncButton(
+            userId: widget.userId,
+            onSyncComplete: () {
+              ref.invalidate(tabDataProvider(
+                  TabDataParams(widget.entity.id, dropdownValue)));
+            },
+          ),
         ),
         floatingActionButtonLocation: ExpandableFab.location,
         floatingActionButton: FAB(

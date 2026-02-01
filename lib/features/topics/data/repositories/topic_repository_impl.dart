@@ -415,9 +415,41 @@ class TopicRepositoryImpl implements TopicRepository {
   }
 
   @override
-  Future<Either<Failure, void>> syncTopics() async {
+  Future<Either<Failure, void>> syncTopics(String userId) async {
     try {
-      // Fetch all topics from the local data source
+      // 1. Fetch User to get the latest list of created topics
+      final userResult =
+          await userRepository.getUser(userId, forceFetch: true);
+
+      await userResult.fold(
+        (failure) async {
+          Logger().e("SyncTopics: Failed to fetch user: $failure");
+        },
+        (user) async {
+          if (user != null) {
+            // 2. Iterate through user's created topics and fetch missing ones
+            for (var topicId in user.createdTopics) {
+              if (!localDataSource.topicExists(topicId)) {
+                if (await networkInfo.isConnected) {
+                  final remoteTopicResult =
+                      await remoteDataSource.getTopicById(topicId);
+                  await remoteTopicResult.fold(
+                    (failure) async {
+                       Logger().e("SyncTopics: Failed to fetch missing topic $topicId: $failure");
+                    },
+                    (remoteTopic) async {
+                      await localDataSource.createTopic(remoteTopic);
+                       Logger().i("SyncTopics: Pulled missing topic $topicId");
+                    },
+                  );
+                }
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Proceed with existing sync logic (sync local topics)
       var localTopics = await localDataSource.fetchAllTopics();
 
       for (var localTopic in localTopics) {

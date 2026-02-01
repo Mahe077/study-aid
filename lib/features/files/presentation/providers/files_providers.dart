@@ -10,6 +10,7 @@ import 'package:study_aid/features/files/data/models/file_model.dart';
 import 'package:study_aid/features/files/data/repository/file_repository_impl.dart';
 import 'package:study_aid/features/files/domain/repository/file_repository.dart';
 import 'package:study_aid/features/files/presentation/notifiers/files_notifier.dart';
+import 'package:study_aid/features/files/domain/usecases/file_usecases.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_provider.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
 
@@ -60,6 +61,11 @@ final filesProvider = StateNotifierProvider.family<FilesNotifier, AsyncValue<Fil
     );
   },
 );
+
+final syncFilesUseCaseProvider = Provider<SyncFilesUseCase>((ref) {
+  final repository = ref.watch(fileRepositoryProvider);
+  return SyncFilesUseCase(repository);
+});
 
 class FilesParams {
   final String topicId;

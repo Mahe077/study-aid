@@ -136,9 +136,40 @@ class NoteRepositoryImpl extends NoteRepository {
   }
 
   @override
-  Future<Either<Failure, void>> syncNotes() async {
+  Future<Either<Failure, void>> syncNotes(String userId) async {
     try {
-      // Fetch all local notes
+      // 1. Fetch available topics to scan for missing notes
+      final allTopics = await topicRepository.fetchAllTopics();
+
+      await allTopics.fold(
+        (failure) async {
+          Logger().e("SyncNotes: Failed to fetch topics: $failure");
+        },
+        (topics) async {
+          // 2. Iterate through all topics and their notes
+          for (var topic in topics) {
+            for (var noteId in topic.notes) {
+              if (!localDataSource.noteExists(noteId)) {
+                if (await networkInfo.isConnected) {
+                  final remoteNoteResult =
+                      await remoteDataSource.getNoteById(noteId);
+                  await remoteNoteResult.fold(
+                    (failure) async {
+                        Logger().e("SyncNotes: Failed to fetch missing note $noteId: $failure");
+                    },
+                    (remoteNote) async {
+                      await localDataSource.createNote(remoteNote);
+                      Logger().i("SyncNotes: Pulled missing note $noteId");
+                    },
+                  );
+                }
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Keep existing sync logic
       var localNotes = await localDataSource.fetchAllNotes();
 
       for (var localNote in localNotes) {
