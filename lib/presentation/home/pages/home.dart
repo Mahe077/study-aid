@@ -11,6 +11,7 @@ import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/utils/assets/app_vectors.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
+import 'package:study_aid/common/widgets/buttons/sync_button.dart';
 import 'package:study_aid/common/widgets/tiles/recent_tile.dart';
 import 'package:study_aid/common/widgets/tiles/content_tile.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
@@ -93,9 +94,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       resizeToAvoidBottomInset : false,
-      appBar: const BasicAppbar(
+      appBar: BasicAppbar(
         hideBack: true,
         showMenu: true,
+        action: SyncButton(userId: widget.user.id),
       ),
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: FAB(

@@ -65,7 +65,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
     final fileRef =
         storageRef.child('Images/${DateTime.now().millisecondsSinceEpoch}.jpg');
 
-    await fileRef.putFile(File(imagePath));
+    await fileRef.putFile(File(imagePath)).timeout(const Duration(seconds: 60));
     final downloadUrl = await fileRef.getDownloadURL();
     return downloadUrl;
   }
@@ -99,7 +99,7 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       contentJson = jsonEncode(contentList);
     }
 
-    Logger().d("updatedContentJson:: $contentJson");
+    // Logger().d("updatedContentJson:: $contentJson");
 
     return {
       'updatedContentJson': contentJson,

@@ -39,4 +39,43 @@ class Topic extends BaseEntity {
     required this.titleLowerCase,
     required this.userId,
   });
+
+  Topic copyWith({
+    String? id,
+    String? title,
+    String? description,
+    Color? color,
+    DateTime? createdDate,
+    DateTime? updatedDate,
+    List<String>? subTopics,
+    List<String>? notes,
+    List<String>? audioRecordings,
+    List<String>? files,
+    String? syncStatus,
+    DateTime? localChangeTimestamp,
+    DateTime? remoteChangeTimestamp,
+    String? parentId,
+    String? titleLowerCase,
+    String? userId,
+  }) {
+    return Topic(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      color: color ?? this.color,
+      createdDate: createdDate ?? this.createdDate,
+      updatedDate: updatedDate ?? this.updatedDate,
+      subTopics: subTopics ?? this.subTopics,
+      notes: notes ?? this.notes,
+      audioRecordings: audioRecordings ?? this.audioRecordings,
+      files: files ?? this.files,
+      syncStatus: syncStatus ?? this.syncStatus,
+      localChangeTimestamp: localChangeTimestamp ?? this.localChangeTimestamp,
+      remoteChangeTimestamp:
+          remoteChangeTimestamp ?? this.remoteChangeTimestamp,
+      parentId: parentId ?? this.parentId,
+      titleLowerCase: titleLowerCase ?? this.titleLowerCase,
+      userId: userId ?? this.userId,
+    );
+  }
 }

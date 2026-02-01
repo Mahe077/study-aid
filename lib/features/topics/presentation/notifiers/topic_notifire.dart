@@ -153,6 +153,7 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
   }
 
   Future<void> updateTopic(Topic topic) async {
+    final previousState = state;
     state = const AsyncValue.loading();
     try {
       final updateTopic = _ref.read(updateTopicProvider);
@@ -162,18 +163,18 @@ class TopicsNotifier extends StateNotifier<AsyncValue<TopicsState>> {
         (failure) =>
             state = AsyncValue.error(failure.message, StackTrace.current),
         (updatedTopic) {
-          final currentState = state;
-
-          state = AsyncValue.data(
-            currentState.value!.copyWith(
-                topics: currentState.value!.topics
-                    .map(
-                      (topic) =>
-                          topic.id == updatedTopic.id ? updatedTopic : topic,
-                    )
-                    .toList(),
-                lastDocument: currentState.value!.lastDocument),
-          );
+          if (previousState.value != null) {
+            state = AsyncValue.data(
+              previousState.value!.copyWith(
+                  topics: previousState.value!.topics
+                      .map(
+                        (topic) =>
+                            topic.id == updatedTopic.id ? updatedTopic : topic,
+                      )
+                      .toList(),
+                  lastDocument: previousState.value!.lastDocument),
+            );
+          }
         },
       );
     } catch (e, stackTrace) {

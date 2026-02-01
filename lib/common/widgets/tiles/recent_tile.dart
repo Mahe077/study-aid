@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/helpers/audio_file_utils.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
@@ -44,14 +46,23 @@ class _RecentTileState extends State<RecentTile> {
   void _preparePlayer(PlayerController controller, String? localPath) async {
     try {
       if (localPath != null) {
-        Logger().i("Audio file path: $localPath");
-        File file = File(localPath);
+        // Logger().i("Audio file path: $localPath");
+        String? compatiblePath = await AudioFileUtils.getCompatibleAudioPath(localPath);
+        File file = File(compatiblePath ?? localPath);
+        
         if (await file.exists()) {
-          await controller.extractWaveformData(path: file.path);
+          final length = await file.length();
+          if (length > 0) {
+            await controller.extractWaveformData(path: file.path);
+          } else {
+            Logger().w("Audio file is empty: ${file.path}");
+          }
         } else {
-          Logger().e("File does not exist at the provided path: $file");
+          Logger().e("File does not exist: $file");
         }
       }
+    } on PlatformException catch (e) {
+      Logger().w("Error preparing player (PlatformException): ${e.message}");
     } catch (e) {
       Logger().e("Error preparing player: $e");
     }

@@ -3,19 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/features/notes/presentation/providers/summarization_provider.dart';
 
 class SummarizationDialog extends ConsumerStatefulWidget {
-  final String content;
+  final String? content;
   final String topicId;
   final String userId;
   final String? title;
   final Color? noteColor;
+  final String? fileUrl;
+  final String? fileType;
 
   const SummarizationDialog({
     Key? key,
-    required this.content,
+    this.content,
     required this.topicId,
     required this.userId,
     this.title,
     this.noteColor,
+    this.fileUrl,
+    this.fileType,
   }) : super(key: key);
 
   @override
@@ -27,14 +31,27 @@ class _SummarizationDialogState extends ConsumerState<SummarizationDialog> {
   void initState() {
     super.initState();
     // Start summarization immediately when dialog opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(summarizationNotifierProvider.notifier).summarizeAndSave(
-            content: widget.content,
-            topicId: widget.topicId,
-            userId: widget.userId,
-            title: widget.title,
-            noteColor: widget.noteColor,
-          );
+    // Start summarization immediately when dialog opens
+    // Using Future.microtask to avoid "setState during build" if the notifier updates immediately
+    Future.microtask(() {
+      if (widget.content != null) {
+        ref.read(summarizationNotifierProvider.notifier).summarizeAndSave(
+              content: widget.content!,
+              topicId: widget.topicId,
+              userId: widget.userId,
+              title: widget.title,
+              noteColor: widget.noteColor,
+            );
+      } else if (widget.fileUrl != null && widget.fileType != null) {
+        ref.read(summarizationNotifierProvider.notifier).extractAndSummarize(
+              fileUrl: widget.fileUrl!,
+              fileType: widget.fileType!,
+              topicId: widget.topicId,
+              userId: widget.userId,
+              title: widget.title,
+              noteColor: widget.noteColor,
+            );
+      }
     });
   }
 

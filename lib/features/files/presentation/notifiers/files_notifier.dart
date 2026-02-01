@@ -86,6 +86,7 @@ class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
     required String userId,
     required String dropdownValue,
     List<String>? allowedExtensions,
+    VoidCallback? onUploadStarted,
   }) async {
     try {
       // Pick file
@@ -93,6 +94,10 @@ class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
       if (pickedFile == null) {
         return Left(Failure('No file selected'));
       }
+
+      // Invoke the callback to show the "upload started" toast.
+      onUploadStarted?.call();
+
 
       // Update UI to show upload progress
       final currentState = state.value!;
