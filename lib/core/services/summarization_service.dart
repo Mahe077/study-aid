@@ -198,9 +198,9 @@ class SummarizationService {
       "analysisInput": {"documents": documents},
       "tasks": [
         {
-          "kind": "ExtractiveSummarization",
-          "taskName": "extractiveSummary",
-          "parameters": {"sentenceCount": 10}
+          "kind": "AbstractiveSummarization",
+          "taskName": "abstractiveSummary",
+          "parameters": {"summaryLength": "long"}
         }
       ]
     };
@@ -260,22 +260,22 @@ class SummarizationService {
       final documents = results['documents'] as List?;
       if (documents == null || documents.isEmpty) return null;
 
-      // Sort by document ID and combine summaries
+       // Sort by document ID and combine summaries
       final sortedDocs = List<dynamic>.from(documents);
       sortedDocs.sort(
           (a, b) => int.parse(a['id']).compareTo(int.parse(b['id'])));
 
-      final allSentences = <String>[];
+      final allSummaries = <String>[];
       for (final doc in sortedDocs) {
-        final sentences = doc['sentences'] as List?;
-        if (sentences != null) {
-          for (final s in sentences) {
-            allSentences.add(s['text'] as String);
+        final summaries = doc['summaries'] as List?;
+        if (summaries != null) {
+          for (final s in summaries) {
+            allSummaries.add(s['text'] as String);
           }
         }
       }
 
-      return allSentences.isNotEmpty ? allSentences.join(' ') : null;
+      return allSummaries.isNotEmpty ? allSummaries.join(' ') : null;
     } catch (e) {
       _logger.e('Error extracting summary: $e');
       return null;

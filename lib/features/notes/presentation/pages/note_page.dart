@@ -144,13 +144,17 @@ class _NotePageState extends ConsumerState<NotePage> {
         try {
           await noteNotifier.deleteNote(widget.topicId, widget.entity!.id,
               widget.userId, widget.dropdownValue);
-          toast.showSuccess(description: 'Item deleted successfully');
+          
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Close NotePage
+            toast.showSuccess(description: 'Item deleted successfully');
+          }
         } catch (e) {
-          toast.showFailure(
-              description: 'An error occurred while deleting the note.');
+          if (context.mounted) {
+            toast.showFailure(
+                description: 'An error occurred while deleting the note.');
+          }
           Logger().d(e.toString());
-        } finally {
-          Navigator.of(context).pop();
         }
       },
     );
@@ -298,9 +302,11 @@ class _NotePageState extends ConsumerState<NotePage> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Row(
                 children: [
-                  AppHeadings(
-                    text: widget.topicTitle ?? '',
-                    alignment: TextAlign.left,
+                   Expanded(
+                    child: AppHeadings(
+                      text: widget.topicTitle ?? '',
+                      alignment: TextAlign.left,
+                    ),
                   ),
                 ],
               ),
@@ -335,7 +341,6 @@ class _NotePageState extends ConsumerState<NotePage> {
                               fillColor: Colors.transparent,
                               focusedBorder: InputBorder.none),
                           canRequestFocus: !quillController.readOnly,
-                          // maxLength: 25,
                         ),
                       ),
                       if (!isSaved) _saveButton(context),

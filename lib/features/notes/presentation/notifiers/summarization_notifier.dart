@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:study_aid/core/services/file_text_extractor_service.dart';
 import 'package:study_aid/core/services/summarization_service.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/domain/usecases/note.dart';
@@ -43,9 +44,49 @@ class SummarizationState {
 
 class SummarizationNotifier extends StateNotifier<SummarizationState> {
   final SummarizationService _service;
+  final FileTextExtractorService _extractor;
   final CreateNote _createNote;
 
-  SummarizationNotifier(this._service, this._createNote) : super(SummarizationState());
+  SummarizationNotifier(this._service, this._extractor, this._createNote) : super(SummarizationState());
+
+  Future<void> extractAndSummarize({
+    required String fileUrl,
+    required String fileType,
+    required String topicId,
+    required String userId,
+    String? title,
+    Color? noteColor,
+  }) async {
+    state = state.copyWith(isLoading: true, statusMessage: 'Extracting text from file...', isError: false, isSuccess: false);
+    
+    try {
+      final text = await _extractor.extractText(fileUrl, fileType);
+      
+      if (text.isEmpty) {
+        state = state.copyWith(
+          isLoading: false, 
+          isError: true, 
+          statusMessage: 'Could not extract any text from this file.'
+        );
+        return;
+      }
+      
+      // Proceed to summarization
+      await summarizeAndSave(
+        content: text,
+        topicId: topicId,
+        userId: userId,
+        title: title,
+        noteColor: noteColor,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false, 
+        isError: true, 
+        statusMessage: 'Extraction failed: ${e.toString().replaceAll("Exception: ", "")}'
+      );
+    }
+  }
 
   Future<void> summarizeAndSave({
     required String content,

@@ -14,6 +14,7 @@ final fileTextExtractorServiceProvider = Provider<FileTextExtractorService>((ref
 
 final summarizationNotifierProvider = StateNotifierProvider.autoDispose<SummarizationNotifier, SummarizationState>((ref) {
   final service = ref.read(summarizationServiceProvider);
+  final extractor = ref.read(fileTextExtractorServiceProvider);
   final createNote = ref.read(createNoteProvider);
-  return SummarizationNotifier(service, createNote);
+  return SummarizationNotifier(service, extractor, createNote);
 });

@@ -3,13 +3,16 @@ import 'dart:io';
 
 import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/helpers/audio_file_utils.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/headings/sub_headings.dart';
+import 'package:study_aid/common/widgets/dialogs/color_picker_dialog.dart';
 import 'package:study_aid/core/utils/helpers/helpers.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/common/widgets/tiles/note_tag.dart';
@@ -26,6 +29,8 @@ import 'package:study_aid/features/files/presentation/providers/files_providers.
 import 'package:study_aid/features/notes/presentation/providers/summarization_provider.dart';
 import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
+// import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
+// import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContentTile extends ConsumerStatefulWidget {
@@ -97,14 +102,23 @@ class _ContentTileState extends ConsumerState<ContentTile> {
   void _preparePlayer(PlayerController controller, String? localPath) async {
     try {
       if (localPath != null) {
-        Logger().i("Content Tile :: Audio file path: $localPath");
-        File file = File(localPath);
+        // Logger().i("Content Tile :: Audio file path: $localPath");
+        String? compatiblePath = await AudioFileUtils.getCompatibleAudioPath(localPath);
+        File file = File(compatiblePath ?? localPath);
+        
         if (await file.exists()) {
-          await controller.extractWaveformData(path: file.path);
+          final length = await file.length();
+          if (length > 0) {
+            await controller.extractWaveformData(path: file.path);
+          } else {
+            Logger().w("Audio file is empty: ${file.path}");
+          }
         } else {
-          Logger().e("File does not exist at the provided path: $file");
+          Logger().e("File does not exist: $file");
         }
       }
+    } on PlatformException catch (e) {
+      Logger().w("Error preparing player (PlatformException): ${e.message}");
     } catch (e) {
       Logger().e("Error preparing player: $e");
     }
@@ -404,14 +418,20 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             buttonSize: const Size(25, 25),
             childrenButtonSize: const Size(0, 0),
             backgroundColor: widget.entity.color,
-            // backgroundColor: Colors.white,
             elevation: 0,
             overlayColor: Colors.black,
             overlayOpacity: 0.4,
             spacing: 0,
+            spaceBetweenChildren: 1,
             childMargin: EdgeInsets.zero,
             childPadding: EdgeInsets.zero,
             children: [
+              SpeedDialChild(
+                label: 'Change Color',
+                onTap: _changeTopicColor,
+                backgroundColor: AppColors.white,
+                labelBackgroundColor: AppColors.white,
+              ),
               SpeedDialChild(
                 label: 'Delete Topic',
                 onTap: _deleteTopic,
@@ -432,6 +452,7 @@ class _ContentTileState extends ConsumerState<ContentTile> {
             overlayColor: Colors.black,
             overlayOpacity: 0.4,
             spacing: 0,
+            spaceBetweenChildren: 3,
             childMargin: EdgeInsets.zero,
             childPadding: EdgeInsets.zero,
             children: [
@@ -506,48 +527,29 @@ class _ContentTileState extends ConsumerState<ContentTile> {
     if (widget.entity is! FileEntity) return;
 
     final fileEntity = widget.entity as FileEntity;
-    final toast = CustomToast(context: context);
 
-    // 1. Show loading
-    toast.showInfo(
-        title: 'Processing', description: 'Extracting text from file...');
-
-    try {
-      final extractor = ref.read(fileTextExtractorServiceProvider);
-      final text =
-          await extractor.extractText(fileEntity.fileUrl, fileEntity.fileType);
-
-      if (text.isEmpty) {
-        toast.showInfo(
-            title: 'No Text',
-            description: 'Could not extract any text from this file.');
-        return;
+    // Show Dialog immediately (extraction happens inside)
+    if (context.mounted) {
+      final result = await showDialog(
+        context: context,
+        barrierDismissible: false, // Prevent closing while processing
+        builder: (_) => SummarizationDialog(
+          // No extracted 'content' yet
+          fileUrl: fileEntity.fileUrl,
+          fileType: fileEntity.fileType,
+          topicId: widget.parentTopicId,
+          userId: widget.userId,
+          title: 'Summary: ${fileEntity.fileName}',
+          noteColor: widget.tileColor,
+        ),
+      );
+      if (result is Note && mounted) {
+        ref
+            .read(tabDataProvider(
+                    TabDataParams(widget.parentTopicId, widget.dropdownValue))
+                .notifier)
+            .updateNote(result);
       }
-
-      // 2. Show Dialog
-      if (context.mounted) {
-        final result = await showDialog(
-          context: context,
-          builder: (_) => SummarizationDialog(
-            content: text,
-            topicId: widget.parentTopicId,
-            userId: widget.userId,
-            title: 'Summary: ${fileEntity.fileName}',
-            noteColor: widget.tileColor,
-          ),
-        );
-        if (result is Note && mounted) {
-          ref
-              .read(tabDataProvider(
-                      TabDataParams(widget.parentTopicId, widget.dropdownValue))
-                  .notifier)
-              .updateNote(result);
-        }
-      }
-    } catch (e) {
-      Logger().e("Error extracting text: $e");
-      toast.showFailure(
-          description: e.toString().replaceAll('Exception: ', ''));
     }
   }
 
@@ -588,4 +590,70 @@ class _ContentTileState extends ConsumerState<ContentTile> {
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
+
+  void _changeTopicColor() async {
+    Color? newColor = await showAppColorPicker(context, widget.entity.color);
+    if (newColor != null && newColor != widget.entity.color) {
+      if (!mounted) return;
+      // final toast = CustomToast(context: context);
+      // toast.showInfo(title: 'Processing...', description: 'Updating colors.');
+      try {
+        final updatedTopic = (widget.entity as Topic).copyWith(color: newColor);
+        await ref
+            .read(topicsProvider(
+                    TopicParams(widget.userId, widget.dropdownValue))
+                .notifier)
+            .updateTopic(updatedTopic);
+        // _propagateColorChange(widget.entity.color, newColor, updatedTopic);
+      } catch (e) {
+        Logger().e("Error updating topic color: $e");
+        if (mounted) {
+          final toast = CustomToast(context: context);
+          toast.showFailure(description: 'Failed to update topic color');
+        }
+      }
+    }
+  }
+
+  // void _propagateColorChange(
+  //     Color oldColor, Color newColor, Topic topic) async {
+  //   final noteRepo = ref.read(noteRepositoryProvider);
+  //   final audioRepo = ref.read(audioRepositoryProvider);
+  //   final topicRepo = ref.read(topicRepositoryProvider);
+
+  //   for (final noteId in topic.notes) {
+  //     final noteResult = await noteRepo.getNote(noteId);
+  //     noteResult.fold((l) => null, (note) {
+  //       if (note != null && note.color == oldColor) {
+  //         ref.read(updateNoteProvider).call(note.copyWith(color: newColor),
+  //             topic.id, widget.userId);
+  //       }
+  //     });
+  //   }
+
+  //   for (final audioId in topic.audioRecordings) {
+  //     final audioResult = await audioRepo.getAudio(audioId);
+  //     audioResult.fold((l) => null, (audio) {
+  //       if (audio != null && audio.color == oldColor) {
+  //         ref.read(updateAudioRecodingProvider).call(
+  //             audio.copyWith(color: newColor), topic.id, widget.userId);
+  //       }
+  //     });
+  //   }
+
+  //   for (final subTopicId in topic.subTopics) {
+  //     final subTopicResult = await topicRepo.getTopic(subTopicId);
+  //     subTopicResult.fold((l) => null, (subTopic) {
+  //       if (subTopic != null && subTopic.color == oldColor) {
+  //         ref
+  //             .read(updateTopicProvider)
+  //             .call(subTopic.copyWith(color: newColor));
+  //       }
+  //     });
+  //   }
+  //   if (mounted) {
+  //     final toast = CustomToast(context: context);
+  //     toast.showSuccess(description: 'Colors updated.');
+  //   }
+  // }
 }

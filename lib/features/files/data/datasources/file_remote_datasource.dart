@@ -43,7 +43,7 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
       final path = 'files/$userId/$topicId/${timestamp}_$fileName';
       final ref = _storage.ref().child(path);
 
-      await ref.putData(bytes);
+      await ref.putData(bytes).timeout(const Duration(seconds: 60));
       final downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {

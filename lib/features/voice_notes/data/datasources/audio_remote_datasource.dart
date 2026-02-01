@@ -111,8 +111,8 @@ class RemoteDataSourceImpl extends RemoteDataSource {
           audioFile.path.split('/').last; // Get only the file name
       Reference audiosRef = storageRef.child("Audio/$filename");
 
-      // Upload the audio file to Firebase Storage
-      await audiosRef.putFile(audioFile);
+      // Upload the audio file to Firebase Storage with a timeout
+      await audiosRef.putFile(audioFile).timeout(const Duration(seconds: 60));
 
       // Retrieve the download URL
       String downloadUrl = await audiosRef.getDownloadURL();

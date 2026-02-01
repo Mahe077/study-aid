@@ -27,7 +27,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException {
       return Left(ServerFailure('Failed to sign in'));
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -42,7 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException {
       return Left(ServerFailure('Failed to sign up'));
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -63,7 +63,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException {
       return Left(ServerFailure('Failed the google sign-in'));
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -84,7 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException {
       return Left(ServerFailure('Failed to google sign-in'));
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -105,7 +105,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException {
       return Left(ServerFailure('Failed the Apple sign-in'));
     } catch (e) {
-      return Left(Failure(e.toString()));
+      return Left(Failure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -118,7 +118,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return const Right(
           unit); // `unit` is used to indicate success with no result
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -128,7 +128,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await remoteDataSource.resetPassword(newPassword);
       return const Right(unit);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -138,7 +138,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await remoteDataSource.sendPasswordResetEmail(email);
       return const Right(unit);
     } on Exception catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -151,7 +151,7 @@ class AuthRepositoryImpl implements AuthRepository {
       await localDataSource.clearUser();
       return const Right(unit);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 }
