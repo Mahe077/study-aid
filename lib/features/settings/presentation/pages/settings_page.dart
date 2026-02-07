@@ -12,6 +12,7 @@ import 'package:study_aid/features/authentication/presentation/notifiers/auth_no
 import 'package:study_aid/features/authentication/presentation/pages/signin.dart';
 import 'package:study_aid/features/settings/presentation/pages/account_page.dart';
 import 'package:study_aid/features/settings/presentation/pages/appearance_page.dart';
+import 'package:study_aid/features/settings/presentation/pages/voice_settings_page.dart';
 import 'package:widgets_easier/widgets_easier.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -109,6 +110,40 @@ class SettingsPage extends ConsumerWidget {
                             SizedBox(width: 5),
                             Text(
                               'Appearance',
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  color: AppColors.black,
+                                  fontWeight: FontWeight.w500),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () => {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (BuildContext context) =>
+                                  const VoiceSettingsPage(),
+                            ),
+                          )
+                        },
+                        style: ElevatedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            backgroundColor: AppColors.grey.withOpacity(0.81)),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.record_voice_over,
+                              size: 25,
+                              color: AppColors.primary,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Voice settings',
                               style: TextStyle(
                                   fontSize: 20,
                                   color: AppColors.black,

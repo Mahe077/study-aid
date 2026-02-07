@@ -1,14 +1,13 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/common/helpers/enums.dart';
+import 'package:study_aid/common/providers/connection_provider.dart';
 import 'package:study_aid/common/widgets/appbar/basic_app_bar.dart';
 import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 import 'package:study_aid/common/widgets/buttons/fab.dart';
@@ -25,6 +24,9 @@ import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.d
 import 'package:study_aid/common/widgets/buttons/sync_button.dart';
 import 'package:study_aid/features/files/presentation/widgets/files_list_view.dart';
 import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
+import 'package:study_aid/features/notes/presentation/providers/tts_provider.dart';
+import 'package:study_aid/features/notes/presentation/widgets/tts_player_widget.dart';
+import 'package:study_aid/features/notes/domain/models/tts_state.dart';
 
 class TopicPage extends ConsumerStatefulWidget {
   final String topicTitle;
@@ -44,8 +46,6 @@ class TopicPage extends ConsumerStatefulWidget {
   ConsumerState<TopicPage> createState() => _TopicPageState();
 }
 
-enum TtsState { playing, stopped, paused, continued }
-
 class _TopicPageState extends ConsumerState<TopicPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController _search = TextEditingController();
@@ -54,27 +54,8 @@ class _TopicPageState extends ConsumerState<TopicPage>
   bool _recordExists = false;
   bool _noteExists = false;
 
-  late FlutterTts flutterTts;
-  String? language;
-  String? engine;
-  double volume = 0.5;
-  double pitch = 0.6;
-  double rate = 0.3;
-  bool isCurrentLanguageInstalled = false;
-
-  String? _newVoiceText;
-
-  TtsState ttsState = TtsState.stopped;
-
-  bool get isPlaying => ttsState == TtsState.playing;
-  bool get isStopped => ttsState == TtsState.stopped;
-  bool get isPaused => ttsState == TtsState.paused;
-  bool get isContinued => ttsState == TtsState.continued;
-
-  bool get isIOS => !kIsWeb && Platform.isIOS;
-  bool get isAndroid => !kIsWeb && Platform.isAndroid;
-  bool get isWindows => !kIsWeb && Platform.isWindows;
-  bool get isWeb => kIsWeb;
+  // OpenAI TTS player visibility state
+  bool _showNotesTtsPlayer = false;
 
   final Map<String, String> sortOptions = {
     'createdDate': 'Date Created',
@@ -93,116 +74,72 @@ class _TopicPageState extends ConsumerState<TopicPage>
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
     _audioPlayer = AudioPlayer();
-    initTts();
   }
 
-  dynamic initTts() async {
-    flutterTts = FlutterTts();
-
-    _setAwaitOptions();
-
-    if (isAndroid) {
-      _getDefaultEngine();
-      _getDefaultVoice();
+  /// Toggles the Notes TTS player visibility and starts playback
+  Future<void> _toggleNotesTtsPlayer(List<Note> notes) async {
+    if (notes.isEmpty) {
+      CustomToast(context: context).showInfo(
+        title: 'No notes available',
+        description: 'Please create some notes first.',
+      );
+      return;
     }
 
-    flutterTts.setStartHandler(() {
-      setState(() {
-        if (kDebugMode) {
-          print("Playing");
-        }
-        ttsState = TtsState.playing;
-      });
+    final notifier = ref.read(
+        tabDataProvider(TabDataParams(widget.entity.id, dropdownValue))
+            .notifier);
+    final allNotes = await notifier.loadAllNotes(widget.entity.id);
+    final notesToPlay = allNotes.isNotEmpty ? allNotes : notes;
+
+    if (notesToPlay.isEmpty) {
+      CustomToast(context: context).showInfo(
+        title: 'No notes available',
+        description: 'Please create some notes first.',
+      );
+      return;
+    }
+
+    setState(() {
+      _showNotesTtsPlayer = true;
     });
 
-    flutterTts.setCompletionHandler(() {
-      setState(() {
-        if (kDebugMode) {
-          print("Complete");
-        }
-        ttsState = TtsState.stopped;
-      });
-    });
+    // Initialize TTS for all notes
+    ref.read(ttsPlaybackProvider.notifier).initializeMultipleNotes(
+          notesToPlay,
+          widget.entity.id,
+        );
 
-    flutterTts.setCancelHandler(() {
-      setState(() {
-        if (kDebugMode) {
-          print("Cancel");
-        }
-        ttsState = TtsState.stopped;
-      });
-    });
+    await showModalBottomSheet(
+      context: context,
+      isDismissible: false,
+      enableDrag: false,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (context) {
+        return TtsPlayerWidget(
+          noteTitle: 'All Notes',
+          onClose: () => Navigator.of(context).pop(),
+        );
+      },
+    );
 
-    flutterTts.setPauseHandler(() {
+    ref.read(ttsPlaybackProvider.notifier).stop();
+    if (mounted) {
       setState(() {
-        if (kDebugMode) {
-          print("Paused");
-        }
-        ttsState = TtsState.paused;
+        _showNotesTtsPlayer = false;
       });
-    });
-
-    flutterTts.setContinueHandler(() {
-      setState(() {
-        if (kDebugMode) {
-          print("Continued");
-        }
-        ttsState = TtsState.continued;
-      });
-    });
-
-    flutterTts.setErrorHandler((msg) {
-      setState(() {
-        if (kDebugMode) {
-          print("error: $msg");
-        }
-        ttsState = TtsState.stopped;
-      });
-    });
-  }
-
-  Future<void> _getDefaultEngine() async {
-    var engine = await flutterTts.getDefaultEngine;
-    if (engine != null) {
-      if (kDebugMode) {
-        print(engine);
-      }
     }
   }
 
-  Future<void> _getDefaultVoice() async {
-    var voice = await flutterTts.getDefaultVoice;
-    if (voice != null) {
-      if (kDebugMode) {
-        print(voice);
-      }
+  /// Closes the Notes TTS player
+  void _closeNotesTtsPlayer() {
+    ref.read(ttsPlaybackProvider.notifier).stop();
+    if (mounted) {
+      setState(() {
+        _showNotesTtsPlayer = false;
+      });
     }
-  }
-
-  Future<void> _speak() async {
-    await flutterTts.setVolume(volume);
-    await flutterTts.setSpeechRate(rate);
-    await flutterTts.setPitch(pitch);
-
-    if (_newVoiceText != null) {
-      if (_newVoiceText!.isNotEmpty) {
-        await flutterTts.speak(_newVoiceText!);
-      }
-    }
-  }
-
-  Future<void> _setAwaitOptions() async {
-    await flutterTts.awaitSpeakCompletion(true);
-  }
-
-  Future<void> _stop() async {
-    var result = await flutterTts.stop();
-    if (result == 1) setState(() => ttsState = TtsState.stopped);
-  }
-
-  Future<void> _pause() async {
-    var result = await flutterTts.pause();
-    if (result == 1) setState(() => ttsState = TtsState.paused);
   }
 
   @override
@@ -211,7 +148,6 @@ class _TopicPageState extends ConsumerState<TopicPage>
     _search.dispose();
     _audioPlayer.dispose();
     _playerStateSubscription?.cancel();
-    flutterTts.stop();
     super.dispose();
   }
 
@@ -764,37 +700,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
           const SizedBox(height: 5),
         ],
         if (_noteExists && type == TopicType.note) ...[
-          if (TtsState.stopped != ttsState)
-            // Show control row if TTS is playing
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (TtsState.paused == ttsState)
-                  IconButton(
-                      icon: const Icon(Icons.play_arrow),
-                      onPressed: () {
-                        _speak();
-                      }),
-                if (TtsState.playing == ttsState || TtsState.continued == ttsState)
-                IconButton(
-                  icon: const Icon(Icons.pause),
-                  onPressed: () {
-                    // Pause playback
-                    _pause();
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.stop),
-                  onPressed: () {
-                    // Stop playback completely
-                    _stop();
-                  },
-                ),
-              ],
-            )
-          else
-            // Show play button if TTS is not playing or completed
-          _playTTSButton(filteredItems),
+          _playTTSButton(filteredItems.whereType<Note>().toList()),
           const SizedBox(height: 5),
         ],
         Expanded(
@@ -864,8 +770,16 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  Widget _playTTSButton(List<dynamic> notes) {
-    final toast = CustomToast(context: context);
+  Widget _playTTSButton(List<Note> notes) {
+    final ttsState = ref.watch(ttsPlaybackProvider);
+    final isPlaying = ttsState.status == TtsStatus.playing;
+    final connectivity = ref.watch(connectivityProvider);
+    final isOnline = connectivity.maybeWhen(
+      data: (results) =>
+          results.isNotEmpty && !results.contains(ConnectivityResult.none),
+      orElse: () => false,
+    );
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
@@ -873,25 +787,16 @@ class _TopicPageState extends ConsumerState<TopicPage>
           style: ElevatedButton.styleFrom(
             fixedSize: const Size(115, 15),
             padding: const EdgeInsets.all(2),
-            backgroundColor: AppColors.black,
+            backgroundColor: isOnline ? AppColors.black : Colors.grey,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
           ),
-          onPressed: () {
-            if (notes.isNotEmpty) {
-              _playtts(notes); // Start playing all audio
-            } else {
-              toast.showInfo(
-                  title: 'No audio files available.',
-                  description:
-                      'Please record or upload new audio to get started.');
-            }
-          },
+          onPressed: isOnline ? () => _toggleNotesTtsPlayer(notes) : null,
           child: Row(
             children: [
               Icon(
-                  (TtsState.playing == ttsState)
+                  _showNotesTtsPlayer && isPlaying
                       ? Icons.stop
                       : Icons.play_arrow,
                   size: 15,
@@ -1020,31 +925,7 @@ class _TopicPageState extends ConsumerState<TopicPage>
     );
   }
 
-  void _playtts(List<dynamic> notes) async {
-    if (TtsState.playing == ttsState) {
-      _stop();
-    } else {
-      String newVoiceText = '';
 
-      // Loop through each note and concatenate the content
-      for (var note in notes) {
-        if (note is Note && note.content.length > 1) {
-          newVoiceText += 'Title, , ${note.title}, , , , , ';
-          newVoiceText +=
-              'Content, , ${note.content}, '; // Add note content to the newVoiceText string
-        }
-      }
-
-      // Update the state once after the loop completes
-      setState(() {
-        _newVoiceText = newVoiceText;
-      });
-
-      // Now, speak the concatenated text
-      _speak();
-      // _showTtsBottomSheet();
-    }
-  }
 
   Widget _summarizeButton(List<dynamic> notes) {
     return Row(
