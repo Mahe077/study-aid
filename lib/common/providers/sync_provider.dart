@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/features/authentication/domain/usecases/load_user.dart';
 import 'package:study_aid/features/authentication/presentation/providers/user_providers.dart';
@@ -9,6 +10,7 @@ import 'package:study_aid/features/voice_notes/domain/usecases/audio.dart';
 import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 import 'package:study_aid/features/files/domain/usecases/file_usecases.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 
 final syncProvider = Provider((ref) => SyncProvider(
       ref.read(syncTopicsUseCaseProvider),
@@ -34,6 +36,17 @@ class SyncProvider {
   );
 
   Future<void> syncAll(String userId) async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
+      AppLogger.w("SyncAll: No authenticated user found. Skipping sync.");
+      return;
+    }
+
+    if (currentUser.uid != userId) {
+      AppLogger.w("SyncAll: Auth UID mismatch (Auth: ${currentUser.uid}, Local: $userId). Skipping sync.");
+      return;
+    }
+
     await syncTopics.call(userId);
     await syncUserData.call(userId);
     await syncNotes.call(userId);

@@ -45,10 +45,10 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
       // Return the topic with the newly assigned ID
       return Right(topicWithId);
-    } on ServerException {
-      return Left(ServerFailure('Failed to sign in'));
-    } on Exception catch (e) {
-      throw Exception('Error in creating a topic: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error creating topic: ${e.toString()}'));
     }
   }
 
@@ -60,8 +60,10 @@ class RemoteDataSourceImpl implements RemoteDataSource {
           .doc(topic.id)
           .update(topic.copyWith(syncStatus: 'synced').toFirestore());
       return Right(topic);
-    } on Exception catch (e) {
-      throw Exception('Error in updating a topic: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error updating topic: ${e.toString()}'));
     }
   }
 
@@ -70,8 +72,10 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     try {
       await _firestore.collection('topics').doc(topicId).delete();
       return const Right(null);
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
-      throw Exception('Error in deleting the topic: $e');
+      return Left(ServerFailure('Error deleting topic: ${e.toString()}'));
     }
   }
 
@@ -82,8 +86,10 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       return Right(querySnapshot.docs
           .map((doc) => TopicModel.fromFirestore(doc))
           .toList());
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
-      throw Exception('Error in loading topics: $e');
+      return Left(ServerFailure('Error loading topics: ${e.toString()}'));
     }
   }
 

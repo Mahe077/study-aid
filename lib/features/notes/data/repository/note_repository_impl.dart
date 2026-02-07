@@ -155,7 +155,7 @@ class NoteRepositoryImpl extends NoteRepository {
                       await remoteDataSource.getNoteById(noteId);
                   await remoteNoteResult.fold(
                     (failure) async {
-                        Logger().e("SyncNotes: Failed to fetch missing note $noteId: $failure");
+                        Logger().e("SyncNotes: Failed to fetch missing note $noteId: ${failure.message}");
                     },
                     (remoteNote) async {
                       await localDataSource.createNote(remoteNote);
@@ -180,7 +180,7 @@ class NoteRepositoryImpl extends NoteRepository {
         await remoteNoteOrFailure.fold((failure) async {
           // If the note doesn't exist on the remote source, create it remotely
           final newNoteResult = await remoteDataSource.createNote(localNote);
-          newNoteResult.fold((failure) => Left(Failure(failure.toString())),
+          newNoteResult.fold((failure) => Left(failure),
               (newNote) async {
             // Replace the old local note with the newly created one
             await localDataSource.deleteNote(localNote.id);

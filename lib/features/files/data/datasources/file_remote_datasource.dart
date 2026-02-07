@@ -61,10 +61,10 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
       );
       await docRef.set(fileWithId.toFirestore());
       return Right(fileWithId);
-    } on ServerException {
-      return Left(ServerFailure('Failed to create file'));
-    } on Exception catch (e) {
-      throw Exception('Error creating file: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error creating file: ${e.toString()}'));
     }
   }
 
@@ -107,8 +107,10 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
       } else {
         return Left(ServerFailure('File not found'));
       }
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
-      throw Exception('Error fetching file: $e');
+      return Left(ServerFailure('Error fetching file: ${e.toString()}'));
     }
   }
 
@@ -125,8 +127,10 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
           .update(updatedFile.toFirestore());
 
       return Right(updatedFile);
-    } on Exception catch (e) {
-      throw Exception('Error updating file: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error updating file: ${e.toString()}'));
     }
   }
 

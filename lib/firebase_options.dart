@@ -41,32 +41,32 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBoZr8mWwa19sqcMxm8KRoNezvaryH7j1A',
-    appId: '1:544057525889:android:8b3abd20b77dd65bd72f80',
-    messagingSenderId: '544057525889',
+    apiKey: 'AIzaSyCADdqap2j18ObvCrdtSmEBags5Ga3lcyQ',
+    appId: '1:494696942035:android:0f5d46b398abb710fbc726',
+    messagingSenderId: '494696942035',
     projectId: 'study-aid-e3671',
-    storageBucket: 'study-aid-e3671.appspot.com',
+    storageBucket: 'study-aid-e3671.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCs50h3J9qikwm2_eHneinBKXKkEa8x2wk',
-    appId: '1:544057525889:ios:afd46761701a37cfd72f80',
-    messagingSenderId: '544057525889',
+    apiKey: 'AIzaSyC4eCxU0tyZr1qQGyPhDauZPitRaY3-IS4',
+    appId: '1:494696942035:ios:620d0f8158fe00d2fbc726',
+    messagingSenderId: '494696942035',
     projectId: 'study-aid-e3671',
-    storageBucket: 'study-aid-e3671.appspot.com',
-    androidClientId: '544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com',
-    iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
+    storageBucket: 'study-aid-e3671.firebasestorage.app',
+    androidClientId: '494696942035-gl5f2h4ds3v2ujnbt19rl3vs1naffldh.apps.googleusercontent.com',
+    iosClientId: '494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCs50h3J9qikwm2_eHneinBKXKkEa8x2wk',
-    appId: '1:544057525889:ios:afd46761701a37cfd72f80',
-    messagingSenderId: '544057525889',
+    apiKey: 'AIzaSyC4eCxU0tyZr1qQGyPhDauZPitRaY3-IS4',
+    appId: '1:494696942035:ios:620d0f8158fe00d2fbc726',
+    messagingSenderId: '494696942035',
     projectId: 'study-aid-e3671',
-    storageBucket: 'study-aid-e3671.appspot.com',
-    androidClientId: '544057525889-7ectlugp0ioopiil0024ksv78e6m1fsk.apps.googleusercontent.com',
-    iosClientId: '544057525889-2vp0hjeu926sj6vjruib03toob3a9v64.apps.googleusercontent.com',
+    storageBucket: 'study-aid-e3671.firebasestorage.app',
+    androidClientId: '494696942035-gl5f2h4ds3v2ujnbt19rl3vs1naffldh.apps.googleusercontent.com',
+    iosClientId: '494696942035-t7af0qv756n0ljfj7td8rqnlbfs02jt1.apps.googleusercontent.com',
     iosBundleId: 'com.example.studyAid',
   );
 

@@ -142,8 +142,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -154,7 +154,7 @@ class TopicRepositoryImpl implements TopicRepository {
               newTopic.notes.add(noteId);
             }
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });
@@ -188,8 +188,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -198,7 +198,7 @@ class TopicRepositoryImpl implements TopicRepository {
                 syncStatus: ConstantStrings.synced);
             newTopic.audioRecordings.add(audioId);
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });
@@ -230,8 +230,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -242,7 +242,7 @@ class TopicRepositoryImpl implements TopicRepository {
               newTopic.files.add(fileId);
             }
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });

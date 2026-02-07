@@ -230,7 +230,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
                       await remoteDataSource.getAudioRecordingById(audioId);
                   await remoteAudioResult.fold(
                     (failure) async {
-                       Logger().e("SyncAudio: Failed to fetch missing audio $audioId: $failure");
+                       Logger().e("SyncAudio: Failed to fetch missing audio $audioId: ${failure.message}");
                     },
                     (remoteAudio) async {
                       // Download the file
@@ -264,7 +264,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
           final uploadResult = await remoteDataSource.createAudioRecording(
               localAudio,
               false); //TODO:check this what should we do  for syncing beacuse no transcibe happend yet
-          uploadResult.fold((failure) => Left(Failure(failure.toString())),
+          uploadResult.fold((failure) => Left(failure),
               (result) async {
             final syncedAudio = result.value1;
             // Replace the old local audio with the newly created one

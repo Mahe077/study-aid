@@ -165,7 +165,8 @@ class FileRepositoryImpl extends FileRepository {
                       await remoteDataSource.getFileById(fileId);
                   await remoteFileResult.fold(
                     (failure) async {
-                       Logger().e("SyncFiles: Failed to fetch missing file $fileId: $failure");
+                      Logger().w(
+                          "SyncFiles: Skipping missing file $fileId: ${failure.message}");
                     },
                     (remoteFile) async {
                       await localDataSource.createFile(remoteFile);
@@ -188,7 +189,7 @@ class FileRepositoryImpl extends FileRepository {
 
         await remoteFileOrFailure.fold((failure) async {
           final newFileResult = await remoteDataSource.createFile(localFile);
-          newFileResult.fold((failure) => Left(Failure(failure.toString())),
+          newFileResult.fold((failure) => Left(failure),
               (newFile) async {
             await localDataSource.deleteFile(localFile.id);
             await localDataSource.createFile(newFile);
