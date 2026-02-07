@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:study_aid/core/services/file_upload_service.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
-import 'package:study_aid/features/authentication/domain/repositories/user_repository.dart';
 import 'package:study_aid/features/files/data/datasources/file_local_datasource.dart';
 import 'package:study_aid/features/files/data/datasources/file_remote_datasource.dart';
 import 'package:study_aid/features/files/data/models/file_model.dart';

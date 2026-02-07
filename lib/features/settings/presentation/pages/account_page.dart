@@ -10,7 +10,6 @@ import 'package:study_aid/common/widgets/headings/headings.dart';
 import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/validators/validators.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:study_aid/features/authentication/data/models/user.dart';
 import 'package:study_aid/features/authentication/domain/entities/user.dart';
 import 'package:study_aid/features/authentication/presentation/notifiers/auth_notifier.dart'
     as auth_notifier;

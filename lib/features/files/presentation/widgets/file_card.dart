@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
-import 'package:study_aid/features/files/presentation/notifiers/files_notifier.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';

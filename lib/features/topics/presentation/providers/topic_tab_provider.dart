@@ -7,7 +7,6 @@ import 'package:study_aid/features/topics/presentation/providers/topic_provider.
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
 import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
-import 'package:study_aid/features/files/domain/repository/file_repository.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
 
 class TabDataState {
