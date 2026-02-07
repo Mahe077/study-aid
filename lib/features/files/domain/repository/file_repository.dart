@@ -14,6 +14,8 @@ abstract class FileRepository {
       String topicId, int limit, int startAfter, String sortBy);
   Future<Either<Failure, void>> syncFiles(String userId);
   Future<Either<Failure, FileEntity?>> getFile(String fileId);
+  Future<Either<Failure, FileEntity?>> ensureFileAvailable(
+      FileEntity file, String topicId, String userId);
   Future<Either<Failure, List<FileEntity>>> search(
       String query, String userId);
   Future<Either<Failure, String>> uploadFileToStorage(

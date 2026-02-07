@@ -28,7 +28,7 @@ class FileCard extends ConsumerWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _openFile(context, file.fileUrl),
+        onTap: () => _openFile(context, ref),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -158,9 +158,24 @@ class FileCard extends ConsumerWidget {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
-  Future<void> _openFile(BuildContext context, String url) async {
+  Future<void> _openFile(BuildContext context, WidgetRef ref) async {
     try {
-      final uri = Uri.parse(url);
+      final notifier = ref.read(
+          filesProvider(FilesParams(topicId: topicId, sortBy: sortBy)).notifier);
+      final resolvedFile =
+          await notifier.ensureFileAvailable(file, userId, sortBy);
+
+      if (resolvedFile == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('File missing. Removed from this topic.')),
+          );
+        }
+        return;
+      }
+
+      final uri = Uri.parse(resolvedFile.fileUrl);
       if (await canLaunchUrl(uri)) {
         // Force external application on iOS to avoid embedded view issues
         final mode = Platform.isIOS 

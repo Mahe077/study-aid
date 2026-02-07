@@ -270,6 +270,48 @@ class TopicRepositoryImpl implements TopicRepository {
   }
 
   @override
+  Future<Either<Failure, void>> removeFileOfParent(
+      String parentId, String fileId) async {
+    try {
+      final now = DateTime.now();
+      if (await networkInfo.isConnected) {
+        final result = await remoteDataSource.getTopicById(parentId);
+        return await result.fold(
+          (failure) async => Left(failure),
+          (topic) async {
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            newTopic.files.remove(fileId);
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
+            return await updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
+              return const Right(null);
+            });
+          },
+        );
+      } else {
+        final localParentTopic = await localDataSource.getCachedTopic(parentId);
+        if (localParentTopic != null) {
+          TopicModel newTopic = localParentTopic.copyWith(
+              updatedDate: now,
+              localChangeTimestamp: now,
+              syncStatus: ConstantStrings.pending);
+          newTopic.files.remove(fileId);
+          await localDataSource.updateTopic(newTopic);
+        } else {
+          return Left(Failure("Something Wrong Try again later!"));
+        }
+      }
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, Topic>> updateTopic(Topic topic) async {
     try {
       final now = DateTime.now();

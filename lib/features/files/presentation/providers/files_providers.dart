@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:study_aid/core/services/file_local_cache_service.dart';
 import 'package:study_aid/core/services/file_upload_service.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
 import 'package:study_aid/features/files/data/datasources/file_local_datasource.dart';
@@ -25,9 +26,13 @@ final fileUploadServiceProvider = Provider<FileUploadService>((ref) {
   return FileUploadService(remoteDataSource);
 });
 
+final fileLocalCacheServiceProvider =
+    Provider<FileLocalCacheService>((ref) => FileLocalCacheService());
+
 final fileRepositoryProvider = Provider<FileRepository>((ref) {
   final localDataSource = ref.watch(fileLocalDataSourceProvider);
   final remoteDataSource = ref.watch(fileRemoteDataSourceProvider);
+  final cacheService = ref.watch(fileLocalCacheServiceProvider);
   
   // Use Riverpod providers instead of GetIt
   final networkInfo = NetworkInfo();
@@ -37,6 +42,7 @@ final fileRepositoryProvider = Provider<FileRepository>((ref) {
   return FileRepositoryImpl(
     remoteDataSource: remoteDataSource,
     localDataSource: localDataSource,
+    cacheService: cacheService,
     networkInfo: networkInfo,
     topicRepository: topicRepository,
     userRepository: userRepository,
@@ -49,10 +55,12 @@ final filesProvider = StateNotifierProvider.family<FilesNotifier, AsyncValue<Fil
   (ref, params) {
     final repository = ref.watch(fileRepositoryProvider);
     final uploadService = ref.watch(fileUploadServiceProvider);
+    final cacheService = ref.watch(fileLocalCacheServiceProvider);
     
     return FilesNotifier(
       repository,
       uploadService,
+      cacheService,
       params.topicId,
       ref,
       params.sortBy,

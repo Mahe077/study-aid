@@ -10,10 +10,12 @@ import 'package:study_aid/features/files/data/models/file_model.dart';
 
 abstract class FileRemoteDataSource {
   Future<Either<Failure, FileModel>> createFile(FileModel file);
+  Future<Either<Failure, FileModel>> upsertFile(FileModel file);
   Future<Either<Failure, FileModel>> updateFile(FileModel file);
   Future<Either<Failure, void>> deleteFile(String fileId);
   Future<Either<Failure, FileModel>> getFileById(String fileId);
   Future<bool> fileExists(String fileId);
+  Future<bool> storageFileExists(String fileUrl);
   Future<Either<Failure, List<FileModel>>> searchFromRemote(
       String query, String userId);
   Future<String> uploadFileToStorage(
@@ -32,6 +34,23 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
       return docSnapshot.exists;
     } on Exception catch (e) {
       throw Exception('Error checking file existence: $e');
+    }
+  }
+
+  @override
+  Future<bool> storageFileExists(String fileUrl) async {
+    if (fileUrl.isEmpty) return false;
+    try {
+      final ref = _storage.refFromURL(fileUrl);
+      await ref.getMetadata();
+      return true;
+    } on FirebaseException catch (e) {
+      if (e.code == 'object-not-found') {
+        return false;
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -65,6 +84,24 @@ class FileRemoteDataSourceImpl extends FileRemoteDataSource {
       return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
       return Left(ServerFailure('Error creating file: ${e.toString()}'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, FileModel>> upsertFile(FileModel file) async {
+    try {
+      final fileWithStatus = file.copyWith(
+        syncStatus: ConstantStrings.synced,
+      );
+      await _firestore
+          .collection('files')
+          .doc(fileWithStatus.id)
+          .set(fileWithStatus.toFirestore());
+      return Right(fileWithStatus);
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error upserting file: ${e.toString()}'));
     }
   }
 
