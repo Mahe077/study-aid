@@ -54,6 +54,28 @@ Welcome to the initial release of **Study Aid**! This version establishes the fo
 - Improved error handling for summarization service.
 - Added tile colour change option
 
+## [1.1.0] - 2026-02-07
+
+### 🔊 Text-to-Speech (Pro)
+
+- **High-Quality AI Voices**: Experience natural-sounding audio with OpenAI's advanced TTS engine.
+- **Enhanced Player**:
+  - Precision controls: Play, Pause, Restart, Seek (±15s).
+  - Continuous playback for multiple notes.
+  - Variable speed control (0.5x - 2.0x).
+  - Background caching for smooth listening.
+- **Voice Customization**: Choose your preferred AI voice in Settings.
+
+### 🔄 Sync Improvements
+
+- **Reliable File Sync**: Smarter handling of missing files reduces sync errors.
+- **Offline Support**: Better detection and recovery when switching network states.
+
+### 🐛 Bug Fixes
+
+- **Player Stability**: Resolved crashes and state synchronization issues in the audio player.
+- **Layout**: Optimized player positioning to work seamlessly with the Floating Action Button.
+
 ---
 
 _Thank you for using Study Aid!_
