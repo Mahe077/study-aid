@@ -211,9 +211,46 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
   }
 
   @override
-  Future<Either<Failure, void>> syncAudioRecordings() async {
+  Future<Either<Failure, void>> syncAudioRecordings(String userId) async {
     try {
-      // Fetch all local audio recordings
+      // 1. Fetch available topics to scan for missing audio
+      final allTopics = await topicRepository.fetchAllTopics();
+
+      await allTopics.fold(
+        (failure) async {
+          Logger().e("SyncAudio: Failed to fetch topics: $failure");
+        },
+        (topics) async {
+          // 2. Iterate through all topics and their audio recordings
+          for (var topic in topics) {
+            for (var audioId in topic.audioRecordings) {
+              if (!localDataSource.audioExists(audioId)) {
+                if (await networkInfo.isConnected) {
+                  final remoteAudioResult =
+                      await remoteDataSource.getAudioRecordingById(audioId);
+                  await remoteAudioResult.fold(
+                    (failure) async {
+                       Logger().e("SyncAudio: Failed to fetch missing audio $audioId: ${failure.message}");
+                    },
+                    (remoteAudio) async {
+                      // Download the file
+                      final file = await remoteDataSource.downloadFile(
+                          remoteAudio.url, remoteAudio.localpath);
+                      if (file != null) {
+                        await localDataSource.createAudioRecording(
+                            remoteAudio.copyWith(localpath: file.path));
+                         Logger().i("SyncAudio: Pulled missing audio $audioId");
+                      }
+                    },
+                  );
+                }
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Keep existing sync logic
       var localAudioRecordings =
           await localDataSource.fetchAllAudioRecordings();
 
@@ -227,7 +264,7 @@ class AudioRecordingRepositoryImpl extends AudioRecordingRepository {
           final uploadResult = await remoteDataSource.createAudioRecording(
               localAudio,
               false); //TODO:check this what should we do  for syncing beacuse no transcibe happend yet
-          uploadResult.fold((failure) => Left(Failure(failure.toString())),
+          uploadResult.fold((failure) => Left(failure),
               (result) async {
             final syncedAudio = result.value1;
             // Replace the old local audio with the newly created one

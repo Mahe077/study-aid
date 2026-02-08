@@ -4,7 +4,6 @@ import 'package:study_aid/core/services/summarization_service.dart';
 import 'package:study_aid/core/utils/helpers/markdown_to_quill_converter.dart';
 import 'package:study_aid/features/notes/domain/entities/note.dart';
 import 'package:study_aid/features/notes/domain/usecases/note.dart';
-import 'package:study_aid/core/utils/helpers/custome_types.dart'; // For BaseEntity if needed
 import 'package:flutter/material.dart';
 
 class SummarizationState {

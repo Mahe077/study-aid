@@ -10,6 +10,11 @@ import 'package:study_aid/features/authentication/domain/repositories/user_repos
 import 'package:study_aid/features/authentication/domain/usecases/load_user.dart';
 import 'package:study_aid/features/authentication/presentation/notifiers/user_notifire.dart';
 import 'package:study_aid/features/authentication/presentation/providers/auth_providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
 
 // Data source providers for UserRepository
 final userRemoteDataSourceProvider =

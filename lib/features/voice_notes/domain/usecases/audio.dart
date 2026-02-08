@@ -8,8 +8,8 @@ class SyncAudioRecordingsUseCase {
 
   SyncAudioRecordingsUseCase(this.repository);
 
-  Future<void> call() async {
-    final result = await repository.syncAudioRecordings();
+  Future<void> call(String userId) async {
+    final result = await repository.syncAudioRecordings(userId);
     return result.fold(
       (failure) => Left(failure),
       (success) => Right(success),

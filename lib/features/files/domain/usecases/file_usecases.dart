@@ -44,3 +44,17 @@ class GetFileUseCase {
     return repository.getFile(fileId);
   }
 }
+
+class SyncFilesUseCase {
+  final FileRepository repository;
+
+  SyncFilesUseCase(this.repository);
+
+  Future<void> call(String userId) async {
+    final result = await repository.syncFiles(userId);
+    return result.fold(
+      (failure) => Left(failure),
+      (success) => Right(success),
+    );
+  }
+}

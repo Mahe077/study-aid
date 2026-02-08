@@ -12,7 +12,7 @@ abstract class AudioRecordingRepository {
       String parentId, String audioId, String userId);
   Future<Either<Failure, PaginatedObj<AudioRecording>>> fetchAudioRecordings(
       String topicId, int limit, int startAfter, String sortBy);
-  Future<Either<Failure, void>> syncAudioRecordings();
+  Future<Either<Failure, void>> syncAudioRecordings(String userId);
   Future<Either<Failure, void>> updateAudioRecordingOfParent(
       String parentId, String audioId);
   // Future<File?> downloadFile(String url, String filePath);

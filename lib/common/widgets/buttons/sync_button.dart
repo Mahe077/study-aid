@@ -5,13 +5,20 @@ import 'package:study_aid/common/widgets/bannerbars/base_bannerbar.dart';
 
 class SyncButton extends ConsumerStatefulWidget {
   final String userId;
-  const SyncButton({super.key, required this.userId});
+  final VoidCallback? onSyncComplete;
+
+  const SyncButton({
+    super.key,
+    required this.userId,
+    this.onSyncComplete,
+  });
 
   @override
   ConsumerState<SyncButton> createState() => _SyncButtonState();
 }
 
-class _SyncButtonState extends ConsumerState<SyncButton> with SingleTickerProviderStateMixin {
+class _SyncButtonState extends ConsumerState<SyncButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   bool _isSyncing = false;
 
@@ -39,12 +46,14 @@ class _SyncButtonState extends ConsumerState<SyncButton> with SingleTickerProvid
     });
 
     final toast = CustomToast(context: context);
-    toast.showInfo(title: "Sync Started", description: "Syncing data with cloud...");
+    toast.showInfo(
+        title: "Sync Started", description: "Syncing data with cloud...");
 
     try {
       await ref.read(syncProvider).syncAll(widget.userId);
       if (mounted) {
         toast.showSuccess(description: "Sync completed successfully.");
+        widget.onSyncComplete?.call();
       }
     } catch (e) {
       if (mounted) {

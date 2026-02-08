@@ -1,9 +1,9 @@
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/services/file_local_cache_service.dart';
 import 'package:study_aid/core/services/file_upload_service.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
@@ -47,6 +47,7 @@ class FilesState {
 class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
   final FileRepository repository;
   final FileUploadService uploadService;
+  final FileLocalCacheService cacheService;
   final String topicId;
   final Ref _ref;
   final String sortBy;
@@ -54,6 +55,7 @@ class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
   FilesNotifier(
     this.repository,
     this.uploadService,
+    this.cacheService,
     this.topicId,
     this._ref,
     this.sortBy,
@@ -151,7 +153,15 @@ class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
           ));
           return Left(failure);
         },
-        (newFile) {
+        (newFile) async {
+          if (metadata.bytes != null) {
+            await cacheService.saveLocalCopy(
+              fileId: newFile.id,
+              fileName: metadata.fileName,
+              bytes: metadata.bytes!,
+            );
+          }
+
           // Update UI
           final tabDataNotifier = _ref.read(
               tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
@@ -214,5 +224,52 @@ class FilesNotifier extends StateNotifier<AsyncValue<FilesState>> {
         state = AsyncValue.error(e, stackTrace);
       }
     }
+  }
+
+  Future<FileEntity?> ensureFileAvailable(
+    FileEntity file,
+    String userId,
+    String dropdownValue,
+  ) async {
+    final result =
+        await repository.ensureFileAvailable(file, topicId, userId);
+
+    return result.fold(
+      (failure) => null,
+      (updatedFile) {
+        final currentState = state.value;
+        if (currentState == null) return updatedFile;
+
+        if (updatedFile == null) {
+          state = AsyncValue.data(currentState.copyWith(
+            files: currentState.files
+                .where((f) => f.id != file.id)
+                .toList(),
+            lastDocument: currentState.lastDocument,
+          ));
+
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
+          tabDataNotifier.deleteFile(file.id);
+          return null;
+        }
+
+        if (updatedFile.fileUrl != file.fileUrl) {
+          final updatedList = currentState.files
+              .map((f) => f.id == updatedFile.id ? updatedFile : f)
+              .toList();
+          state = AsyncValue.data(currentState.copyWith(
+            files: updatedList,
+            lastDocument: currentState.lastDocument,
+          ));
+
+          final tabDataNotifier = _ref.read(
+              tabDataProvider(TabDataParams(topicId, dropdownValue)).notifier);
+          tabDataNotifier.updateFile(updatedFile);
+        }
+
+        return updatedFile;
+      },
+    );
   }
 }

@@ -7,7 +7,7 @@ import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/authentication/data/models/user.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+// import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 abstract class RemoteDataSource {
   Future<UserModel> signInWithEmail(String email, String password);
@@ -30,7 +30,7 @@ abstract class RemoteDataSource {
 class RemoteDataSourceImpl implements RemoteDataSource {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FacebookAuth _facebookAuth = FacebookAuth.instance;
+  // final FacebookAuth _facebookAuth = FacebookAuth.instance;
 
   @override
   Future<UserModel> signInWithEmail(String email, String password) async {
@@ -312,70 +312,70 @@ class RemoteDataSourceImpl implements RemoteDataSource {
 
   @override
   Future<UserModel?> signInWithFacebook() async {
-    try {
-      // Trigger the Facebook login flow
-      final LoginResult facebookUser = await _facebookAuth.login(
-        permissions: ['email', 'public_profile'],
-      );
-
-      if (facebookUser.status != LoginStatus.success ||
-          facebookUser.accessToken == null) {
-        AppLogger
-            .i("Facebook Sign-In canceled or failed: ${facebookUser.status}");
-        return null; // User canceled or login failed
-      }
-
-      // Create a credential using the Facebook access token
-      final OAuthCredential facebookAuthCredential =
-          FacebookAuthProvider.credential(
-        facebookUser.accessToken!.tokenString,
-      );
-
-      // Sign in to Firebase with the Facebook credential
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .signInWithCredential(facebookAuthCredential);
-
-      // Fetch the user from Firestore or create a new one if not found
-      UserModel? user = await getUserById(userCredential.user!.uid);
-
-      if (user == null) {
-        // Create a new user
-        user = UserModel(
-          id: userCredential.user!.uid,
-          username: userCredential.user?.displayName ?? '',
-          email: userCredential.user?.email ?? '',
-          createdDate: DateTime.now(),
-          updatedDate: DateTime.now(),
-          createdTopics: [],
-          syncStatus: ConstantStrings.synced,
-          recentItems: [],
-          color: AppColors.defaultColor,
-        );
-        await updateUser(user); // Save the new user to Firestore
-        AppLogger.i("New user created with Facebook Sign-In: ${user.email}");
-      } else {
-        AppLogger.i("Existing user signed in with Facebook: ${user.email}");
-      }
-
-      return user; // Return the user model
-    } on FirebaseAuthException catch (e) {
-      // Handle Firebase-specific errors
-      AppLogger.e("Firebase error during Facebook Sign-In: ${e.message}");
-      switch (e.code) {
-        case 'account-exists-with-different-credential':
-          throw Exception(
-              "An account already exists with a different credential.");
-        case 'invalid-credential':
-          throw Exception("The credential provided is invalid.");
-        default:
-          throw Exception(
-              "An error occurred during Facebook Sign-In. Please try again.");
-      }
-    } catch (e) {
-      // Handle unexpected errors
-      AppLogger.e("Unexpected error during Facebook Sign-In: $e");
-      throw Exception("An unexpected error occurred. Please try again.");
-    }
+    // try {
+    //   // Trigger the Facebook login flow
+    //   final LoginResult facebookUser = await _facebookAuth.login(
+    //     permissions: ['email', 'public_profile'],
+    //   );
+    //
+    //   if (facebookUser.status != LoginStatus.success ||
+    //       facebookUser.accessToken == null) {
+    //     AppLogger
+    //         .i("Facebook Sign-In canceled or failed: ${facebookUser.status}");
+    //     return null; // User canceled or login failed
+    //   }
+    //
+    //   // Create a credential using the Facebook access token
+    //   final OAuthCredential facebookAuthCredential =
+    //       FacebookAuthProvider.credential(
+    //     facebookUser.accessToken!.tokenString,
+    //   );
+    //
+    //   // Sign in to Firebase with the Facebook credential
+    //   final UserCredential userCredential = await FirebaseAuth.instance
+    //       .signInWithCredential(facebookAuthCredential);
+    //
+    //   // Fetch the user from Firestore or create a new one if not found
+    //   UserModel? user = await getUserById(userCredential.user!.uid);
+    //
+    //   if (user == null) {
+    //     // Create a new user
+    //     user = UserModel(
+    //       id: userCredential.user!.uid,
+    //       username: userCredential.user?.displayName ?? '',
+    //       email: userCredential.user?.email ?? '',
+    //       createdDate: DateTime.now(),
+    //       updatedDate: DateTime.now(),
+    //       createdTopics: [],
+    //       syncStatus: ConstantStrings.synced,
+    //       recentItems: [],
+    //       color: AppColors.defaultColor,
+    //     );
+    //     await updateUser(user); // Save the new user to Firestore
+    //     AppLogger.i("New user created with Facebook Sign-In: ${user.email}");
+    //   } else {
+    //     AppLogger.i("Existing user signed in with Facebook: ${user.email}");
+    //   }
+    //
+    //   return user; // Return the user model
+    // } on FirebaseAuthException catch (e) {
+    //   // Handle Firebase-specific errors
+    //   AppLogger.e("Firebase error during Facebook Sign-In: ${e.message}");
+    //   switch (e.code) {
+    //     case 'account-exists-with-different-credential':
+    //       throw Exception(
+    //           "An account already exists with a different credential.");
+    //     case 'invalid-credential':
+    //       throw Exception("The credential provided is invalid.");
+    //     default:
+    //       throw Exception(
+    //           "An error occurred during Facebook Sign-In. Please try again.");
+    //   }
+    // } catch (e) {
+    //   // Handle unexpected errors
+    //   AppLogger.e("Unexpected error during Facebook Sign-In: $e");
+    //   throw Exception("An unexpected error occurred. Please try again.");
+    // }
   }
 
   @override
@@ -564,15 +564,15 @@ class RemoteDataSourceImpl implements RemoteDataSource {
             break;
             
           case 'facebook.com':
-            final LoginResult facebookUser = await _facebookAuth.login(
-              permissions: ['email', 'public_profile'],
-            );
-            if (facebookUser.status != LoginStatus.success || facebookUser.accessToken == null) {
-              throw Exception('Facebook Sign-In canceled or failed.');
-            }
-            credential = FacebookAuthProvider.credential(
-              facebookUser.accessToken!.tokenString,
-            );
+            // final LoginResult facebookUser = await _facebookAuth.login(
+            //   permissions: ['email', 'public_profile'],
+            // );
+            // if (facebookUser.status != LoginStatus.success || facebookUser.accessToken == null) {
+            //   throw Exception('Facebook Sign-In canceled or failed.');
+            // }
+            // credential = FacebookAuthProvider.credential(
+            //   facebookUser.accessToken!.tokenString,
+            // );
             break;
             
           case 'apple.com':
@@ -586,7 +586,7 @@ class RemoteDataSourceImpl implements RemoteDataSource {
             throw Exception('Unsupported authentication provider: $providerId');
         }
         
-        await user.reauthenticateWithCredential(credential);
+        await user.reauthenticateWithCredential(credential!);
         AppLogger.i('Successfully reauthenticated with $providerId');
       }
 

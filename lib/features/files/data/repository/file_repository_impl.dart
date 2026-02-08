@@ -2,9 +2,11 @@ import 'dart:typed_data';
 import 'package:dartz/dartz.dart';
 import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/failures.dart';
+import 'package:study_aid/core/utils/app_logger.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
 import 'package:study_aid/core/utils/helpers/custome_types.dart';
 import 'package:study_aid/core/utils/helpers/network_info.dart';
+import 'package:study_aid/core/services/file_local_cache_service.dart';
 import 'package:study_aid/features/authentication/domain/repositories/user_repository.dart';
 import 'package:study_aid/features/files/data/datasources/file_local_datasource.dart';
 import 'package:study_aid/features/files/data/datasources/file_remote_datasource.dart';
@@ -16,6 +18,7 @@ import 'package:study_aid/features/topics/domain/repositories/topic_repository.d
 class FileRepositoryImpl extends FileRepository {
   final FileRemoteDataSource remoteDataSource;
   final FileLocalDataSource localDataSource;
+  final FileLocalCacheService cacheService;
   final NetworkInfo networkInfo;
   final TopicRepository topicRepository;
   final UserRepository userRepository;
@@ -23,6 +26,7 @@ class FileRepositoryImpl extends FileRepository {
   FileRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
+    required this.cacheService,
     required this.networkInfo,
     required this.topicRepository,
     required this.userRepository,
@@ -136,27 +140,90 @@ class FileRepositoryImpl extends FileRepository {
   Future<void> deleteFile(
       String topicId, String fileId, String userId) async {
     await localDataSource.deleteFile(fileId);
+    await cacheService.removeLocal(fileId);
 
     if (await networkInfo.isConnected) {
       await remoteDataSource.deleteFile(fileId);
-      await topicRepository.updateFileOfParent(topicId, fileId);
     }
+    await topicRepository.removeFileOfParent(topicId, fileId);
     await userRepository.updateRecentItems(userId, fileId, ConstantStrings.file,
         isDelete: true);
   }
 
   @override
-  Future<Either<Failure, void>> syncFiles() async {
+  Future<Either<Failure, void>> syncFiles(String userId) async {
     try {
+      // 1. Fetch available topics to scan for missing files
+      final allTopics = await topicRepository.fetchAllTopics();
+
+      await allTopics.fold(
+        (failure) async {
+          Logger().e("SyncFiles: Failed to fetch topics: $failure");
+        },
+        (topics) async {
+          // 2. Iterate through all topics and their files
+          for (var topic in topics) {
+            for (var fileId in topic.files) {
+              if (!await networkInfo.isConnected) {
+                continue;
+              }
+
+              FileEntity? candidate =
+                  await localDataSource.getCachedFile(fileId);
+
+              if (candidate == null) {
+                final remoteFileResult =
+                    await remoteDataSource.getFileById(fileId);
+                await remoteFileResult.fold(
+                  (failure) async {
+                    Logger().w(
+                        "SyncFiles: Missing file $fileId in cloud: ${failure.message}");
+                  },
+                  (remoteFile) async {
+                    await localDataSource.createFile(remoteFile);
+                    candidate = remoteFile;
+                    Logger().i("SyncFiles: Pulled missing file $fileId");
+                  },
+                );
+              }
+
+              if (candidate != null) {
+                await ensureFileAvailable(candidate!, topic.id, userId);
+              } else {
+                await localDataSource.deleteFile(fileId);
+                await cacheService.removeLocal(fileId);
+                await topicRepository.removeFileOfParent(topic.id, fileId);
+                await userRepository.updateRecentItems(
+                    userId, fileId, ConstantStrings.file,
+                    isDelete: true);
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Keep existing sync logic
       var localFiles = await localDataSource.fetchAllFiles();
 
       for (var localFile in localFiles) {
+        if (await networkInfo.isConnected) {
+          final ensured =
+              await ensureFileAvailable(localFile, localFile.topicId, userId);
+          if (ensured.isLeft()) {
+            continue;
+          }
+          final ensuredFile = ensured.getOrElse(() => null);
+          if (ensuredFile == null) {
+            continue;
+          }
+        }
+
         final remoteFileOrFailure =
             await remoteDataSource.getFileById(localFile.id);
 
         await remoteFileOrFailure.fold((failure) async {
           final newFileResult = await remoteDataSource.createFile(localFile);
-          newFileResult.fold((failure) => Left(Failure(failure.toString())),
+          newFileResult.fold((failure) => Left(failure),
               (newFile) async {
             await localDataSource.deleteFile(localFile.id);
             await localDataSource.createFile(newFile);
@@ -202,6 +269,76 @@ class FileRepositoryImpl extends FileRepository {
     } catch (e) {
       return Left(Failure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, FileEntity?>> ensureFileAvailable(
+      FileEntity file, String topicId, String userId) async {
+    try {
+      if (!await networkInfo.isConnected) {
+        return Right(file);
+      }
+
+      final docExists = await remoteDataSource.fileExists(file.id);
+      final storageExists = docExists
+          ? await remoteDataSource.storageFileExists(file.fileUrl)
+          : false;
+      final hasLocal = await cacheService.localFileExists(file.id);
+
+      if (!docExists || !storageExists) {
+        if (hasLocal) {
+          final bytes = await cacheService.readLocalBytes(file.id);
+          if (bytes == null) {
+            return await _removeMissingFile(file, topicId, userId, docExists);
+          }
+
+          final newUrl = await remoteDataSource.uploadFileToStorage(
+              bytes, file.fileName, file.userId, file.topicId);
+
+          final now = DateTime.now();
+          final updated = FileModel.fromDomain(file).copyWith(
+            fileUrl: newUrl,
+            updatedDate: now,
+            remoteChangeTimestamp: now,
+            localChangeTimestamp: now,
+            syncStatus: ConstantStrings.synced,
+          );
+
+          final upsert = await remoteDataSource.upsertFile(updated);
+          return await upsert.fold(
+            (failure) => Left(failure),
+            (remoteFile) async {
+              await localDataSource.updateFile(remoteFile);
+              return Right(remoteFile);
+            },
+          );
+        }
+
+        return await _removeMissingFile(file, topicId, userId, docExists);
+      }
+
+      return Right(file);
+    } catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  Future<Either<Failure, FileEntity?>> _removeMissingFile(
+      FileEntity file, String topicId, String userId, bool docExists) async {
+    AppLogger.i("Removing missing file: ${file.id}");
+    await localDataSource.deleteFile(file.id);
+    await cacheService.removeLocal(file.id);
+
+    if (docExists) {
+      await remoteDataSource.deleteFile(file.id);
+    }
+
+    await topicRepository.removeFileOfParent(topicId, file.id);
+    await userRepository.updateRecentItems(
+        userId, file.id, ConstantStrings.file,
+        isDelete: true);
+
+    return const Right(null);
   }
 
   @override

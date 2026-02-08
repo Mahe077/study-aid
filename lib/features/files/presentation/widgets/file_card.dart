@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:study_aid/core/utils/theme/app_colors.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
-import 'package:study_aid/features/files/presentation/notifiers/files_notifier.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +28,7 @@ class FileCard extends ConsumerWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _openFile(context, file.fileUrl),
+        onTap: () => _openFile(context, ref),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -159,9 +158,24 @@ class FileCard extends ConsumerWidget {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
-  Future<void> _openFile(BuildContext context, String url) async {
+  Future<void> _openFile(BuildContext context, WidgetRef ref) async {
     try {
-      final uri = Uri.parse(url);
+      final notifier = ref.read(
+          filesProvider(FilesParams(topicId: topicId, sortBy: sortBy)).notifier);
+      final resolvedFile =
+          await notifier.ensureFileAvailable(file, userId, sortBy);
+
+      if (resolvedFile == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('File missing. Removed from this topic.')),
+          );
+        }
+        return;
+      }
+
+      final uri = Uri.parse(resolvedFile.fileUrl);
       if (await canLaunchUrl(uri)) {
         // Force external application on iOS to avoid embedded view issues
         final mode = Platform.isIOS 

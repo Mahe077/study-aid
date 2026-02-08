@@ -70,12 +70,16 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Triggering sync on app startup
     final userAsyncValue = ref.watch(userProvider);
+    final authStateAsyncValue = ref.watch(authStateProvider);
 
-    userAsyncValue.whenData((user) {
-      if (user != null) {
+    if (userAsyncValue.hasValue && authStateAsyncValue.hasValue) {
+      final user = userAsyncValue.value;
+      final authUser = authStateAsyncValue.value;
+
+      if (user != null && authUser != null && user.id == authUser.uid) {
         ref.read(syncProvider).syncAll(user.id);
       }
-    });
+    }
 
     return ToastificationWrapper(
       child: MaterialApp(

@@ -142,8 +142,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -154,7 +154,7 @@ class TopicRepositoryImpl implements TopicRepository {
               newTopic.notes.add(noteId);
             }
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });
@@ -188,8 +188,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -198,7 +198,7 @@ class TopicRepositoryImpl implements TopicRepository {
                 syncStatus: ConstantStrings.synced);
             newTopic.audioRecordings.add(audioId);
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });
@@ -230,8 +230,8 @@ class TopicRepositoryImpl implements TopicRepository {
       final now = DateTime.now();
       if (await networkInfo.isConnected) {
         final result = await remoteDataSource.getTopicById(parentId);
-        result.fold(
-          (failure) => Left(failure),
+        return await result.fold(
+          (failure) async => Left(failure),
           (topic) async {
             TopicModel newTopic = topic.copyWith(
                 updatedDate: now,
@@ -242,7 +242,7 @@ class TopicRepositoryImpl implements TopicRepository {
               newTopic.files.add(fileId);
             }
             final updateResult = await remoteDataSource.updateTopic(newTopic);
-            return updateResult.fold((failure) => Left(failure), (T) async {
+            return await updateResult.fold((failure) => Left(failure), (T) async {
               await localDataSource.updateTopic(T);
               return const Right(null);
             });
@@ -258,6 +258,48 @@ class TopicRepositoryImpl implements TopicRepository {
           if (!newTopic.files.contains(fileId)) {
             newTopic.files.add(fileId);
           }
+          await localDataSource.updateTopic(newTopic);
+        } else {
+          return Left(Failure("Something Wrong Try again later!"));
+        }
+      }
+      return const Right(null);
+    } on Exception catch (e) {
+      return Left(Failure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> removeFileOfParent(
+      String parentId, String fileId) async {
+    try {
+      final now = DateTime.now();
+      if (await networkInfo.isConnected) {
+        final result = await remoteDataSource.getTopicById(parentId);
+        return await result.fold(
+          (failure) async => Left(failure),
+          (topic) async {
+            TopicModel newTopic = topic.copyWith(
+                updatedDate: now,
+                remoteChangeTimestamp: now,
+                localChangeTimestamp: now,
+                syncStatus: ConstantStrings.synced);
+            newTopic.files.remove(fileId);
+            final updateResult = await remoteDataSource.updateTopic(newTopic);
+            return await updateResult.fold((failure) => Left(failure), (T) async {
+              await localDataSource.updateTopic(T);
+              return const Right(null);
+            });
+          },
+        );
+      } else {
+        final localParentTopic = await localDataSource.getCachedTopic(parentId);
+        if (localParentTopic != null) {
+          TopicModel newTopic = localParentTopic.copyWith(
+              updatedDate: now,
+              localChangeTimestamp: now,
+              syncStatus: ConstantStrings.pending);
+          newTopic.files.remove(fileId);
           await localDataSource.updateTopic(newTopic);
         } else {
           return Left(Failure("Something Wrong Try again later!"));
@@ -415,9 +457,41 @@ class TopicRepositoryImpl implements TopicRepository {
   }
 
   @override
-  Future<Either<Failure, void>> syncTopics() async {
+  Future<Either<Failure, void>> syncTopics(String userId) async {
     try {
-      // Fetch all topics from the local data source
+      // 1. Fetch User to get the latest list of created topics
+      final userResult =
+          await userRepository.getUser(userId, forceFetch: true);
+
+      await userResult.fold(
+        (failure) async {
+          Logger().e("SyncTopics: Failed to fetch user: $failure");
+        },
+        (user) async {
+          if (user != null) {
+            // 2. Iterate through user's created topics and fetch missing ones
+            for (var topicId in user.createdTopics) {
+              if (!localDataSource.topicExists(topicId)) {
+                if (await networkInfo.isConnected) {
+                  final remoteTopicResult =
+                      await remoteDataSource.getTopicById(topicId);
+                  await remoteTopicResult.fold(
+                    (failure) async {
+                       Logger().e("SyncTopics: Failed to fetch missing topic $topicId: $failure");
+                    },
+                    (remoteTopic) async {
+                      await localDataSource.createTopic(remoteTopic);
+                       Logger().i("SyncTopics: Pulled missing topic $topicId");
+                    },
+                  );
+                }
+              }
+            }
+          }
+        },
+      );
+
+      // 3. Proceed with existing sync logic (sync local topics)
       var localTopics = await localDataSource.fetchAllTopics();
 
       for (var localTopic in localTopics) {

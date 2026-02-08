@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dartz/dartz.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:logger/logger.dart';
 import 'package:study_aid/core/error/exceptions.dart';
 import 'package:study_aid/core/error/failures.dart';
 import 'package:study_aid/core/utils/constants/constant_strings.dart';
@@ -51,10 +50,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       );
       await docRef.set(topicWithId.toFirestore());
       return Right(topicWithId);
-    } on ServerException {
-      return Left(ServerFailure('Failed to sign in'));
-    } on Exception catch (e) {
-      throw Exception('Error in creating a note: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error creating note: ${e.toString()}'));
     }
   }
 
@@ -158,8 +157,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       } else {
         return Left(ServerFailure('Note not found'));
       }
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
-      throw Exception('Error in fetching a note: $e');
+      return Left(ServerFailure('Error fetching note: ${e.toString()}'));
     }
   }
 
@@ -183,8 +184,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
           .update(updatedNote.toFirestore());
 
       return Right(note.copyWith(syncStatus: ConstantStrings.synced));
-    } on Exception catch (e) {
-      throw Exception('Error in updating a note: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error updating note: ${e.toString()}'));
     }
   }
 

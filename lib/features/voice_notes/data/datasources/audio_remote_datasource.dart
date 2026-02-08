@@ -82,10 +82,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
           return Right(Tuple2(audioWithId, transcribeText));
         },
       );
-    } on ServerException {
-      return Left(ServerFailure('Failed to sign in'));
-    } on Exception catch (e) {
-      throw Exception('Error in creating an audio: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error creating audio: ${e.toString()}'));
     }
   }
 
@@ -163,8 +163,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       } else {
         return Left(ServerFailure('Audio not found'));
       }
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
     } catch (e) {
-      throw Exception('Error in fetching a audio: $e');
+      return Left(ServerFailure('Error fetching audio: ${e.toString()}'));
     }
   }
 
@@ -175,8 +177,10 @@ class RemoteDataSourceImpl extends RemoteDataSource {
       await _firestore.collection('audios').doc(audio.id).update(
           audio.copyWith(syncStatus: ConstantStrings.synced).toFirestore());
       return Right(audio.copyWith(syncStatus: ConstantStrings.synced));
-    } on Exception catch (e) {
-      throw Exception('Error in updating a audio: $e');
+    } on FirebaseException catch (e) {
+      return Left(ServerFailure('Firestore error: ${e.message}'));
+    } catch (e) {
+      return Left(ServerFailure('Error updating audio: ${e.toString()}'));
     }
   }
 

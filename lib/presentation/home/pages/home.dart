@@ -97,7 +97,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       appBar: BasicAppbar(
         hideBack: true,
         showMenu: true,
-        action: SyncButton(userId: widget.user.id),
+        action: SyncButton(
+          userId: widget.user.id,
+          onSyncComplete: () {
+            ref.invalidate(
+                topicsProvider(TopicParams(widget.user.id, dropdownValue)));
+            ref.invalidate(recentItemProvider(widget.user.id));
+          },
+        ),
       ),
       floatingActionButtonLocation: ExpandableFab.location,
       floatingActionButton: FAB(

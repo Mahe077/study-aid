@@ -26,11 +26,8 @@ import 'package:study_aid/features/voice_notes/domain/entities/audio_recording.d
 import 'package:study_aid/features/voice_notes/presentation/pages/voice_drawer.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
-import 'package:study_aid/features/notes/presentation/providers/summarization_provider.dart';
 import 'package:study_aid/features/notes/presentation/widgets/summarization_dialog.dart';
 import 'package:study_aid/features/topics/presentation/providers/topic_tab_provider.dart';
-// import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
-// import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ContentTile extends ConsumerStatefulWidget {

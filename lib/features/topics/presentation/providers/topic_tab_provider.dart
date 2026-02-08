@@ -7,7 +7,6 @@ import 'package:study_aid/features/topics/presentation/providers/topic_provider.
 import 'package:study_aid/features/notes/presentation/providers/note_provider.dart';
 import 'package:study_aid/features/voice_notes/presentation/providers/audio_provider.dart';
 import 'package:study_aid/features/files/domain/entities/file_entity.dart';
-import 'package:study_aid/features/files/domain/repository/file_repository.dart';
 import 'package:study_aid/features/files/presentation/providers/files_providers.dart';
 
 class TabDataState {
@@ -181,6 +180,58 @@ class TabDataNotifier extends StateNotifier<AsyncValue<TabDataState>> {
     } finally {
       isFetchingNotes = false; // Reset the flag after fetching
     }
+  }
+
+  Future<List<Note>> loadAllNotes(String topicId) async {
+    if (isFetchingNotes) {
+      return state.value?.notes ?? [];
+    }
+
+    try {
+      isFetchingNotes = true;
+      final repository = ref.read(noteRepositoryProvider);
+      final result = await repository.fetchNotes(topicId, 5, 0, sortBy);
+
+      result.fold(
+        (failure) =>
+            state = AsyncValue.error(failure.message, StackTrace.current),
+        (paginatedObj) {
+          final refreshedNotes =
+              paginatedObj.items.whereType<Note>().toList();
+          final current = state.value;
+
+          if (current == null) {
+            state = AsyncValue.data(TabDataState(
+              topics: const [],
+              notes: refreshedNotes,
+              audioRecordings: const [],
+              files: const [],
+              hasMoreTopics: false,
+              hasMoreNotes: paginatedObj.hasMore,
+              hasMoreAudio: false,
+              hasMoreFiles: false,
+              lastNoteDocument: paginatedObj.lastDocument,
+            ));
+          } else {
+            state = AsyncValue.data(current.copyWith(
+              notes: refreshedNotes,
+              hasMoreNotes: paginatedObj.hasMore,
+              lastNoteDocument: paginatedObj.lastDocument,
+            ));
+          }
+        },
+      );
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    } finally {
+      isFetchingNotes = false;
+    }
+
+    while (state.value?.hasMoreNotes ?? false) {
+      await loadMoreNotes(topicId);
+    }
+
+    return state.value?.notes ?? [];
   }
 
   Future<void> loadMoreAudio(String topicId) async {
